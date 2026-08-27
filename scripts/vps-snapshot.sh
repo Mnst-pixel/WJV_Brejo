@@ -23,7 +23,7 @@ lscpu > "$output_dir/lscpu.txt"
 free -b > "$output_dir/memory.txt"
 swapon --show --bytes > "$output_dir/swap.txt"
 lsblk -e7 -o NAME,TYPE,SIZE,FSTYPE,FSVER,MOUNTPOINTS,UUID > "$output_dir/block-devices.txt"
-df -BT1 > "$output_dir/disk.txt"
+df -B1 -T > "$output_dir/disk.txt"
 df -i > "$output_dir/inodes.txt"
 
 docker version --format 'client={{.Client.Version}} server={{.Server.Version}} api={{.Server.APIVersion}}' > "$output_dir/docker-version.txt"
