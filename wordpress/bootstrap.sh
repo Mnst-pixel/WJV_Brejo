@@ -116,7 +116,7 @@ if ! wp menu list --fields=slug --format=csv | grep -q '^kairos-primary$'; then
   wp menu item add-custom kairos-primary 'Biblioteca' "$KAIROS_BASE_URL/app/biblioteca" >/dev/null
   wp menu item add-custom kairos-primary 'Consultor' "$KAIROS_BASE_URL/app/consultor" >/dev/null
   wp menu item add-post kairos-primary "$(wp post list --post_type=page --name=contato --field=ID --format=ids)" --title='Contato' >/dev/null
-  location="$(wp menu location list --field=location | head -n 1 || true)"
+  location="$(wp menu location list --fields=location --format=csv | tail -n +2 | head -n 1 || true)"
   if [ -n "$location" ]; then wp menu location assign kairos-primary "$location" || true; fi
 fi
 
