@@ -6,13 +6,13 @@
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--kairos-abyss);color:var(--kairos-parchment);font-family:Montserrat,Arial,sans-serif}
 h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea{font-family:Montserrat,Arial,sans-serif}
-.site-main{min-height:70vh;overflow:hidden;background:radial-gradient(circle at 78% 8%,rgba(135,167,174,.12),transparent 34%),var(--kairos-abyss)}
+.site-main{width:100%!important;max-width:none!important;min-height:70vh;margin:0!important;overflow:hidden;background:radial-gradient(circle at 78% 8%,rgba(135,167,174,.12),transparent 34%),var(--kairos-abyss)}
 .page-header{display:none}
 
 /* Hello Elementor shell */
 #site-header{position:sticky;top:0;z-index:50;padding:0;background:rgba(20,35,29,.96);border-bottom:1px solid var(--kairos-line);box-shadow:0 10px 30px rgba(3,12,8,.22);backdrop-filter:blur(12px)}
 #site-header .header-inner{display:flex;align-items:center;gap:2rem;max-width:1440px;min-height:76px;padding:8px clamp(1rem,4vw,4rem)}
-#site-header .site-branding{display:flex;align-items:center;gap:.75rem;min-width:max-content}
+#site-header .site-branding{display:flex!important;flex-flow:row nowrap!important;align-items:center;gap:.75rem;width:auto!important;min-width:max-content}
 #site-header .site-logo{margin:0}
 #site-header .custom-logo{display:block;width:54px!important;height:58px!important;object-fit:contain}
 #site-header .site-title,#site-header .site-description{margin:0;color:var(--kairos-parchment)}

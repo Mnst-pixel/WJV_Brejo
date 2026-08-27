@@ -34,8 +34,15 @@ wp user update "$WORDPRESS_ADMIN_USER" \
   --user_email="$WORDPRESS_ADMIN_EMAIL" \
   --display_name="${WORDPRESS_ADMIN_DISPLAY_NAME:-Vinícius}" >/dev/null
 
-wp theme install hello-elementor --version=3.4.9 --activate --force
-wp plugin install elementor --version=4.2.3 --activate --force
+if [ "$(wp theme get hello-elementor --field=version 2>/dev/null || true)" != "3.4.9" ]; then
+  wp theme install hello-elementor --version=3.4.9 --force
+fi
+wp theme activate hello-elementor
+
+if [ "$(wp plugin get elementor --field=version 2>/dev/null || true)" != "4.2.3" ]; then
+  wp plugin install elementor --version=4.2.3 --force
+fi
+wp plugin activate elementor
 wp language core install pt_BR --activate || true
 
 create_page() {
