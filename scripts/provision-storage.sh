@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+code_root=/opt/kairos/current
+[[ "$(realpath -m -- "$code_root")" == /opt/kairos/current ]]
+# The repository is public code/config only; container UIDs need read/traverse access to bind mounts.
+chmod -R a+rX -- "$code_root"
+
 root=/srv/kairos
 [[ "$(realpath -m -- "$root")" == /srv/kairos ]]
 install -d -o root -g root -m 0755 "$root"
