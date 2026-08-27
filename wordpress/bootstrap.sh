@@ -29,6 +29,14 @@ if ! wp core is-installed; then
     --skip-email
 fi
 
+current_base_url="$(wp option get home 2>/dev/null || true)"
+if [ -n "$current_base_url" ] && [ "$current_base_url" != "$KAIROS_BASE_URL" ]; then
+  wp search-replace "$current_base_url" "$KAIROS_BASE_URL" \
+    --all-tables-with-prefix --skip-columns=guid --precise >/dev/null
+fi
+wp option update home "$KAIROS_BASE_URL" >/dev/null
+wp option update siteurl "$KAIROS_BASE_URL" >/dev/null
+
 # Reconcile non-secret profile fields without changing the existing password.
 wp user update "$WORDPRESS_ADMIN_USER" \
   --user_email="$WORDPRESS_ADMIN_EMAIL" \

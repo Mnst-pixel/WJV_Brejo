@@ -22,10 +22,11 @@ fernet_secret() { openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'; }
 {
   echo 'COMPOSE_PROJECT_NAME=kairos'
   echo 'KAIROS_PUBLIC_PORT=4080'
-  echo 'KAIROS_BASE_URL=http://2.24.215.183:4080'
-  echo 'KAIROS_ALLOWED_HOSTS=2.24.215.183,localhost,127.0.0.1'
-  echo 'KAIROS_CORS_ORIGINS=http://2.24.215.183:4080'
-  echo 'KAIROS_CSRF_TRUSTED_ORIGINS=http://2.24.215.183:4080'
+  echo 'KAIROS_BASE_URL=https://kairos.2-24-215-183.sslip.io'
+  echo 'KAIROS_ALLOWED_HOSTS=kairos.2-24-215-183.sslip.io,2.24.215.183,localhost,127.0.0.1,api'
+  echo 'KAIROS_CORS_ORIGINS=https://kairos.2-24-215-183.sslip.io'
+  echo 'KAIROS_CSRF_TRUSTED_ORIGINS=https://kairos.2-24-215-183.sslip.io'
+  echo 'KAIROS_TLS_ENABLED=true'
   echo 'KAIROS_DEBUG=false'
   echo 'KAIROS_LOG_LEVEL=INFO'
   printf 'DJANGO_SECRET_KEY=%s\n' "$(secret)"
