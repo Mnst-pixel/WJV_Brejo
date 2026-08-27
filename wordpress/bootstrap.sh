@@ -138,8 +138,11 @@ if ! wp menu list --fields=slug --format=csv | grep -q '^kairos-primary$'; then
   wp menu item add-post kairos-primary "$(wp post list --post_type=page --name=contato --field=ID --format=ids)" --title='Contato' >/dev/null
 fi
 
-if ! wp menu item list kairos-primary --fields=title --format=csv | grep -q '^Entrar$'; then
-  wp menu item add-custom kairos-primary 'Entrar' "$KAIROS_BASE_URL/app/login" >/dev/null
+entry_item_id="$(wp menu item list kairos-primary --fields=db_id,title --format=csv | awk -F, '$2 == "Entrar" {print $1; exit}')"
+if [ -z "$entry_item_id" ]; then
+  wp menu item add-custom kairos-primary 'Entrar' "$KAIROS_BASE_URL/app/entrar" >/dev/null
+else
+  wp menu item update "$entry_item_id" --link="$KAIROS_BASE_URL/app/entrar" >/dev/null
 fi
 
 # Location assignment must also run after an interrupted or partial first seed.
