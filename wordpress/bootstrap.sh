@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+export WP_CLI_CACHE_DIR="${WP_CLI_CACHE_DIR:-/tmp/wp-cli-cache}"
+mkdir -p "$WP_CLI_CACHE_DIR"
+
 cd /var/www/html
 
 until [ -f wp-includes/version.php ]; do sleep 2; done
@@ -69,7 +72,7 @@ if ! wp option get kairos_logo_attachment_id >/dev/null 2>&1; then
 fi
 
 if ! wp option get kairos_icon_attachment_id >/dev/null 2>&1; then
-  icon_id="$(wp media import '/assets/Mini Icone.png' --title='Mini ícone Kairós' --alt='Mini ícone do Kairós' --porcelain)"
+  icon_id="$(wp media import '/assets/Mini-Icone.png' --title='Mini ícone Kairós' --alt='Mini ícone do Kairós' --porcelain)"
   wp option update kairos_icon_attachment_id "$icon_id"
   wp option update site_icon "$icon_id"
 fi
