@@ -13,4 +13,5 @@ install -d -o root -g root -m 0750 "$root/models" "$root/localai-backends" "$roo
 install -d -o 10000 -g 10000 -m 0700 "$root/hermes"
 install -d -o 10001 -g 10001 -m 0750 "$root/mcp-brasil-cache"
 install -d -o root -g root -m 0700 "$root/backups"
+install -d -o root -g root -m 0750 "$root/observability"
 echo "KAIROS_STORAGE_PROVISION=PASS"
