@@ -2,16 +2,61 @@
 @font-face{font-family:Montserrat;src:url("fonts/montserrat-500.woff2") format("woff2");font-style:normal;font-weight:500;font-display:swap}
 @font-face{font-family:Montserrat;src:url("fonts/montserrat-600.woff2") format("woff2");font-style:normal;font-weight:600;font-display:swap}
 @font-face{font-family:Montserrat;src:url("fonts/montserrat-700.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap}
-:root{--kairos-abyss:var(--e-global-color-primary,#1e312a);--kairos-cave:var(--e-global-color-secondary,#253d32);--kairos-gold:var(--e-global-color-accent,#dcc992);--kairos-parchment:var(--e-global-color-text,#efead7)}
+:root{--kairos-abyss:#17261f;--kairos-deep:#1e312a;--kairos-cave:#253d32;--kairos-moss:#385344;--kairos-gold:#dcc992;--kairos-gold-deep:#928566;--kairos-parchment:#efead7;--kairos-ink:#17261f;--kairos-line:rgba(220,201,146,.42)}
 html{scroll-behavior:smooth}
-body{background:var(--kairos-abyss);color:var(--kairos-parchment);font-family:Montserrat,Arial,sans-serif}
+body{margin:0;background:var(--kairos-abyss);color:var(--kairos-parchment);font-family:Montserrat,Arial,sans-serif}
 h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea{font-family:Montserrat,Arial,sans-serif}
-.site-main{min-height:70vh}
-.wp-site-blocks,.site-main{background:radial-gradient(circle at 78% 8%,rgba(135,167,174,.14),transparent 34%),var(--kairos-abyss)}
-.kairos-hero{min-height:68vh;display:flex;flex-direction:column;justify-content:center;padding:clamp(3rem,8vw,8rem) clamp(1.25rem,8vw,8rem);background:linear-gradient(115deg,rgba(20,37,31,.98),rgba(37,61,50,.8));border-bottom:1px solid rgba(220,201,146,.45)}
-.kairos-section{padding:clamp(3rem,7vw,7rem) clamp(1.25rem,8vw,8rem)}
-.kairos-section.is-parchment{background:#efead7;color:#17261f}
-.kairos-card{height:100%;padding:1.5rem;border:1px solid rgba(220,201,146,.45);border-radius:12px;background:rgba(37,61,50,.72)}
-.wp-element-button{background:#928566;color:#fff;border-radius:6px;font-weight:600}
+.site-main{min-height:70vh;overflow:hidden;background:radial-gradient(circle at 78% 8%,rgba(135,167,174,.12),transparent 34%),var(--kairos-abyss)}
+.page-header{display:none}
+
+/* Hello Elementor shell */
+#site-header{position:sticky;top:0;z-index:50;padding:0;background:rgba(20,35,29,.96);border-bottom:1px solid var(--kairos-line);box-shadow:0 10px 30px rgba(3,12,8,.22);backdrop-filter:blur(12px)}
+#site-header .header-inner{display:flex;align-items:center;gap:2rem;max-width:1440px;min-height:76px;padding:8px clamp(1rem,4vw,4rem)}
+#site-header .site-branding{display:flex;align-items:center;gap:.75rem;min-width:max-content}
+#site-header .site-logo{margin:0}
+#site-header .custom-logo{display:block;width:54px!important;height:58px!important;object-fit:contain}
+#site-header .site-title,#site-header .site-description{margin:0;color:var(--kairos-parchment)}
+#site-header .site-description{max-width:220px;font-size:.68rem;line-height:1.35;letter-spacing:.08em;text-transform:uppercase;color:rgba(239,234,215,.7)}
+#site-header nav{margin-left:auto}
+#site-header ul{display:flex;align-items:center;gap:.15rem;margin:0;padding:0;list-style:none}
+#site-header li a{display:block;padding:.7rem .62rem;color:rgba(239,234,215,.86);font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:color .2s ease,background .2s ease}
+#site-header li a:hover{color:var(--kairos-gold)}
+#site-header li:last-child a{margin-left:.55rem;padding:.68rem 1rem;border:1px solid var(--kairos-gold);border-radius:6px;background:var(--kairos-gold-deep);color:#fff}
+#site-header li:last-child a:hover{background:var(--kairos-gold);color:var(--kairos-ink)}
+
+/* Editorial landing page, aligned to the accepted Kairós dashboard concept. */
+.kairos-hero{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:center;min-height:clamp(620px,76vh,820px);padding:clamp(4rem,8vw,8rem) max(clamp(1.25rem,7vw,7rem),calc((100vw - 1440px)/2));border-bottom:1px solid var(--kairos-line);background:var(--kairos-deep);overflow:hidden}
+.kairos-hero::before{content:"";position:absolute;z-index:-2;inset:0 0 0 34%;background-image:url('/app/cave-oracle.png');background-position:center;background-size:cover}
+.kairos-hero::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,var(--kairos-deep) 0%,rgba(30,49,42,.98) 34%,rgba(30,49,42,.75) 54%,rgba(30,49,42,.18) 100%),linear-gradient(0deg,rgba(23,38,31,.42),transparent 45%)}
+.kairos-hero>*{width:min(620px,54vw);margin-left:0!important;margin-right:auto!important}
+.kairos-hero .wp-block-site-logo{width:auto;margin-bottom:1.2rem!important}
+.kairos-hero .custom-logo{width:72px!important;height:80px!important;object-fit:contain;filter:drop-shadow(0 10px 20px rgba(0,0,0,.25))}
+.kairos-hero h1{margin:.3rem 0 1.2rem;color:var(--kairos-parchment);font-size:clamp(2.7rem,5.5vw,5.6rem);font-weight:600;line-height:.98;letter-spacing:-.045em;text-wrap:balance}
+.kairos-hero p{max-width:580px;margin:0 0 2rem;color:rgba(239,234,215,.84);font-size:clamp(1rem,1.45vw,1.25rem);line-height:1.7}
+.kairos-hero .wp-block-buttons{display:flex;gap:.8rem;flex-wrap:wrap}
+.kairos-section{padding:clamp(4rem,7vw,7rem) max(clamp(1.25rem,7vw,7rem),calc((100vw - 1440px)/2));border-bottom:1px solid rgba(220,201,146,.15)}
+.kairos-section>h2{max-width:820px;margin-top:0;color:var(--kairos-gold);font-size:clamp(2rem,3.6vw,3.5rem);font-weight:500;line-height:1.1;letter-spacing:-.035em}
+.kairos-section>p,.kairos-section>ul{max-width:840px;color:rgba(239,234,215,.78);font-size:1.05rem;line-height:1.75}
+.kairos-section .wp-block-columns{gap:1.1rem;margin:1.1rem 0}
+.kairos-section.is-parchment{background:var(--kairos-parchment);color:var(--kairos-ink)}
+.kairos-section.is-parchment>h2{color:var(--kairos-ink)}
+.kairos-section.is-parchment>p{color:rgba(23,38,31,.82)}
+.kairos-card{height:100%;box-sizing:border-box;padding:1.65rem;border:1px solid var(--kairos-line);border-radius:10px;background:linear-gradient(145deg,rgba(56,83,68,.72),rgba(30,49,42,.88));box-shadow:0 14px 45px rgba(6,17,12,.17)}
+.kairos-card h3{margin-top:0;color:var(--kairos-gold);font-size:1.15rem}
+.kairos-card p{color:rgba(239,234,215,.74);line-height:1.65}
+.wp-element-button{box-sizing:border-box;padding:.82rem 1.15rem;border:1px solid var(--kairos-gold-deep);border-radius:6px;background:var(--kairos-gold-deep);color:#fff;font-size:.88rem;font-weight:600;text-decoration:none;transition:transform .2s ease,background .2s ease,color .2s ease}
+.wp-element-button:hover{transform:translateY(-1px);background:var(--kairos-gold);color:var(--kairos-ink)}
+.is-style-outline>.wp-element-button{background:transparent;color:var(--kairos-parchment);border-color:var(--kairos-gold)}
+.is-parchment .is-style-outline>.wp-element-button{color:var(--kairos-ink)}
+
+#site-footer{padding:2.2rem clamp(1rem,4vw,4rem);border-top:1px solid var(--kairos-line);background:#122019;color:var(--kairos-parchment)}
+#site-footer .footer-inner{display:flex;align-items:center;gap:1.25rem;max-width:1440px;margin:auto}
+#site-footer .site-branding{display:flex;align-items:center;gap:.75rem}
+#site-footer .custom-logo{display:block;width:46px!important;height:52px!important;object-fit:contain}
+#site-footer .site-title,#site-footer .site-description{margin:0;color:var(--kairos-parchment)}
+#site-footer a{color:var(--kairos-gold)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #87a7ae;outline-offset:3px}
+@media(max-width:1120px){#site-header .site-description{display:none}#site-header li a{padding:.65rem .42rem;font-size:.7rem}}
+@media(max-width:900px){#site-header .header-inner{min-height:66px}.site-navigation-toggle-holder{display:flex!important;margin-left:auto}.site-navigation-dropdown{background:var(--kairos-deep);border-top:1px solid var(--kairos-line)}#site-header .site-navigation-dropdown ul{display:block}#site-header .site-navigation-dropdown li a{padding:.9rem 1.2rem}#site-header .site-navigation-dropdown li:last-child a{margin:.4rem 1.2rem 1rem;text-align:center}.kairos-hero{min-height:620px}.kairos-hero::before{inset:0;background-position:63% center}.kairos-hero::after{background:linear-gradient(90deg,rgba(23,38,31,.98),rgba(23,38,31,.72)),linear-gradient(0deg,rgba(23,38,31,.85),transparent 45%)}.kairos-hero>*{width:min(660px,100%)}}
+@media(max-width:600px){#site-header .custom-logo{width:44px!important;height:48px!important}.kairos-hero{min-height:calc(100svh - 66px);padding-top:3rem;padding-bottom:3rem}.kairos-hero h1{font-size:clamp(2.5rem,13vw,4rem)}.kairos-hero .wp-block-buttons{display:grid;width:100%}.kairos-hero .wp-block-button,.kairos-hero .wp-element-button{width:100%;text-align:center}.kairos-section .wp-block-columns{display:grid}.kairos-card{padding:1.35rem}#site-footer .footer-inner{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

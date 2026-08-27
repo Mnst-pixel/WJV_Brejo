@@ -29,6 +29,11 @@ if ! wp core is-installed; then
     --skip-email
 fi
 
+# Reconcile non-secret profile fields without changing the existing password.
+wp user update "$WORDPRESS_ADMIN_USER" \
+  --user_email="$WORDPRESS_ADMIN_EMAIL" \
+  --display_name="${WORDPRESS_ADMIN_DISPLAY_NAME:-Vinícius}" >/dev/null
+
 wp theme install hello-elementor --version=3.4.9 --activate --force
 wp plugin install elementor --version=4.2.3 --activate --force
 wp language core install pt_BR --activate || true
@@ -116,9 +121,15 @@ if ! wp menu list --fields=slug --format=csv | grep -q '^kairos-primary$'; then
   wp menu item add-custom kairos-primary 'Biblioteca' "$KAIROS_BASE_URL/app/biblioteca" >/dev/null
   wp menu item add-custom kairos-primary 'Consultor' "$KAIROS_BASE_URL/app/consultor" >/dev/null
   wp menu item add-post kairos-primary "$(wp post list --post_type=page --name=contato --field=ID --format=ids)" --title='Contato' >/dev/null
-  location="$(wp menu location list --fields=location --format=csv | tail -n +2 | head -n 1 || true)"
-  if [ -n "$location" ]; then wp menu location assign kairos-primary "$location" || true; fi
 fi
+
+if ! wp menu item list kairos-primary --fields=title --format=csv | grep -q '^Entrar$'; then
+  wp menu item add-custom kairos-primary 'Entrar' "$KAIROS_BASE_URL/app/login" >/dev/null
+fi
+
+# Location assignment must also run after an interrupted or partial first seed.
+location="$(wp menu location list --fields=location --format=csv | tail -n +2 | head -n 1 || true)"
+if [ -n "$location" ]; then wp menu location assign kairos-primary "$location" || true; fi
 
 wp cache flush >/dev/null || true
 
