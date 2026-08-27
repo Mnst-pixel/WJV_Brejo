@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-08-27T02:25:00Z",
+  "artifacts": [
+    {
+      "name": "cantinho_estudos_v2 (1).html",
+      "drive_file_id": "18kFUeKRgMRpZiiLWlKQoVTkCo-oaObsx",
+      "media_type": "text/html",
+      "bytes": 288409,
+      "lines": 3852,
+      "sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733",
+      "redistribution": "not_committed_pending_rights_review",
+      "initial_legal_status": "legacy_unverified"
+    },
+    {
+      "name": "Simbolo.png",
+      "drive_file_id": "1HkQfmkwPa5KowlXYOyM26JCW2Egho8YE",
+      "media_type": "image/png",
+      "bytes": 893147,
+      "width": 650,
+      "height": 725,
+      "sha256": "73092ca27b8a9d20f4c376f00f702c120404886454b89f1decad06371205540a",
+      "redistribution": "project_identity_asset"
+    },
+    {
+      "name": "Mini Icone.png",
+      "drive_file_id": "1A_O_696DSFLlxC7aBKRUJmq0DtBJFtQ8",
+      "media_type": "image/png",
+      "bytes": 230958,
+      "width": 442,
+      "height": 475,
+      "sha256": "d7a170e345c7e865a009d39ba4057a8e54737a3f0054e8eb14d7e7132dc30a91",
+      "redistribution": "project_identity_asset"
+    },
+    {
+      "name": "MCP_Jurisprudencio - Gepeto.zip",
+      "drive_file_id": "11voqrBD29hlLnZNRwmRpOJfeomUJvCrZ",
+      "media_type": "application/zip",
+      "bytes": 47008,
+      "entries": 26,
+      "sha256": "9ea64f8a04a511ebf569e07ab8c6cee8bcb8202d1fb54f854a1c58d743618800",
+      "redistribution": "source_license_not_declared_review_required"
+    },
+    {
+      "name": "LocalAI-master.zip",
+      "drive_file_id": "1Ody1eisSC4DkdC0r0yZiaSLuw9qVit5I",
+      "media_type": "application/zip",
+      "bytes": 27658141,
+      "entries": 3912,
+      "sha256": "86fe48a550d6aedd2bf46b4c944dcbc16f5a8c693ec524c0412b2844696dd88f",
+      "redistribution": "upstream_mit_reference_not_committed"
+    }
+  ]
+}
