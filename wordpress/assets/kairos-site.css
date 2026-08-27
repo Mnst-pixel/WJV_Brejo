@@ -1,0 +1,17 @@
+@font-face{font-family:Montserrat;src:url("fonts/montserrat-400.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:Montserrat;src:url("fonts/montserrat-500.woff2") format("woff2");font-style:normal;font-weight:500;font-display:swap}
+@font-face{font-family:Montserrat;src:url("fonts/montserrat-600.woff2") format("woff2");font-style:normal;font-weight:600;font-display:swap}
+@font-face{font-family:Montserrat;src:url("fonts/montserrat-700.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap}
+:root{--kairos-abyss:var(--e-global-color-primary,#1e312a);--kairos-cave:var(--e-global-color-secondary,#253d32);--kairos-gold:var(--e-global-color-accent,#dcc992);--kairos-parchment:var(--e-global-color-text,#efead7)}
+html{scroll-behavior:smooth}
+body{background:var(--kairos-abyss);color:var(--kairos-parchment);font-family:Montserrat,Arial,sans-serif}
+h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea{font-family:Montserrat,Arial,sans-serif}
+.site-main{min-height:70vh}
+.wp-site-blocks,.site-main{background:radial-gradient(circle at 78% 8%,rgba(135,167,174,.14),transparent 34%),var(--kairos-abyss)}
+.kairos-hero{min-height:68vh;display:flex;flex-direction:column;justify-content:center;padding:clamp(3rem,8vw,8rem) clamp(1.25rem,8vw,8rem);background:linear-gradient(115deg,rgba(20,37,31,.98),rgba(37,61,50,.8));border-bottom:1px solid rgba(220,201,146,.45)}
+.kairos-section{padding:clamp(3rem,7vw,7rem) clamp(1.25rem,8vw,8rem)}
+.kairos-section.is-parchment{background:#efead7;color:#17261f}
+.kairos-card{height:100%;padding:1.5rem;border:1px solid rgba(220,201,146,.45);border-radius:12px;background:rgba(37,61,50,.72)}
+.wp-element-button{background:#928566;color:#fff;border-radius:6px;font-weight:600}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #87a7ae;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

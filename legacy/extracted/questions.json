@@ -1,0 +1,1517 @@
+[
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 1,
+    "question": "O que caracteriza o REFÚGIO no direito internacional público?",
+    "alternatives": [
+      "Proteção a quem foge por motivos políticos, garantindo segurança em outro país",
+      "Autorização para um país invadir outro em caso de conflito interno",
+      "Permissão para viajar livremente sem restrições entre países",
+      "Medida para expulsar estrangeiros considerados indesejados"
+    ],
+    "answer_index": 0,
+    "explanation": "O refúgio protege quem é forçado a fugir por razões como guerra, perseguição por raça, religião, nacionalidade, grupo social ou opinião política. Diferente do asilo, restrito a perseguição política individual.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 2,
+    "question": "No alto mar, qual é a regra vigente para embarcações estrangeiras?",
+    "alternatives": [
+      "Proibição de navegação sem autorização da ONU",
+      "Vigora o princípio da liberdade, mas com restrições como combate ao tráfico de drogas",
+      "As águas são divididas por linhas entre litorais e centro do oceano",
+      "O Estado mais próximo tem jurisdição exclusiva"
+    ],
+    "answer_index": 1,
+    "explanation": "No alto mar vigora a liberdade de navegação para qualquer bandeira. Exceções incluem combate a crimes internacionais como tráfico de drogas e pirataria, onde navios de guerra podem intervir.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 3,
+    "question": "O que caracteriza as ÁGUAS EXTERNAS no direito internacional público?",
+    "alternatives": [
+      "Águas dentro das fronteiras, sob jurisdição exclusiva do país",
+      "Águas além das territoriais, mas ainda com direitos específicos do Estado costeiro",
+      "Águas além da jurisdição de qualquer país",
+      "Águas pertencentes exclusivamente à ONU"
+    ],
+    "answer_index": 1,
+    "explanation": "Águas externas (Zona Contígua e ZEE) ficam além do mar territorial, mas conferem direitos específicos ao Estado: fiscalização na Zona Contígua, exploração econômica na ZEE.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 4,
+    "question": "Sobre o IUS IN BELLO, qual afirmativa está CORRETA?",
+    "alternatives": [
+      "O corso é atividade de espionagem entre Estados em beligerância",
+      "Hipóteses legítimas de guerra são legítima defesa e manutenção da ordem pública",
+      "São crimes internacionais o uso de ADM e o ataque surpresa em fronteiras abertas",
+      "A comunidade internacional condena o uso de armas sem alvo definido"
+    ],
+    "answer_index": 3,
+    "explanation": "O ius in bello regula a conduta durante o conflito. O uso de armas sem alvo definido (minas antipessoal, certas armas químicas) é vedado por causar sofrimento indiscriminado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 5,
+    "question": "O Brasil NUNCA extradita qual categoria de pessoas, de forma absolutamente incondicional?",
+    "alternatives": [
+      "Estrangeiros com filhos brasileiros",
+      "Brasileiros naturalizados",
+      "Brasileiros natos",
+      "Asilados políticos"
+    ],
+    "answer_index": 2,
+    "explanation": "Brasileiros natos têm garantia constitucional absoluta de não extradição (art. 5º, LI CF). Naturalizados têm exceções: crimes antes da naturalização ou tráfico de drogas.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 6,
+    "question": "Um turista fica 200 dias no Brasil com visto de 90 dias. Qual medida se aplica?",
+    "alternatives": [
+      "Repatriação",
+      "Expulsão",
+      "Extradição",
+      "Deportação"
+    ],
+    "answer_index": 3,
+    "explanation": "Deportação: medida para estrangeiro em situação irregular (entrada ou permanência). Repatriação é antes de entrar; expulsão exige crime; extradição é pedido de outro Estado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 7,
+    "question": "O 'Princípio da Dupla Tipicidade' na extradição significa que:",
+    "alternatives": [
+      "O crime foi cometido duas vezes pelo mesmo autor",
+      "O extraditando tem duas nacionalidades",
+      "O fato deve ser crime tanto no Brasil quanto no país requerente",
+      "Dois Estados pedem a extradição simultaneamente"
+    ],
+    "answer_index": 2,
+    "explanation": "Dupla tipicidade: se a conduta não for crime no Brasil, a pessoa não é entregue, mesmo que seja crime gravíssimo no exterior.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 8,
+    "question": "A Corte Interamericana de Direitos Humanos tem sede em:",
+    "alternatives": [
+      "Washington D.C., EUA",
+      "Nova York, EUA",
+      "Brasília, Brasil",
+      "San José, Costa Rica"
+    ],
+    "answer_index": 3,
+    "explanation": "A Corte IDH fica em San José, Costa Rica. A Comissão Interamericana fica em Washington D.C. São órgãos distintos: a Comissão filtra e recomenda; a Corte julga e condena.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 9,
+    "question": "Qual é a faixa do mar territorial, onde o Estado tem soberania plena?",
+    "alternatives": [
+      "0 a 24 milhas",
+      "0 a 200 milhas",
+      "0 a 12 milhas",
+      "12 a 24 milhas"
+    ],
+    "answer_index": 2,
+    "explanation": "Mar territorial: 12 milhas — soberania plena sobre solo, subsolo, água e espaço aéreo. Zona Contígua: 12-24 milhas (fiscalização). ZEE: até 200 milhas (exploração econômica).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 10,
+    "question": "A pirataria em alto mar tem característica única no DI. Qual é ela?",
+    "alternatives": [
+      "Só pode ser combatida pela ONU",
+      "É o primeiro crime de jurisdição universal — qualquer Estado pode capturar e julgar piratas",
+      "Apenas o país da bandeira da embarcação atacada pode agir",
+      "Regulada exclusivamente pelos EUA como potência naval"
+    ],
+    "answer_index": 1,
+    "explanation": "Pirataria é o primeiro crime de jurisdição universal: qualquer Estado, independente de vínculo com as partes, pode capturar navios piratas no alto mar e julgá-los.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 11,
+    "question": "O Mercosul é juridicamente classificado como:",
+    "alternatives": [
+      "Mercado Comum completo",
+      "União Econômica e Monetária",
+      "União Aduaneira imperfeita (intergovernamental)",
+      "Zona de Livre Comércio simples"
+    ],
+    "answer_index": 2,
+    "explanation": "Apesar do nome, o Mercosul está na fase de União Aduaneira imperfeita. É intergovernamental: decisões precisam de consenso unânime e ratificação interna de cada país.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 12,
+    "question": "A DUDH (1948) nasceu como:",
+    "alternatives": [
+      "Tratado vinculante com força de lei imediata",
+      "Resolução da Assembleia Geral da ONU, sem força de tratado originalmente",
+      "Convenção ratificada obrigatoriamente por todos os fundadores da ONU",
+      "Emenda à Carta da ONU"
+    ],
+    "answer_index": 1,
+    "explanation": "A DUDH nasceu como resolução (não vinculante), mas hoje é considerada norma costumeira e ius cogens (norma imperativa do direito internacional).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 13,
+    "question": "O asilo diplomático é concedido em:",
+    "alternatives": [
+      "Dentro do território do país asilante",
+      "Embaixadas e navios de guerra oficiais",
+      "Apenas em cidades sede da ONU",
+      "Pelo STF após pedido formal"
+    ],
+    "answer_index": 1,
+    "explanation": "Asilo diplomático é concedido em repartições diplomáticas (embaixadas) e embarcações oficiais. É provisório — negocia-se salvo-conduto para o asilado chegar ao país protetor.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 14,
+    "question": "Qual NÃO é princípio fundamental do Direito Comunitário Europeu?",
+    "alternatives": [
+      "Primazia",
+      "Efeito Direto",
+      "Aplicabilidade Imediata",
+      "Reciprocidade Obrigatória"
+    ],
+    "answer_index": 3,
+    "explanation": "Os três princípios são: Primazia, Efeito Direto e Aplicabilidade Imediata. Reciprocidade pertence ao DI clássico, não ao comunitário.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 15,
+    "question": "Um estrangeiro entrou no Brasil com 8 anos e vive aqui desde então. Pode ser expulso?",
+    "alternatives": [
+      "Sim, se cometer crime hediondo",
+      "Não — quem entrou com até 12 anos e reside aqui desde então está protegido",
+      "Sim, com autorização judicial do STF",
+      "Apenas se não tiver cônjuge ou filhos brasileiros"
+    ],
+    "answer_index": 1,
+    "explanation": "A Lei 13.445/17 proíbe expressamente a expulsão de estrangeiro que ingressou no Brasil com até 12 anos de idade e aqui reside desde então — independente do crime.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 16,
+    "question": "A 'entrega' (surrender) ao TPI difere da extradição porque:",
+    "alternatives": [
+      "Entrega só ocorre para crimes políticos",
+      "Na entrega, até brasileiros natos podem ser entregues ao TPI",
+      "A entrega não exige processo judicial",
+      "A entrega só ocorre entre países latino-americanos"
+    ],
+    "answer_index": 1,
+    "explanation": "O art. 5º §4º CF submete o Brasil ao TPI. A entrega pode alcançar qualquer pessoa, inclusive brasileiros natos — pois é entrega a um tribunal internacional, não a outro Estado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 17,
+    "question": "Na ZEE, qual é o direito do Estado costeiro?",
+    "alternatives": [
+      "Soberania plena sobre qualquer atividade",
+      "Apenas fiscalização aduaneira e sanitária",
+      "Exploração econômica exclusiva dos recursos naturais (pesca, petróleo)",
+      "Proibição total de navegação estrangeira"
+    ],
+    "answer_index": 2,
+    "explanation": "A ZEE (12–200 milhas) garante ao Estado exploração econômica exclusiva dos recursos. Não é soberania plena — navios e aeronaves estrangeiras têm liberdade de navegação e sobrevoo.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 18,
+    "question": "Os Canais de Suez e do Panamá têm qual natureza jurídica?",
+    "alternatives": [
+      "Domínio público internacional — uso gratuito",
+      "Patrimônio da ONU gerido pela IMO",
+      "Domínio privado dos Estados onde estão — regulam e cobram pedágio",
+      "Zonas neutras sob controle conjunto de potências"
+    ],
+    "answer_index": 2,
+    "explanation": "Canais artificiais são domínio privado do Estado territorial. O Egito controla Suez; o Panamá controla o Canal do Panamá. Diferem dos estreitos naturais, que são domínio público.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 19,
+    "question": "O que é o Princípio da Reciprocidade na extradição?",
+    "alternatives": [
+      "O extraditando deve ser tratado com dignidade",
+      "O Brasil só extradita se o outro país se comprometer a fazer o mesmo no futuro",
+      "Ambos os países devem ter o mesmo sistema jurídico",
+      "O crime deve ter vítimas nos dois países"
+    ],
+    "answer_index": 1,
+    "explanation": "Reciprocidade: na ausência de tratado formal, o Brasil extradita se o Estado requerente prometer tratamento recíproco em casos futuros.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 20,
+    "question": "Sobre a condição jurídica do estrangeiro, marque a CORRETA:",
+    "alternatives": [
+      "Extradição exclui estrangeiro por entrada ou permanência irregular",
+      "O Brasil proíbe extradição dissimulada — entrega informal sem processo legal perante o STF",
+      "Expulsão e extradição são institutos similares, diferenciando só no ilícito penal",
+      "Estrangeiro barrado na entrada por condição irregular é deportado"
+    ],
+    "answer_index": 1,
+    "explanation": "O Brasil proíbe extradição dissimulada (entrega informal à margem da lei). A opção A descreve deportação. A D descreve repatriação. Expulsão e extradição são institutos distintos.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 21,
+    "question": "O que NÃO é novidade da Lei de Imigração (Lei 13.445/17)?",
+    "alternatives": [
+      "O visto humanitário",
+      "A proteção mais humanista dos estrangeiros",
+      "A proibição de extradição dissimulada",
+      "O fim da expulsão por atividade nociva"
+    ],
+    "answer_index": 2,
+    "explanation": "A proibição de extradição dissimulada já existia antes da Lei 13.445/17. Visto humanitário, proteção ampliada ao migrante e extinção da expulsão por 'atividade nociva' são novidades da lei.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 22,
+    "question": "Sobre o asilo político, qual afirmativa está CORRETA?",
+    "alternatives": [
+      "Asilo diplomático só é possível com autorização do Estado onde está a embaixada",
+      "O asilo é direito de todo perseguido político, garantido por tratados",
+      "Asilo territorial = embaixadas; exílio = território do Estado que o concede",
+      "Salvo-conduto é negociado com o Estado perseguidor para saída segura do asilado"
+    ],
+    "answer_index": 3,
+    "explanation": "O salvo-conduto é negociado pelo Estado asilante com o Estado perseguidor para garantir passagem segura do asilado até o território protetor. Asilo não é direito absoluto — é ato discricionário.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 23,
+    "question": "Qual afirmativa sobre Domínio Público Internacional está CORRETA?",
+    "alternatives": [
+      "A plataforma continental geológica é terra submersa até onde se inicia o mar profundo; a legal é definida em milhas com a ONU",
+      "No alto mar há zonas preferenciais da ONU para neutralidade e controle estratégico",
+      "EUA reivindicam a Antártida pela teoria da descoberta",
+      "Oceanos são divididos por linhas entre pontas dos litorais e centro"
+    ],
+    "answer_index": 0,
+    "explanation": "A plataforma continental geológica é o prolongamento natural do território sob o mar. A plataforma legal pode ser negociada com a ONU. Nenhum país tem direito reconhecido sobre a Antártida.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 24,
+    "question": "Sobre os mecanismos de solução de conflitos internacionais, qual está CORRETA?",
+    "alternatives": [
+      "Arbitragem internacional nasce da CIJ e aplica o DIP",
+      "Bons ofícios implica proposta de solução por Estado neutro",
+      "Sistema de Consultas institucionaliza solução preventiva com mecanismo preestabelecido",
+      "Países em conflito submetem a questão ao CS da ONU como mediador"
+    ],
+    "answer_index": 2,
+    "explanation": "O Sistema de Consultas é mecanismo preventivo: países se reúnem periodicamente para resolver divergências antes que virem conflitos graves. Bons ofícios apenas reaproxima, sem propor soluções.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 25,
+    "question": "Sobre o direito comunitário, o que NÃO podemos afirmar?",
+    "alternatives": [
+      "UE/Mercosul gerará zona de livre comércio nos termos atuais",
+      "NAFTA é zona de livre comércio entre EUA e Canadá",
+      "Mercosul é Zona de Preferências Aduaneiras por ter TEC",
+      "UE é mais que Mercado Comum, com moeda única e banco central"
+    ],
+    "answer_index": 2,
+    "explanation": "O Mercosul TEM TEC (Tarifa Externa Comum) → classifica-se como União Aduaneira, não Zona de Preferências Aduaneiras. O NAFTA (USMCA) inclui também o México.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 26,
+    "question": "Sobre vistos no Brasil, qual está CORRETA?",
+    "alternatives": [
+      "Visto de trânsito é para turistas",
+      "Visto de imigrante é definitivo",
+      "Visto de visita serve para turistas",
+      "Visto humanitário é somente para períodos de guerra"
+    ],
+    "answer_index": 2,
+    "explanation": "O visto de visita (antes chamado de turismo) é destinado a estadias curtas: turismo, negócios, eventos. O de imigrante não é definitivo — requer renovação. O humanitário atende qualquer vulnerabilidade extrema.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 27,
+    "question": "Sobre extradição, o que NÃO podemos afirmar?",
+    "alternatives": [
+      "Só é possível mediante tratado entre os países",
+      "Depende da detração da pena no Brasil",
+      "Brasileiros naturalizados podem ser extraditados em casos excepcionais",
+      "Exige dupla tipicidade (fato deve ser crime nos dois países)"
+    ],
+    "answer_index": 0,
+    "explanation": "A extradição NÃO exige obrigatoriamente tratado — pode ocorrer pelo Princípio da Reciprocidade (promessa de tratamento recíproco). Afirmar que 'só é possível mediante tratado' é FALSO.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 28,
+    "question": "O que é o ius ad bellum?",
+    "alternatives": [
+      "Regras que devem ser seguidas durante o combate",
+      "O direito de iniciar um conflito armado — hoje praticamente banido",
+      "A autorização da ONU para operações de paz",
+      "A jurisdição penal internacional para crimes de guerra"
+    ],
+    "answer_index": 1,
+    "explanation": "Ius ad bellum = direito de iniciar guerra. Após a Carta da ONU (1945), é praticamente banido — apenas legítima defesa e autorização do Conselho de Segurança justificam o uso da força.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 29,
+    "question": "Na estrutura do Sistema Interamericano, quem pode levar um caso à Corte IDH?",
+    "alternatives": [
+      "Qualquer cidadão prejudicado diretamente",
+      "Qualquer ONG de direitos humanos",
+      "Apenas a Comissão Interamericana ou Estados-Membros",
+      "Apenas o MP do país violador"
+    ],
+    "answer_index": 2,
+    "explanation": "O cidadão NÃO acessa a Corte diretamente. Ele denuncia à Comissão; se o Estado descumprir as recomendações, a Comissão (ou outro Estado) leva à Corte.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "diQs",
+    "legacy_position": 30,
+    "question": "O que é o 'salvo-conduto' no contexto do asilo diplomático?",
+    "alternatives": [
+      "Documento que naturaliza o asilado no país protetor",
+      "Garantia negociada com o Estado perseguidor para saída segura do asilado diplomático",
+      "Autorização da ONU para o Estado acolher refugiados",
+      "Decisão judicial que impede a extradição do asilado"
+    ],
+    "answer_index": 1,
+    "explanation": "O salvo-conduto é negociado entre o Estado asilante (que protege na embaixada) e o Estado perseguidor, para garantir a passagem segura do asilado até o território do país protetor.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 1,
+    "question": "Qual é a diferença entre obrigação principal e obrigação acessória no direito previdenciário?",
+    "alternatives": [
+      "Principal = declarações; acessória = pagamento",
+      "Principal sempre envolve pagamento em dinheiro; acessória é dever instrumental (declarações, registros)",
+      "São sinônimos no contexto previdenciário",
+      "Principal é para pessoas físicas; acessória é para pessoas jurídicas"
+    ],
+    "answer_index": 1,
+    "explanation": "Obrigação principal = sempre pagamento (art. 121 CTN). Obrigação acessória = deveres instrumentais como declarações, registros e documentos ao INSS. Se descumprir a acessória, a multa vira obrigação principal.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 2,
+    "question": "Quem é o responsável tributário na relação de emprego com carteira assinada?",
+    "alternatives": [
+      "O empregado, pois recebe o salário",
+      "O empregador, que por lei deve descontar e repassar ao INSS",
+      "A Receita Federal, que gerencia os repasses",
+      "O sindicato da categoria"
+    ],
+    "answer_index": 1,
+    "explanation": "O empregado é o contribuinte (salário = fato gerador), mas o empregador é o responsável tributário — a lei o obriga a descontar a contribuição e repassar ao INSS.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 3,
+    "question": "Se a empresa desconta o INSS do empregado e não repassa ao INSS, comete:",
+    "alternatives": [
+      "Infração administrativa punida pela Receita",
+      "Crime de sonegação fiscal, julgado pela Justiça Estadual",
+      "Crime de apropriação indébita previdenciária (art. 168-A CP), apurado pela PF e julgado pela Justiça Federal",
+      "Irregularidade civil sem consequência penal"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 168-A do Código Penal: apropriar-se de contribuição descontada do empregado e não repassar ao INSS é crime. Apurado pela Polícia Federal e julgado pela Justiça Federal.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 4,
+    "question": "Quem financia a Seguridade Social segundo o art. 195 da CF?",
+    "alternatives": [
+      "Apenas trabalhadores e empresas",
+      "Trabalhadores, empresas, importadores e participantes de concursos de prognóstico (loterias)",
+      "Apenas o Estado via impostos gerais",
+      "Somente contribuintes do RGPS"
+    ],
+    "answer_index": 1,
+    "explanation": "Art. 195 CF: empregadores/empresas (folha, faturamento, lucro), trabalhadores/segurados, participantes de concursos de prognóstico (loterias) e importadores de bens/serviços do exterior.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 5,
+    "question": "Um apostador de loteria, ao apostar, passa a ser segurado da Previdência?",
+    "alternatives": [
+      "Sim, pois contribui indiretamente para o sistema",
+      "Não — parte do valor aposto financia a seguridade, mas o apostador não vira segurado",
+      "Sim, após 5 anos de apostas regulares",
+      "Não, pois loteria não financia a seguridade"
+    ],
+    "answer_index": 1,
+    "explanation": "O apostador contribui indiretamente via loterias (parte da arrecadação vai à seguridade), mas não se torna segurado por isso. Segue o princípio de que toda a sociedade sustenta a proteção social.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 6,
+    "question": "Um aposentado do RGPS retorna ao trabalho. O que ocorre com suas contribuições?",
+    "alternatives": [
+      "Não precisa contribuir mais, pois já está aposentado",
+      "Contribui sobre o novo salário, e essas contribuições podem gerar nova aposentadoria",
+      "Contribui sobre o novo salário, mas as contribuições NÃO geram nova aposentadoria",
+      "Só contribui se o novo salário superar o teto do RGPS"
+    ],
+    "answer_index": 2,
+    "explanation": "O aposentado que retorna ao trabalho é segurado obrigatório e paga INSS sobre o novo salário, MAS o STF afastou a desaposentação — essas contribuições não geram nova aposentadoria no RGPS.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 7,
+    "question": "Qual é a idade mínima para filiação obrigatória ao RGPS, e qual a exceção?",
+    "alternatives": [
+      "18 anos em geral; 16 para aprendiz",
+      "16 anos em geral; 14 anos para aprendiz com contrato educacional",
+      "14 anos em geral; sem exceções",
+      "18 anos sem exceções"
+    ],
+    "answer_index": 1,
+    "explanation": "Regra: 16 anos. Exceção: aprendiz a partir dos 14 anos, desde que haja contrato de aprendizagem com finalidade educacional e prazo determinado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 8,
+    "question": "O que é a pejotização e qual sua consequência previdenciária?",
+    "alternatives": [
+      "Contratação legítima de MEI para prestação de serviços",
+      "Fraude: mascarar relação de emprego via PJ — pode gerar reconhecimento do vínculo e contribuições retroativas",
+      "Registro incorreto de empregado como contribuinte individual — sem consequência",
+      "Modalidade de contrato temporário permitida pela CLT"
+    ],
+    "answer_index": 1,
+    "explanation": "Pejotização = criar PJ fictícia para encobrir relação de emprego com subordinação. É fraude e pode gerar reconhecimento do vínculo empregatício e cobrança de contribuições retroativas ao INSS.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 9,
+    "question": "Qual a diferença entre o segurado especial e o contribuinte individual no âmbito rural?",
+    "alternatives": [
+      "São a mesma categoria",
+      "Especial = economia familiar, sem empregados permanentes, subsistência; individual = autônomo rural com estrutura empresarial",
+      "Especial tem mais contribuições; individual tem menos",
+      "Não existe distinção no RGPS"
+    ],
+    "answer_index": 1,
+    "explanation": "Segurado especial: trabalho rural em regime de economia familiar, sem empregados permanentes, voltado à subsistência. Contribuinte individual: trabalha por conta própria sem esse enquadramento familiar.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 10,
+    "question": "Para o segurado facultativo, quando ocorre a filiação ao RGPS?",
+    "alternatives": [
+      "Com o simples cadastro no INSS",
+      "Com o pagamento da primeira contribuição",
+      "Com a apresentação de documentos na agência do INSS",
+      "Com a formalização de contrato com o INSS"
+    ],
+    "answer_index": 1,
+    "explanation": "O segurado facultativo precisa de manifestação de vontade, que se concretiza com o pagamento da primeira contribuição. Só a partir desse pagamento ele é considerado segurado — o cadastro isolado não basta.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 11,
+    "question": "O trabalhador em condição análoga à escravidão é segurado obrigatório do RGPS?",
+    "alternatives": [
+      "Não, pois a situação é ilegal",
+      "Sim — o DPrevidenciário protege o trabalho de fato, independente da legalidade do vínculo",
+      "Só se o empregador regularizar a situação",
+      "Apenas se houver habeas corpus deferido"
+    ],
+    "answer_index": 1,
+    "explanation": "O direito previdenciário não depende da legalidade do vínculo de trabalho, mas da existência do trabalho de fato. Mesmo em situação ilegal imposta pelo empregador, o trabalhador é segurado obrigatório do RGPS.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 12,
+    "question": "Qual é o período de graça padrão para o segurado obrigatório que para de contribuir?",
+    "alternatives": [
+      "6 meses",
+      "12 meses",
+      "18 meses",
+      "24 meses"
+    ],
+    "answer_index": 1,
+    "explanation": "O período de graça padrão é de 12 meses para segurados obrigatórios. Pode aumentar para 24 meses (se tiver mais de 120 contribuições) ou 36 meses (se houver desemprego involuntário comprovado).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 13,
+    "question": "Para o segurado facultativo, qual é o período de graça?",
+    "alternatives": [
+      "12 meses",
+      "6 meses",
+      "24 meses",
+      "Não existe período de graça para facultativos"
+    ],
+    "answer_index": 1,
+    "explanation": "O segurado facultativo tem período de graça de apenas 6 meses, pois sua participação no sistema é voluntária — período menor que o do obrigatório (12 meses).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 14,
+    "question": "Contribuições abaixo do salário mínimo (após nov/2019) contam para carência?",
+    "alternatives": [
+      "Sim, sempre contam proporcionalmente",
+      "Não contam; podem ser complementadas (pagar diferença) ou agrupadas (juntar até atingir o mínimo)",
+      "Contam apenas para segurado facultativo",
+      "Contam apenas se houver autorização do INSS"
+    ],
+    "answer_index": 1,
+    "explanation": "Após novembro de 2019, contribuições abaixo do mínimo não contam para carência. Para contar: complementação (pagar a diferença) ou agrupamento (somar contribuições menores até alcançar o salário mínimo exigido).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 15,
+    "question": "Quais benefícios NÃO exigem carência, apenas qualidade de segurado?",
+    "alternatives": [
+      "Aposentadoria por tempo e auxílio-doença",
+      "Pensão por morte e auxílio-reclusão",
+      "Salário-maternidade e aposentadoria por invalidez",
+      "Todos os benefícios exigem carência"
+    ],
+    "answer_index": 1,
+    "explanation": "Pensão por morte e auxílio-reclusão exigem apenas qualidade de segurado no momento do evento — sem número mínimo de contribuições. Aposentadorias e auxílio-doença exigem carência específica.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 16,
+    "question": "Para empregado com carteira assinada, a carência conta mesmo se o empregador não pagar o INSS?",
+    "alternatives": [
+      "Não — só conta a partir do pagamento efetivo",
+      "Sim — para empregado a carência conta desde o início da atividade, independente do empregador pagar",
+      "Apenas se o empregado reclamar na Justiça",
+      "Só conta se houver mais de 6 meses de trabalho comprovado"
+    ],
+    "answer_index": 1,
+    "explanation": "Para empregados, domésticos e avulsos, a carência conta desde o início da atividade — mesmo que o empregador não pague. A obrigação de recolher é do empregador; o empregado não é prejudicado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 17,
+    "question": "O que é 'contribuição oportunista' e qual sua consequência?",
+    "alternatives": [
+      "Contribuir em dois regimes ao mesmo tempo — é permitido",
+      "Contribuir após já ter ocorrido o evento (ex: ficar doente e depois contribuir para pedir auxílio-doença) — não é aceito",
+      "Contribuição em atraso com multa — é aceita",
+      "Contribuição extra voluntária para aumentar o benefício — é permitida"
+    ],
+    "answer_index": 1,
+    "explanation": "Contribuição oportunista = contribuir depois que o evento já ocorreu para obter benefício. Não é aceito pelo INSS — ex: ficar doente e começar a contribuir para pedir auxílio-doença em seguida.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 18,
+    "question": "O trabalhador avulso tem os mesmos direitos previdenciários do empregado?",
+    "alternatives": [
+      "Não, pois não tem vínculo empregatício formal",
+      "Sim, apesar de não ter vínculo formal, possui os mesmos direitos do empregado",
+      "Apenas parcialmente — somente aposentadoria por tempo",
+      "Depende da aprovação do sindicato mediador"
+    ],
+    "answer_index": 1,
+    "explanation": "O trabalhador avulso presta serviços a várias empresas com intermediação de sindicato ou órgão gestor. Apesar de não ter vínculo formal, possui os mesmos direitos previdenciários do empregado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 19,
+    "question": "Quando ocorre a perda da qualidade de segurado e o que isso implica?",
+    "alternatives": [
+      "Ocorre no 1º dia sem contribuição, cancela todos os benefícios futuros",
+      "Ocorre após o período de graça; o segurado perde a proteção e pode precisar cumprir carência novamente para novos benefícios",
+      "Ocorre após 6 meses sem contribuir; cancela aposentadorias já concedidas",
+      "Nunca ocorre — uma vez filiado, sempre segurado"
+    ],
+    "answer_index": 1,
+    "explanation": "A perda ocorre após o período de graça. Implica perda da proteção, mas NÃO cancela aposentadorias já concedidas ou cujos requisitos já foram cumpridos. Para voltar, precisa filiar-se novamente e, em alguns casos, cumprir parte da carência.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "pvQs",
+    "legacy_position": 20,
+    "question": "A aposentadoria híbrida permite:",
+    "alternatives": [
+      "Aposentar por dois regimes simultaneamente",
+      "Somar períodos rurais e urbanos para cumprir carência, mas aplica a idade mínima urbana (sem redução rural)",
+      "Aposentar mais cedo somando períodos rurais e urbanos com redução de idade",
+      "Só é válida para segurados especiais com mais de 20 anos de atividade"
+    ],
+    "answer_index": 1,
+    "explanation": "A aposentadoria híbrida permite somar períodos de trabalho rural e urbano para a carência. Porém, aplica a IDADE MÍNIMA URBANA — sem a redução prevista para trabalhadores exclusivamente rurais.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 1,
+    "question": "I. O contribuinte é o sujeito passivo com relação direta ao fato gerador da obrigação tributária.\nII. O responsável tributário também possui relação direta com o fato gerador, apenas contribuindo subsidiariamente.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — o contribuinte tem relação direta com o fato gerador (ex: trabalhador cujo salário origina a contribuição). II é FALSA — o responsável tributário, ao contrário, NÃO tem relação direta com o fato gerador; é designado por lei para recolher tributo alheio.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 2,
+    "question": "I. A obrigação acessória sempre envolve o pagamento de um valor em dinheiro ao Fisco.\nII. O descumprimento de uma obrigação acessória pode gerar uma obrigação principal, consistente no pagamento de multa.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — obrigação acessória é dever instrumental (declarações, registros), não pagamento. II é VERDADEIRA — a multa pelo descumprimento da acessória é uma obrigação principal (envolve pagamento em dinheiro), conforme art. 121 do CTN.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 3,
+    "question": "I. O empregador que desconta contribuição previdenciária do empregado e não a repassa ao INSS comete crime de apropriação indébita previdenciária.\nII. Esse crime é apurado pela Polícia Civil e julgado pela Justiça Estadual.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — art. 168-A do Código Penal. II é FALSA — é apurado pela Polícia FEDERAL e julgado pela Justiça FEDERAL, pois o INSS é autarquia federal.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 4,
+    "question": "I. Os participantes de concursos de prognóstico (loterias) são contribuintes da seguridade social, tornando-se automaticamente segurados do RGPS ao apostar.\nII. A lógica por trás dessa contribuição é o princípio de que toda a sociedade deve financiar a proteção social.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — os apostadores financiam indiretamente a seguridade via loterias, mas NÃO se tornam segurados do RGPS por isso. II é VERDADEIRA — reflete o princípio da universalidade do financiamento da seguridade social.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 5,
+    "question": "I. O aposentado pelo RGPS que retorna ao trabalho é isento de contribuir para o INSS.\nII. As contribuições pagas pelo aposentado do RGPS que retorna ao trabalho não geram direito a nova aposentadoria, conforme entendimento do STF.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — o aposentado que retorna ao trabalho volta como segurado OBRIGATÓRIO e deve contribuir sobre o novo salário. II é VERDADEIRA — o STF afastou a desaposentação; as contribuições do retorno não geram nova aposentadoria no RGPS.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 6,
+    "question": "I. A filiação ao RGPS dos segurados obrigatórios ocorre automaticamente com o início da atividade remunerada, independentemente do pagamento de contribuições pelo empregador.\nII. Para o segurado facultativo, a filiação se concretiza com o simples cadastro no INSS, antes mesmo do primeiro pagamento.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — a filiação do obrigatório é automática com o exercício da atividade; o empregado não perde a qualidade de segurado se o empregador não pagar. II é FALSA — para o facultativo, a filiação exige manifestação de vontade E o pagamento da primeira contribuição; o cadastro sozinho não basta.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 7,
+    "question": "I. O período de graça para o segurado obrigatório que se torna desempregado involuntariamente e comprova essa condição pode chegar a 36 meses.\nII. O segurado facultativo possui o mesmo período de graça do segurado obrigatório: 12 meses.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — regra geral 12 meses + 12 por ter mais de 120 contribuições + 12 por desemprego involuntário comprovado = 36 meses. II é FALSA — o segurado facultativo tem apenas 6 meses de período de graça, pois sua participação é voluntária.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 8,
+    "question": "I. A pensão por morte e o auxílio-reclusão exigem carência mínima de 12 contribuições para serem concedidos.\nII. Para esses benefícios, basta que o falecido ou preso tivesse a qualidade de segurado no momento do evento.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — pensão por morte e auxílio-reclusão NÃO exigem carência; basta a qualidade de segurado no momento do evento. II é VERDADEIRA — são benefícios sem carência mínima de contribuições, dependendo apenas da manutenção da qualidade de segurado.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 9,
+    "question": "I. Para empregados com carteira assinada, a carência previdenciária conta desde o início da atividade, mesmo que o empregador não tenha recolhido as contribuições ao INSS.\nII. Para contribuintes individuais e facultativos, a carência conta a partir do pagamento efetivo de cada contribuição.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 0,
+    "explanation": "Ambas são VERDADEIRAS. I — o empregado não é prejudicado pela omissão do empregador; a responsabilidade de recolher é deste. II — para contribuintes individuais e facultativos, só conta a partir do pagamento efetivo, pois não há responsável tributário que faça o desconto por eles.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 10,
+    "question": "I. O trabalhador em condição análoga à escravidão não pode ser considerado segurado obrigatório do RGPS, pois a relação de trabalho é ilegal.\nII. O direito previdenciário protege o trabalho de fato, independentemente da legalidade do vínculo.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — mesmo em situação ilegal ou análoga à escravidão, o trabalhador é segurado obrigatório. II é VERDADEIRA — o RGPS protege quem trabalha de fato; a irregularidade é do empregador, não do trabalhador.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 11,
+    "question": "I. O segurado especial é o trabalhador urbano que exerce atividade por conta própria sem empregados.\nII. Para o segurado especial comprovar o trabalho rural, não basta prova testemunhal isolada — é necessário início de prova material.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — o segurado especial é o trabalhador RURAL em regime de economia FAMILIAR, sem empregados permanentes, voltado à subsistência. II é VERDADEIRA — a jurisprudência exige início de prova material (documentos) para comprovar o trabalho rural.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 12,
+    "question": "I. A diarista, por não trabalhar de forma contínua para o mesmo tomador, é enquadrada como empregada doméstica.\nII. A diarista é classificada como contribuinte individual no RGPS.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — a diarista NÃO é empregada doméstica, justamente por falta de continuidade. II é VERDADEIRA — por trabalhar de forma não contínua e por conta própria, é classificada como contribuinte individual.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 13,
+    "question": "I. A pejotização ocorre quando o trabalhador cria uma pessoa jurídica para prestar serviços, mesmo havendo subordinação, pessoalidade e habitualidade — características de vínculo empregatício.\nII. Reconhecida a fraude da pejotização, não há consequências previdenciárias, apenas trabalhistas.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — pejotização é mascarar relação de emprego com subordinação via PJ, o que é fraude. II é FALSA — há consequências TAMBÉM previdenciárias: reconhecimento do vínculo gera cobrança retroativa de contribuições ao INSS.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 14,
+    "question": "I. O trabalhador avulso, apesar de não ter vínculo empregatício formal, possui os mesmos direitos previdenciários do empregado.\nII. O trabalhador avulso presta serviços a uma única empresa por vez, com intermediação do sindicato.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — o avulso tem isonomia de direitos previdenciários com o empregado (CF, art. 7º, XXXIV). II é FALSA — o avulso presta serviços a DIVERSAS empresas (não uma só), sem vínculo em nenhuma, com intermediação de sindicato ou órgão gestor.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 15,
+    "question": "I. O aprendiz pode ser filiado ao RGPS como segurado obrigatório a partir dos 14 anos, desde que haja contrato de aprendizagem com finalidade educacional.\nII. A regra geral para filiação obrigatória ao RGPS é de 18 anos de idade.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — aprendiz pode filiar-se a partir dos 14 anos com contrato educacional. II é FALSA — a regra geral é 16 anos, não 18. Portanto, I verdadeira e II falsa.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 16,
+    "question": "I. Contribuições pagas abaixo do valor do salário mínimo (após novembro de 2019) não contam automaticamente para a carência previdenciária.\nII. Essas contribuições são simplesmente perdidas e não podem ser aproveitadas de forma alguma.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — após nov/2019, contribuições abaixo do mínimo não contam automaticamente para carência. II é FALSA — elas podem ser aproveitadas via COMPLEMENTAÇÃO (pagar a diferença) ou AGRUPAMENTO (somar contribuições menores até atingir o mínimo de um mês).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 17,
+    "question": "I. A perda da qualidade de segurado após o período de graça cancela automaticamente o direito à aposentadoria por idade caso todos os requisitos já tenham sido cumpridos antes da perda.\nII. Para reaver a qualidade de segurado após a perda, é necessário reiniciar as contribuições e, em alguns casos, cumprir novamente parte da carência.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — a perda da qualidade de segurado NÃO cancela direitos já adquiridos; quem já cumpriu os requisitos da aposentadoria programada antes da perda mantém o direito. II é VERDADEIRA — ao retornar ao sistema após a perda, pode ser necessário cumprir parte da carência novamente para certos benefícios.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 18,
+    "question": "I. A aposentadoria híbrida permite somar períodos de trabalho rural e urbano para fins de carência, aplicando a idade mínima reduzida do trabalhador rural.\nII. Na aposentadoria híbrida, aplica-se a idade mínima urbana, sem o benefício da redução etária rural.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — a aposentadoria híbrida PERMITE somar períodos rurais e urbanos, mas aplica a IDADE MÍNIMA URBANA, não a reduzida. II é VERDADEIRA — exatamente: por incluir tempo urbano, perde-se o benefício da redução de idade.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 19,
+    "question": "I. Servidores públicos ocupantes de cargo efetivo são filiados ao RGPS como segurados obrigatórios.\nII. Se um servidor público efetivo exercer também uma atividade autônoma fora do cargo, contribuirá para o RGPS nessa segunda atividade.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — servidores efetivos são filiados ao RPPS (regime próprio), NÃO ao RGPS. II é VERDADEIRA — se exercerem atividade fora do cargo (autônoma), passam a contribuir para o RGPS nessa atividade paralela.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 20,
+    "question": "I. No RGPS, o aposentado que continua trabalhando pode solicitar a 'desaposentação' para melhorar o valor do benefício com as novas contribuições.\nII. O STF pacificou o entendimento de que a desaposentação não é permitida sem previsão legal expressa.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — o STF AFASTOU a possibilidade de desaposentação sem previsão legal; não é possível renunciar à aposentadoria para obter uma nova mais vantajosa. II é VERDADEIRA — RE 661256 (2016): STF decidiu que a desaposentação exige previsão legal, que não existe.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 21,
+    "question": "I. A qualidade de segurado é adquirida no momento da filiação e é permanente, não podendo ser perdida enquanto a pessoa estiver viva.\nII. A qualidade de segurado pode ser perdida após o período de graça, caso o segurado não retome as contribuições.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — a qualidade de segurado NÃO é permanente; pode ser perdida após o período de graça sem contribuições. II é VERDADEIRA — encerrado o período de graça sem retorno às contribuições, o segurado perde a qualidade e, consequentemente, a proteção previdenciária.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 22,
+    "question": "I. A substituição tributária no âmbito previdenciário ocorre quando a lei atribui a uma pessoa a responsabilidade de recolher tributo devido por outra.\nII. Na substituição tributária previdenciária, o substituído perde todos os direitos ao benefício, já que a contribuição foi feita por terceiro.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — esse é o conceito exato de substituição tributária. II é FALSA — o substituído (trabalhador) NÃO perde direitos; ao contrário, a lei o protege, presumindo que o desconto foi feito corretamente pelo responsável (empregador).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 23,
+    "question": "I. O segurado facultativo de baixa renda pode contribuir com alíquota reduzida desde que inscrito em cadastro social e com renda familiar dentro do limite legal.\nII. A contribuição reduzida do facultativo de baixa renda gera os mesmos direitos que a contribuição normal, incluindo aposentadoria por tempo de contribuição.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — a modalidade de baixa renda exige inscrição em cadastro social e limite de renda familiar. II é FALSA — a contribuição reduzida gera acesso a apenas alguns benefícios; a aposentadoria por tempo de contribuição exige alíquota normal e não está disponível para essa modalidade reduzida.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 24,
+    "question": "I. O período em que o segurado recebe auxílio por incapacidade pode contar para fins de carência, desde que intercalado com contribuições.\nII. É permitido contribuir após ficar doente para imediatamente solicitar auxílio-doença, pois o que importa é o número de contribuições no momento do pedido.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — o período de recebimento de benefício por incapacidade pode contar para carência se houver contribuições intercaladas, demonstrando continuidade na relação com o sistema. II é FALSA — isso é 'contribuição oportunista', vedada pelo INSS; não se pode contribuir após o evento incapacitante para obter o benefício.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 25,
+    "question": "I. O empregado doméstico precisa trabalhar de forma contínua, com subordinação, remuneração e sem finalidade lucrativa por parte do empregador.\nII. O empregado doméstico somente pode prestar serviços em residências urbanas, sendo vedado o trabalho doméstico em propriedades rurais ou embarcações.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — esses são os requisitos do empregado doméstico. II é FALSA — o trabalho doméstico pode ocorrer em propriedades particulares como sítios ou embarcações, desde que não haja exploração econômica. Se houver lucro, deixa de ser doméstico.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 26,
+    "question": "I. O empresário, independentemente da forma de atuação, é enquadrado como contribuinte individual no RGPS.\nII. Um diretor de empresa que possui subordinação hierárquica à empresa pode ser considerado empregado para fins previdenciários.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 0,
+    "explanation": "Ambas são VERDADEIRAS. I — o empresário (e sócios sem vínculo) é contribuinte individual no RGPS, independente do porte da empresa. II — se houver subordinação comprovada, o diretor pode ser reconhecido como empregado, com os respectivos direitos previdenciários.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 27,
+    "question": "I. O segurado obrigatório que possui mais de 120 contribuições e se desemprega tem direito a período de graça de 24 meses.\nII. Se esse mesmo segurado também comprovar o desemprego involuntário, o período de graça pode ser estendido para até 48 meses.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — mais de 120 contribuições acrescenta 12 meses ao período base de 12, totalizando 24 meses. II é FALSA — o máximo é 36 meses (12 base + 12 por ter mais de 120 contribuições + 12 por desemprego involuntário), não 48 meses.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 28,
+    "question": "I. A carência é sinônimo de filiação ao RGPS — quem está filiado automaticamente cumpriu a carência para todos os benefícios.\nII. Uma pessoa pode ser segurada (ter qualidade de segurado) mas ainda não ter cumprido a carência exigida para determinado benefício.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 2,
+    "explanation": "I é FALSA — filiação, qualidade de segurado e carência são conceitos distintos. Filiação é o vínculo; qualidade é a proteção ativa; carência é o número mínimo de contribuições para cada benefício. II é VERDADEIRA — quem acabou de se filiar é segurado, mas pode não ter as contribuições mínimas para, por exemplo, receber auxílio-doença.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 29,
+    "question": "I. Os vereadores que não estejam vinculados a regime próprio de previdência são segurados obrigatórios do RGPS desde a edição de lei específica em 2004.\nII. Antes de 2004, os vereadores sempre foram segurados obrigatórios do RGPS, independentemente da existência de RPPS.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — ocupantes de mandato eletivo sem RPPS passaram a ser obrigatoriamente vinculados ao RGPS a partir de lei de 2004. II é FALSA — antes de 2004, não havia obrigatoriedade expressa; a vinculação obrigatória ao RGPS para esses casos foi introduzida pela lei específica mencionada.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 30,
+    "question": "I. No regime de economia familiar do segurado especial, é permitido o auxílio eventual de terceiros e o exercício de atividades complementares, desde que não descaracterizem a condição.\nII. O segurado especial perde automaticamente essa condição se vender qualquer produto da sua produção rural.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — auxílio ocasional de terceiros e atividades complementares são permitidos no regime de economia familiar. II é FALSA — a comercialização da produção é PREVISTA e não descaracteriza a condição de segurado especial; ao contrário, é quando ocorre a comercialização que geralmente incide a contribuição previdenciária.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "svQs",
+    "legacy_position": 31,
+    "question": "I. A aposentadoria por idade no RGPS, após a EC 103/2019, exige 65 anos para homens e 62 anos para mulheres, além do período de carência.\nII. A reforma previdenciária (EC 103/2019) extinguiu por completo a aposentadoria por tempo de contribuição para todos os segurados, sem exceção.",
+    "alternatives": [
+      "Ambas verdadeiras",
+      "I verdadeira, II falsa",
+      "I falsa, II verdadeira",
+      "Ambas falsas"
+    ],
+    "answer_index": 1,
+    "explanation": "I é VERDADEIRA — a EC 103/2019 fixou 65 anos (H) e 62 anos (M) para aposentadoria por idade no RGPS. II é FALSA — a EC 103/2019 extinguiu a aposentadoria por tempo de contribuição para novos segurados, mas preservou regras de transição e direitos adquiridos de quem já havia cumprido os requisitos.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 1,
+    "question": "Qual é o efeito da sentença que declara a nulidade absoluta do casamento?",
+    "alternatives": [
+      "Opera ex nunc, preservando todos os efeitos passados",
+      "Opera ex tunc, retroagindo à data da celebração",
+      "Depende exclusivamente da boa-fé dos cônjuges",
+      "Retroage apenas em relação aos filhos havidos do casamento"
+    ],
+    "answer_index": 1,
+    "explanation": "A sentença de nulidade absoluta opera ex tunc — retroage à data da celebração (art. 169 CC). A ação é imprescritível e pode ser proposta por qualquer interessado ou pelo MP.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 2,
+    "question": "Para que o casamento exista juridicamente, são indispensáveis dois elementos mínimos. Quais são eles?",
+    "alternatives": [
+      "Certidão de habilitação e pelo menos duas testemunhas",
+      "Consentimento dos nubentes e celebração na forma da lei",
+      "Registro civil e pacto antenupcial celebrado em cartório",
+      "Habilitação prévia e ausência comprovada de impedimentos"
+    ],
+    "answer_index": 1,
+    "explanation": "Para que o casamento exista são necessários: (1) consentimento — vontade livre dos nubentes — e (2) celebração na forma da lei. Faltando qualquer um desses elementos, o ato é inexistente — 'um nada para o direito'.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 3,
+    "question": "É casamento NULO, nos termos do art. 1.548 e 1.521 do Código Civil, aquele celebrado entre:",
+    "alternatives": [
+      "Menor de 16 anos sem autorização dos pais ou representante legal",
+      "Primos em segundo grau, independentemente de autorização judicial",
+      "Ascendentes e descendentes, seja o parentesco natural ou civil",
+      "Cônjuge e o irmão do ex-cônjuge após divórcio"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.521 CC: são impedimentos que geram nulidade absoluta os casamentos entre ascendentes e descendentes (naturais ou civis/adoção), entre irmãos, entre adotante e adotado, entre pessoas casadas (bigamia) etc. O casamento com menor de 16 anos é ANULÁVEL, não nulo.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 4,
+    "question": "Nos termos do art. 1.551 do CC, não se anulará o casamento contraído por menor que não completou 16 anos quando:",
+    "alternatives": [
+      "O menor completar 18 anos e não impugnar o ato",
+      "Os representantes legais ratificarem expressamente o ato",
+      "Houver gravidez resultante da relação conjugal",
+      "O juiz suprir o consentimento dos representantes"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.551 CC: não se anulará, por motivo de idade, o casamento de que resultou gravidez. A gravidez é causa de convalidação, independentemente da vontade dos representantes legais ou do próprio menor.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 5,
+    "question": "No casamento anulável por vício de vontade — erro essencial sobre a pessoa do cônjuge (art. 1.557 CC) —, o prazo decadencial para propor a ação anulatória é de:",
+    "alternatives": [
+      "180 dias contados da celebração do casamento",
+      "2 anos contados da descoberta do vício",
+      "3 anos contados da data da celebração do casamento",
+      "4 anos contados do início da coabitação com ciência do vício"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.560, III CC: o prazo para anular o casamento por erro essencial é de 3 anos, contados da data da CELEBRAÇÃO — não da descoberta do erro. Atenção: é prazo decadencial, não prescricional.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 6,
+    "question": "O casamento putativo é instituto aplicável a qual plano da invalidade do negócio jurídico?",
+    "alternatives": [
+      "Apenas à inexistência do casamento",
+      "Apenas à nulidade absoluta do casamento",
+      "À nulidade absoluta e à anulabilidade do casamento",
+      "À anulabilidade e à inexistência do casamento"
+    ],
+    "answer_index": 2,
+    "explanation": "O casamento putativo aplica-se à nulidade absoluta (art. 1.521 CC) e à anulabilidade (art. 1.550 CC), desde que haja boa-fé de ao menos um cônjuge. A INEXISTÊNCIA não gera casamento putativo — não produz qualquer efeito civil.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 7,
+    "question": "Segundo o art. 1.561 §2º do CC, se ambos os cônjuges estavam de má-fé ao celebrar o casamento nulo, os efeitos civis aproveitarão:",
+    "alternatives": [
+      "A nenhum deles, inclusive aos filhos havidos do casamento",
+      "Somente ao cônjuge que primeiro propôs a ação de anulação",
+      "Apenas aos filhos do casal, que são sempre protegidos",
+      "A ambos os cônjuges, mas somente após o trânsito em julgado da sentença"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.561 §2º CC: se ambos os cônjuges estavam de má-fé, os efeitos civis só aproveitarão aos filhos. Os filhos são sempre protegidos independentemente da boa ou má-fé dos pais (art. 227 §6º CF).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 8,
+    "question": "Quanto ao cônjuge de MÁ-FÉ no casamento putativo, o art. 1.564 do CC determina que ele:",
+    "alternatives": [
+      "Mantém todos os direitos patrimoniais do casamento, pois já foram consolidados",
+      "Perde todas as vantagens havidas do cônjuge inocente e deve cumprir as promessas do pacto antenupcial",
+      "Tem direito à metade do patrimônio comum adquirido durante o casamento",
+      "Responde apenas por danos morais perante o cônjuge inocente, sem perda patrimonial"
+    ],
+    "answer_index": 1,
+    "explanation": "Art. 1.564 CC: o cônjuge de má-fé perde todas as vantagens havidas do cônjuge inocente e deve cumprir as obrigações assumidas no pacto antenupcial. Pode ainda responder por danos morais e materiais (arts. 186 e 927 CC).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 9,
+    "question": "Qual é o regime de bens aplicado automaticamente quando os nubentes não celebram pacto antenupcial?",
+    "alternatives": [
+      "Comunhão universal de bens",
+      "Separação convencional de bens",
+      "Participação final nos aquestos",
+      "Comunhão parcial de bens"
+    ],
+    "answer_index": 3,
+    "explanation": "Art. 1.640 CC: não havendo convenção, ou sendo ela nula ou ineficaz, vigorará o regime da comunhão parcial de bens. É o regime legal ou supletivo — aplicado automaticamente na ausência de escolha expressa.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 10,
+    "question": "Na comunhão parcial de bens, o prêmio de loteria ganho por um dos cônjuges durante o casamento:",
+    "alternatives": [
+      "É bem exclusivo de quem ganhou, por ser fruto de ato pessoal",
+      "Integra o patrimônio comum do casal, por ser bem adquirido por fato eventual",
+      "Depende de quem efetivamente comprou o bilhete premiado",
+      "É incomunicável por ser fato eventual e aleatório"
+    ],
+    "answer_index": 1,
+    "explanation": "Art. 1.660, II CC: comunicam-se os bens adquiridos por fato eventual, com ou sem o concurso de trabalho ou despesa anterior. O prêmio de loteria é fato eventual e integra o patrimônio comum — independentemente de quem comprou o bilhete.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 11,
+    "question": "Na comunhão parcial, o salário recebido por um dos cônjuges durante o casamento e os bens adquiridos com esse salário:",
+    "alternatives": [
+      "Ambos são incomunicáveis — salário e bens comprados com ele",
+      "O salário é incomunicável, mas os bens comprados onerosamente com ele durante o casamento comunicam-se",
+      "Ambos se comunicam, pois foram obtidos na constância do casamento",
+      "O salário comunica-se; os bens são incomunicáveis por serem fruto do trabalho pessoal"
+    ],
+    "answer_index": 1,
+    "explanation": "Art. 1.659, VI CC: os proventos do trabalho pessoal são incomunicáveis. Mas o art. 1.660, I CC: comunicam-se os bens adquiridos onerosamente na constância do casamento. O salário é incomunicável; os bens comprados com ele durante o casamento, não.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 12,
+    "question": "Na comunhão universal de bens, qual das alternativas abaixo representa um bem que NÃO se comunica?",
+    "alternatives": [
+      "Bens adquiridos por herança antes do casamento",
+      "Bens comprados durante o casamento com renda própria",
+      "Proventos do trabalho pessoal de cada cônjuge, nos termos do art. 1.668, VI do CC",
+      "Frutos dos bens incomunicáveis percebidos durante o casamento"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.668, VI CC: os proventos do trabalho pessoal de cada cônjuge são incomunicáveis mesmo na comunhão universal. Atenção: os bens adquiridos com esses proventos DURANTE o casamento comunicam-se (art. 1.660), e os frutos dos bens incomunicáveis também se comunicam (art. 1.669).",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 13,
+    "question": "A Súmula 377 do STF determina que, no regime de separação LEGAL (obrigatória) de bens:",
+    "alternatives": [
+      "Nenhum bem se comunica entre os cônjuges, inclusive os adquiridos durante o casamento",
+      "Comunicam-se os bens adquiridos onerosamente na constância do casamento",
+      "Apenas os bens anteriores ao casamento se comunicam entre os cônjuges",
+      "O cônjuge supérstite não tem direito à herança dos bens adquiridos durante o casamento"
+    ],
+    "answer_index": 1,
+    "explanation": "Súmula 377/STF: 'No regime de separação legal de bens, comunicam-se os adquiridos na constância do casamento.' Os aquestos (bens comprados onerosamente durante o casamento) comunicam-se com base na presunção do esforço comum.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 14,
+    "question": "O STF, no julgamento do ARE 1.309.642 (Tema 1.236 — fevereiro de 2024), decidiu sobre o regime de separação obrigatória para maiores de 70 anos que:",
+    "alternatives": [
+      "O regime foi declarado inconstitucional e abolido completamente pelo Supremo",
+      "O regime permanece obrigatório e irrenunciável em todos os casos, sem exceção",
+      "O regime pode ser afastado por expressa manifestação de vontade mediante escritura pública",
+      "O regime só pode ser afastado mediante autorização judicial prévia e fundamentada"
+    ],
+    "answer_index": 2,
+    "explanation": "Tema 1.236/STF (ARE 1.309.642 — 01/02/2024 — unânime, rel. Min. Barroso): nos casamentos e uniões estáveis envolvendo pessoa maior de 70 anos, o regime de separação obrigatória pode ser afastado por EXPRESSA MANIFESTAÇÃO DE VONTADE das partes, por escritura pública. Efeitos prospectivos — não retroage.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 15,
+    "question": "No regime de participação final nos aquestos, durante a VIGÊNCIA do casamento, a administração dos bens funciona como:",
+    "alternatives": [
+      "Comunhão universal — há um único patrimônio administrado conjuntamente",
+      "Comunhão parcial — há patrimônios comuns e individuais",
+      "Separação de bens — cada cônjuge administra livremente seu patrimônio",
+      "Separação com autorização mútua obrigatória para atos de alienação"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.672 CC: durante o casamento, no regime de participação final nos aquestos, cada cônjuge possui patrimônio próprio e o administra livremente — funciona como separação de bens. Só na DISSOLUÇÃO é que se apuram os aquestos e cada cônjuge tem direito à metade dos bens onerosamente adquiridos pelo casal.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 16,
+    "question": "O pacto antenupcial é NULO quando:",
+    "alternatives": [
+      "Não é registrado no Cartório de Registro de Imóveis após a celebração",
+      "O casamento não se realizar depois de assinado o pacto",
+      "Não é celebrado por escritura pública em tabelionato de notas",
+      "Contém cláusulas de natureza existencial, não apenas patrimonial"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.653 CC: o pacto antenupcial é NULO se não for feito por escritura pública (nulidade absoluta, insanável). Se não for seguido do casamento, será apenas INEFICAZ — existe e é válido, mas não produz efeitos. O registro no RI é requisito de eficácia perante terceiros, não de validade.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 17,
+    "question": "Para que o pacto antenupcial produza efeitos perante TERCEIROS (como credores dos cônjuges), é necessário:",
+    "alternatives": [
+      "Apenas a lavratura e assinatura da escritura pública pelos nubentes",
+      "Registro em livro de notas no Cartório de Registro de Notas competente",
+      "Registro em livro especial no Cartório de Registro de Imóveis do domicílio dos cônjuges",
+      "Averbação à margem do assento de casamento no Cartório de Registro Civil"
+    ],
+    "answer_index": 2,
+    "explanation": "Art. 1.657 CC: as convenções antenupciais não terão efeito perante terceiros senão depois de registradas, em livro especial, pelo oficial do Registro de Imóveis do domicílio dos cônjuges. Sem o registro, o credor que não conhecia o pacto não é prejudicado por ele.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 18,
+    "question": "O Enunciado 635 da VIII Jornada de Direito Civil estabelece que o pacto antenupcial pode conter cláusulas existenciais. Qual é o limite expresso para essas cláusulas?",
+    "alternatives": [
+      "Só são válidas se tiverem conteúdo exclusivamente patrimonial ou sucessório",
+      "Não devem violar a dignidade da pessoa humana, a igualdade entre os cônjuges e a solidariedade familiar",
+      "São proibidas quando envolvam menores em idade núbil, mesmo com autorização dos pais",
+      "Dependem de homologação judicial para adquirir validade e eficácia entre as partes"
+    ],
+    "answer_index": 1,
+    "explanation": "Enunciado 635 — VIII Jornada de Direito Civil: 'O pacto antenupcial e o contrato de convivência podem conter cláusulas existenciais, desde que estas não violem os princípios da dignidade da pessoa humana, da igualdade entre os cônjuges e da solidariedade familiar.'",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 19,
+    "question": "O contrato de convivência, equivalente ao pacto antenupcial para a união estável, difere deste principalmente porque:",
+    "alternatives": [
+      "Só pode ser celebrado por escritura pública, assim como o pacto antenupcial",
+      "Pode ser firmado por instrumento público OU particular, a qualquer momento da união",
+      "É dispensável, pois a união estável é automaticamente regida pela comunhão universal",
+      "Deve ser registrado no Cartório de Registro de Imóveis para ter validade entre as partes"
+    ],
+    "answer_index": 1,
+    "explanation": "Art. 1.725 CC: na união estável, o contrato de convivência pode ser firmado por instrumento público OU particular, a qualquer tempo — ao contrário do pacto antenupcial, que exige escritura pública e deve ser celebrado ANTES do casamento.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  },
+  {
+    "legacy_dataset": "dc5Qs",
+    "legacy_position": 20,
+    "question": "A mutabilidade do regime de bens, prevista no art. 1.639 §2º do CC, é possível mediante:",
+    "alternatives": [
+      "Simples declaração de vontade dos cônjuges perante o cartório de notas, sem necessidade de decisão judicial",
+      "Pedido motivado de ambos os cônjuges ao juiz, que verificará a procedência das razões e os direitos de terceiros",
+      "Novo pacto antenupcial celebrado após o casamento, com registro imediato no Cartório de Imóveis",
+      "Decisão unilateral de qualquer um dos cônjuges, desde que notificado o outro com antecedência mínima de 30 dias"
+    ],
+    "answer_index": 1,
+    "explanation": "Art. 1.639 §2º CC: é admissível alteração do regime de bens, mediante autorização judicial em pedido motivado de AMBOS OS CÔNJUGES, apurada a procedência das razões invocadas e ressalvados os direitos de terceiros. Exige pedido conjunto e decisão judicial — não basta ato cartorial.",
+    "legal_status": "legacy_unverified",
+    "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+  }
+]

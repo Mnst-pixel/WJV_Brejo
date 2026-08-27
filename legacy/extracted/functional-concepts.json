@@ -1,0 +1,177 @@
+{
+  "subjects": [
+    {
+      "key": "dc5",
+      "label": "Direito Civil V",
+      "panel": "dc5-resumo",
+      "sb": "sb-dc5"
+    },
+    {
+      "key": "di",
+      "label": "Dir. Internacional",
+      "panel": "di-resumo",
+      "sb": "sb-di"
+    },
+    {
+      "key": "pv",
+      "label": "Previdenciário",
+      "panel": "prev-resumo",
+      "sb": "sb-prev"
+    }
+  ],
+  "goal_types": {
+    "estudar-topico": "Estudar tópico",
+    "resolver-questoes": "Resolver questões",
+    "revisar-conteudo": "Revisar conteúdo",
+    "flashcards": "Flashcards",
+    "livre": "Meta livre"
+  },
+  "mark_types": {
+    "fav": {
+      "label": "⭐ Favorito",
+      "cls": "fav"
+    },
+    "prova": {
+      "label": "🔴 Cai em prova",
+      "cls": "prova"
+    },
+    "duvida": {
+      "label": "💙 Tenho dúvida",
+      "cls": "duvida"
+    },
+    "revisar": {
+      "label": "🟠 Revisar",
+      "cls": "revisar"
+    },
+    "decorar": {
+      "label": "✅ Decorar",
+      "cls": "decorar"
+    }
+  },
+  "legal_reference_types": {
+    "legislacao": "Legislação",
+    "jurisprudencia": "Jurisprudência",
+    "sumula": "Súmula",
+    "informativo": "Informativo",
+    "artigo": "Artigo",
+    "doutrina": "Doutrina",
+    "outro": "Outro"
+  },
+  "pomodoro_default": {
+    "mode": "foco",
+    "running": false,
+    "paused": false,
+    "remaining": 1500,
+    "total": 1500,
+    "timer": null,
+    "cycles": 0,
+    "times": {
+      "foco": 25,
+      "pausa-curta": 5,
+      "pausa-longa": 15
+    }
+  },
+  "homepage_quotes": [
+    {
+      "text": "A educação é a arma mais poderosa que você pode usar para mudar o mundo.",
+      "author": "Nelson Mandela"
+    },
+    {
+      "text": "Não é o mais forte que sobrevive, mas o que melhor se adapta às mudanças.",
+      "author": "Charles Darwin"
+    },
+    {
+      "text": "A persistência é o caminho do êxito.",
+      "author": "Charles Chaplin"
+    },
+    {
+      "text": "Aquele que sabe de tudo e trabalha pouco, sabe muito pouco.",
+      "author": "Leonardo da Vinci"
+    },
+    {
+      "text": "A única maneira de fazer um excelente trabalho é amar o que você faz.",
+      "author": "Steve Jobs"
+    },
+    {
+      "text": "O sucesso é a soma de pequenos esforços repetidos dia após dia.",
+      "author": "Robert Collier"
+    },
+    {
+      "text": "A mente que se abre a uma nova ideia jamais voltará ao seu tamanho original.",
+      "author": "Albert Einstein"
+    },
+    {
+      "text": "Aprenda como se fosse viver para sempre. Viva como se fosse morrer amanhã.",
+      "author": "Mahatma Gandhi"
+    },
+    {
+      "text": "O juiz não deve ser ingênuo, mas também não pode ser cínico.",
+      "author": "Rui Barbosa"
+    },
+    {
+      "text": "Depois de escalada a montanha, descobrimos que há muitas outras montanhas para escalar.",
+      "author": "Nelson Mandela"
+    },
+    {
+      "text": "Não tenha medo de crescer devagar; tenha medo apenas de ficar parado.",
+      "author": "Provérbio Chinês"
+    },
+    {
+      "text": "A diferença entre o ordinário e o extraordinário é esse pequeno extra.",
+      "author": "Jimmy Johnson"
+    },
+    {
+      "text": "Ninguém pode fazer por nós o que somente nós podemos fazer por nós mesmos.",
+      "author": "Monteiro Lobato"
+    },
+    {
+      "text": "É melhor tentar e falhar do que não tentar e lamentar.",
+      "author": "William Shakespeare"
+    },
+    {
+      "text": "O conhecimento é a única coisa que ninguém pode tirar de você.",
+      "author": "B. B. King"
+    }
+  ],
+  "panels": [
+    "dashboard",
+    "dc5-bim",
+    "dc5-quiz",
+    "dc5-resumo",
+    "di-bim",
+    "di-quiz",
+    "di-resumo",
+    "flashcards",
+    "homepage",
+    "legis",
+    "marcados",
+    "metas",
+    "notas",
+    "oab-home",
+    "pomodoro",
+    "prev-bim",
+    "prev-quiz",
+    "prev-resumo",
+    "prev-silvio",
+    "uploads"
+  ],
+  "storage_keys": [
+    "gaivota_activities",
+    "gaivota_flashcards",
+    "gaivota_hp_stats",
+    "gaivota_last_panel",
+    "gaivota_legis",
+    "gaivota_marcacoes",
+    "gaivota_marcacoes_meta",
+    "gaivota_metas",
+    "gaivota_notes",
+    "gaivota_pomo_log",
+    "gaivota_pomo_time_by_subj",
+    "gaivota_pomo_times",
+    "gaivota_pomo_today",
+    "gaivota_soft_theme",
+    "gaivota_uploads"
+  ],
+  "legal_status": "legacy_unverified",
+  "source_sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733"
+}

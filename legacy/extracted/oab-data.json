@@ -1,0 +1,466 @@
+{
+  "constitucional": {
+    "title": "Constitucional e Direitos Humanos",
+    "icon": "📜",
+    "items": [
+      {
+        "t": "Estrutura da CF/88",
+        "d": "Preâmbulo, ADCT, 9 títulos. Princípios fundamentais (art. 1-4): soberania, cidadania, dignidade, valores sociais do trabalho, pluralismo político."
+      },
+      {
+        "t": "Direitos e Garantias Fundamentais (art. 5º)",
+        "d": "Rol exemplificativo (§2º). Eficácia imediata (§1º). Cláusula pétrea. Remédios constitucionais: HC, HD, MS, MI, AP."
+      },
+      {
+        "t": "Organização do Estado",
+        "d": "União, Estados, DF, Municípios. Repartição de competências: privativas, exclusivas, concorrentes, comuns. Intervenção federal e estadual."
+      },
+      {
+        "t": "Poder Legislativo",
+        "d": "Bicameralismo federal. Processo legislativo: PEC, PLC, MP, LC, LO. Controle de constitucionalidade: difuso (RE) e concentrado (ADI, ADC, ADPF, ADO)."
+      },
+      {
+        "t": "Poder Executivo",
+        "d": "Mandato de 4 anos, reeleição 1x. Atribuições do PR. Ministros. Responsabilidade: crimes comuns (STF) e crimes de responsabilidade (Senado)."
+      },
+      {
+        "t": "Poder Judiciário",
+        "d": "STF, STJ, TST, TSE, STM, TRF, TJ, Juizados. Conselho Nacional de Justiça. Garantias: vitaliciedade, inamovibilidade, irredutibilidade."
+      },
+      {
+        "t": "Ordem Econômica e Social",
+        "d": "Princípios da ordem econômica (art. 170). SUS, Previdência Social, Assistência Social. Educação (art. 205-214). Meio ambiente (art. 225)."
+      }
+    ]
+  },
+  "administrativo": {
+    "title": "Direito Administrativo",
+    "icon": "🏛️",
+    "items": [
+      {
+        "t": "Princípios da Administração Pública",
+        "d": "LIMPE: Legalidade, Impessoalidade, Moralidade, Publicidade, Eficiência (art. 37 CF). Supremacia e indisponibilidade do interesse público."
+      },
+      {
+        "t": "Poderes Administrativos",
+        "d": "Vinculado e discricionário. Poder hierárquico, disciplinar, regulamentar, de polícia. Abuso de poder: excesso e desvio."
+      },
+      {
+        "t": "Atos Administrativos",
+        "d": "Elementos: competência, finalidade, forma, motivo, objeto. Atributos: presunção de legitimidade, imperatividade, autoexecutoriedade, tipicidade. Vícios e anulação."
+      },
+      {
+        "t": "Licitação (Lei 14.133/21)",
+        "d": "Obrigatoriedade. Modalidades: pregão, concorrência, concurso, leilão. Dispensa e inexigibilidade. Fases e critérios de julgamento."
+      },
+      {
+        "t": "Contratos Administrativos",
+        "d": "Cláusulas exorbitantes. Alteração unilateral. Equilíbrio econômico-financeiro. Rescisão. Teoria da imprevisão."
+      },
+      {
+        "t": "Serviços Públicos",
+        "d": "Conceito, classificação, princípios (continuidade, igualdade, eficiência). Formas de prestação: direta, concessão, permissão, autorização."
+      },
+      {
+        "t": "Responsabilidade Civil do Estado",
+        "d": "Art. 37 §6º CF: teoria objetiva (risco administrativo). Requisitos: conduta, dano, nexo causal. Excludentes: culpa exclusiva da vítima, caso fortuito, força maior."
+      },
+      {
+        "t": "Improbidade Administrativa (Lei 8.429/92)",
+        "d": "Atos que importam enriquecimento ilícito, dano ao erário, violação dos princípios. Sanções. Prescrição."
+      }
+    ]
+  },
+  "tributario": {
+    "title": "Direito Tributário",
+    "icon": "💰",
+    "items": [
+      {
+        "t": "Sistema Tributário Nacional",
+        "d": "Princípios: legalidade, anterioridade, irretroatividade, não-confisco, uniformidade, capacidade contributiva. Imunidades."
+      },
+      {
+        "t": "Obrigação Tributária",
+        "d": "Fato gerador, base de cálculo, alíquota. Sujeito ativo e passivo. Contribuinte e responsável. Solidariedade."
+      },
+      {
+        "t": "Crédito Tributário",
+        "d": "Constituição pelo lançamento (de ofício, por declaração, por homologação). Suspensão, extinção e exclusão. Prescrição e decadência."
+      },
+      {
+        "t": "Impostos Federais",
+        "d": "IR, IPI, IOF, II, IE, ITR. Competência da União. SIMPLES Nacional. Contribuições sociais (COFINS, PIS, CSLL, INSS)."
+      },
+      {
+        "t": "Impostos Estaduais",
+        "d": "ICMS (não-cumulativo, essencial à OAB), IPVA, ITCMD. Guerra fiscal. Substituição tributária no ICMS."
+      },
+      {
+        "t": "Impostos Municipais",
+        "d": "ISSQN, IPTU, ITBI. Competência municipal. Imunidades (livros, templos, partidos)."
+      },
+      {
+        "t": "Processo Administrativo e Judicial",
+        "d": "Mandado de segurança tributário. Ação anulatória. Embargos à execução fiscal. Lei de Execução Fiscal (6.830/80)."
+      }
+    ]
+  },
+  "penal": {
+    "title": "Direito Penal",
+    "icon": "⚖️",
+    "items": [
+      {
+        "t": "Teoria Geral do Crime",
+        "d": "Conceito analítico: fato típico, ilícito, culpável. Tipicidade formal e material. Dolo e culpa. Iter criminis. Tentativa e consumação."
+      },
+      {
+        "t": "Causas de Exclusão",
+        "d": "Ilicitude: legítima defesa, estado de necessidade, exercício regular do direito, estrito cumprimento do dever legal. Culpabilidade: inimputabilidade, inexigibilidade."
+      },
+      {
+        "t": "Concurso de Pessoas",
+        "d": "Autoria e participação. Teoria objetiva formal. Comunicabilidade das circunstâncias. Crimes de mão própria."
+      },
+      {
+        "t": "Penas",
+        "d": "Espécies: privativas de liberdade, restritivas de direitos, multa. Regime inicial (fechado, semiaberto, aberto). Substituição. Progressão de regime."
+      },
+      {
+        "t": "Extinção da Punibilidade",
+        "d": "Prescrição (da pretensão punitiva e executória). Decadência. Perempção. Anistia, graça, indulto. Abolitio criminis. Morte do agente."
+      },
+      {
+        "t": "Crimes em Espécie",
+        "d": "Homicídio (121-128). Lesão corporal. Crimes patrimoniais: furto, roubo, extorsão, estelionato. Crimes contra a honra. Lei Maria da Penha (11.340/06)."
+      },
+      {
+        "t": "Legislação Especial",
+        "d": "Lei de Drogas (11.343/06). Estatuto do Desarmamento. Crimes de trânsito. Lei de Abuso de Autoridade."
+      }
+    ]
+  },
+  "processualpenal": {
+    "title": "Processo Penal",
+    "icon": "🔍",
+    "items": [
+      {
+        "t": "Princípios",
+        "d": "Devido processo legal, contraditório, ampla defesa, presunção de inocência, publicidade, celeridade. Nulidades absolutas e relativas."
+      },
+      {
+        "t": "Inquérito Policial",
+        "d": "Natureza administrativa, inquisitório. Dispensável. Prazo: 30 dias (preso), 30 dias prorrogáveis (solto). Arquivamento."
+      },
+      {
+        "t": "Ação Penal",
+        "d": "Pública incondicionada, condicionada à representação, privada. Queixa-crime. Prazo decadencial (6 meses). Condições da ação."
+      },
+      {
+        "t": "Prisões",
+        "d": "Flagrante, preventiva, temporária (Lei 7.960/89). Habeas Corpus. Liberdade provisória. Medidas cautelares diversas da prisão."
+      },
+      {
+        "t": "Provas",
+        "d": "Sistema do livre convencimento motivado. Provas ilícitas. Interceptação telefônica (Lei 9.296/96). Reconhecimento, confissão, pericial."
+      },
+      {
+        "t": "Procedimentos",
+        "d": "Comum ordinário, sumário, sumaríssimo (JECRIM). Tribunal do Júri. Procedimentos especiais."
+      },
+      {
+        "t": "Recursos",
+        "d": "RESE, Apelação, Embargos. Recurso Especial (STJ) e Extraordinário (STF). Revisão criminal."
+      }
+    ]
+  },
+  "ambiental": {
+    "title": "Direito Ambiental",
+    "icon": "🌿",
+    "items": [
+      {
+        "t": "Princípios",
+        "d": "Prevenção, precaução, poluidor-pagador, usuário-pagador, reparação integral, participação, informação, desenvolvimento sustentável."
+      },
+      {
+        "t": "Responsabilidade Ambiental",
+        "d": "Tríplice: administrativa (multa, embargo), civil (objetiva, solidária, imprescritível) e penal (Lei 9.605/98 — pessoa jurídica também responde)."
+      },
+      {
+        "t": "Lei 9.605/98 (Crimes Ambientais)",
+        "d": "Penas: detenção, reclusão, multa. Atenuantes e agravantes específicos. Reparação do dano. Responsabilidade da PJ."
+      },
+      {
+        "t": "SNUC — Lei 9.985/00",
+        "d": "Unidades de conservação: de proteção integral (uso indireto) e de uso sustentável (uso direto). Zona de amortecimento."
+      },
+      {
+        "t": "Código Florestal (Lei 12.651/12)",
+        "d": "Área de Preservação Permanente (APP), Reserva Legal. CAR. Regime de proteção das florestas."
+      },
+      {
+        "t": "Licenciamento Ambiental",
+        "d": "EIA/RIMA. Poder de polícia ambiental. IBAMA. Responsabilidade por dano ambiental — regime objetivo."
+      }
+    ]
+  },
+  "financeiro": {
+    "title": "Direito Financeiro",
+    "icon": "📊",
+    "items": [
+      {
+        "t": "Orçamento Público",
+        "d": "PPA (4 anos), LDO (metas e prioridades), LOA (anual). Princípios: universalidade, exclusividade, equilíbrio, não-vinculação, não-afetação."
+      },
+      {
+        "t": "Lei de Responsabilidade Fiscal (LC 101/00)",
+        "d": "Transparência, controle e responsabilização. Metas fiscais. Limites de despesas com pessoal. Vedações antes das eleições."
+      },
+      {
+        "t": "Receitas e Despesas Públicas",
+        "d": "Receitas originárias e derivadas. Estágios da despesa: empenho, liquidação, pagamento. Créditos adicionais: suplementares, especiais, extraordinários."
+      },
+      {
+        "t": "Dívida Pública",
+        "d": "Interna e externa. Refinanciamento. Controle pelo Senado Federal. Dívida fundada (longo prazo) e flutuante (curto prazo)."
+      },
+      {
+        "t": "Controle das Finanças",
+        "d": "Interno (poder executivo) e externo (TCU, TCE, TCM + Legislativo). Tomada e prestação de contas."
+      }
+    ]
+  },
+  "civil": {
+    "title": "Direito Civil",
+    "icon": "👨‍👩‍👧",
+    "items": [
+      {
+        "t": "Lei de Introdução (LINDB)",
+        "d": "Vigência, eficácia e revogação das normas. Conflito de leis no tempo e espaço. Equidade, analogia, costumes."
+      },
+      {
+        "t": "Pessoa Natural e Jurídica",
+        "d": "Personalidade, capacidade, domicílio. PJ de direito público e privado. Desconsideração da personalidade jurídica."
+      },
+      {
+        "t": "Negócio Jurídico",
+        "d": "Existência, validade e eficácia. Vícios: erro, dolo, coação, estado de perigo, lesão, fraude. Simulação. Nulidade e anulabilidade."
+      },
+      {
+        "t": "Obrigações",
+        "d": "Dar, fazer e não fazer. Solidariedade ativa e passiva. Inadimplemento, mora, perdas e danos. Cláusula penal."
+      },
+      {
+        "t": "Contratos",
+        "d": "Formação, proposta, aceitação. Contratos em espécie: compra e venda, locação, doação, fiança, mandato, prestação de serviços."
+      },
+      {
+        "t": "Responsabilidade Civil",
+        "d": "Subjetiva (culpa) e objetiva (risco). Ato ilícito. Nexo causal. Dano patrimonial e extrapatrimonial (moral)."
+      },
+      {
+        "t": "Família e Sucessões",
+        "d": "Casamento, união estável, divórcio. Regime de bens. Filiação. Guarda. Alimentos. Herança: legítima e testamentária. Ordem de vocação hereditária."
+      },
+      {
+        "t": "Direitos Reais",
+        "d": "Posse e propriedade. Usucapião. Servidões. Hipoteca, penhor, anticrese. Registro de imóveis."
+      }
+    ]
+  },
+  "processualcivil": {
+    "title": "Processo Civil",
+    "icon": "📋",
+    "items": [
+      {
+        "t": "Princípios e Normas Fundamentais",
+        "d": "CPC 2015 (Lei 13.105/15). Contraditório, ampla defesa, cooperação, boa-fé processual, primazia do mérito."
+      },
+      {
+        "t": "Competência",
+        "d": "Absoluta (matéria, pessoa, funcional) e relativa (território, valor). Conexão, continência, prevenção. Conflito de competência."
+      },
+      {
+        "t": "Petição Inicial e Citação",
+        "d": "Requisitos (art. 319). Indeferimento e emenda. Espécies de citação. Citação por edital."
+      },
+      {
+        "t": "Resposta do Réu",
+        "d": "Contestação (impugnação específica), exceção de incompetência. Reconvenção. Prazo: 15 dias (regra), 30 dias (Fazenda Pública)."
+      },
+      {
+        "t": "Provas",
+        "d": "Ônus da prova. Espécies: documental, testemunhal, pericial, inspeção. Audiência de instrução e julgamento."
+      },
+      {
+        "t": "Sentença e Coisa Julgada",
+        "d": "Requisitos da sentença. Efeitos. Coisa julgada material e formal. Ação rescisória (prazo: 2 anos)."
+      },
+      {
+        "t": "Recursos",
+        "d": "Apelação, agravo de instrumento, agravo interno, embargos de declaração, REsp e RE. Efeito suspensivo. Sucumbência."
+      },
+      {
+        "t": "Execução e Tutela Provisória",
+        "d": "Títulos executivos (judiciais e extrajudiciais). Penhora. Embargos à execução. Tutela de urgência e evidência."
+      }
+    ]
+  },
+  "empresarial": {
+    "title": "Direito Empresarial",
+    "icon": "🏢",
+    "items": [
+      {
+        "t": "Teoria Geral da Empresa",
+        "d": "Empresário, empresa, estabelecimento. Registro. Escrituração. Nome empresarial. Prepostos."
+      },
+      {
+        "t": "Sociedades",
+        "d": "Simples e empresária. Tipos: LTDA (mais cobrada), SA, Em Nome Coletivo, Comandita. Administração, responsabilidade dos sócios, dissolução."
+      },
+      {
+        "t": "Títulos de Crédito",
+        "d": "Princípios: literalidade, autonomia, cartularidade (abstração). Duplicata, cheque, nota promissória, letra de câmbio. Endosso, aval, protesto."
+      },
+      {
+        "t": "Contratos Empresariais",
+        "d": "Franquia, leasing, factoring, consórcio. Seguro. Representação comercial."
+      },
+      {
+        "t": "Recuperação e Falência (Lei 11.101/05)",
+        "d": "Recuperação judicial e extrajudicial. Plano de recuperação. Falência: decretação, arrecadação, liquidação, encerramento. Crimes falimentares."
+      },
+      {
+        "t": "Propriedade Intelectual",
+        "d": "Patente, marca, design industrial (INPI). Software. Lei do Direito Autoral. Concorrência desleal."
+      }
+    ]
+  },
+  "consumidor": {
+    "title": "Direito do Consumidor",
+    "icon": "🛒",
+    "items": [
+      {
+        "t": "CDC (Lei 8.078/90) — Princípios",
+        "d": "Vulnerabilidade do consumidor. Boa-fé objetiva. Equilíbrio contratual. Transparência. Hipossuficiência."
+      },
+      {
+        "t": "Relação de Consumo",
+        "d": "Fornecedor (art. 3º). Consumidor (art. 2º + equiparados). Produto e serviço. Relação de consumo vs. civil/comercial."
+      },
+      {
+        "t": "Responsabilidade pelo Fato e Vício",
+        "d": "Responsabilidade objetiva e solidária. Fato do produto/serviço (acidente de consumo). Vício do produto/serviço. Prazo de reclamação."
+      },
+      {
+        "t": "Contratos de Consumo",
+        "d": "Cláusulas abusivas (art. 51). Contratos de adesão. Direito de arrependimento (7 dias). Práticas abusivas."
+      },
+      {
+        "t": "Publicidade e Oferta",
+        "d": "Publicidade enganosa e abusiva. Oferta vinculante. Controle de cláusulas."
+      },
+      {
+        "t": "Proteção Processual",
+        "d": "Inversão do ônus da prova. Ações coletivas. Tutela específica. Desconsideração da personalidade jurídica."
+      }
+    ]
+  },
+  "trabalho": {
+    "title": "Direito do Trabalho",
+    "icon": "💼",
+    "items": [
+      {
+        "t": "Princípios",
+        "d": "Proteção (in dubio pro operario, norma mais favorável, condição mais benéfica), irrenunciabilidade, continuidade, primazia da realidade."
+      },
+      {
+        "t": "Contrato de Trabalho",
+        "d": "Elementos: pessoalidade, onerosidade, subordinação, não-eventualidade. Alteração e suspensão. Fraudes: pejotização, parassubordinação."
+      },
+      {
+        "t": "Jornada e Remuneração",
+        "d": "44h/semana, 8h/dia. Horas extras (50% acima). Adicional noturno. Intervalos. Remuneração: salário + gorjetas. Equiparação salarial."
+      },
+      {
+        "t": "Rescisão do Contrato",
+        "d": "Sem justa causa (aviso prévio, FGTS+40%, verbas). Justa causa (art. 482 CLT). Indireta (art. 483). Culpa recíproca. Rescisão por acordo."
+      },
+      {
+        "t": "FGTS e Seguro-Desemprego",
+        "d": "Depósito mensal de 8%. Saque nas hipóteses legais. Seguro-desemprego: requisitos, parcelas, valor."
+      },
+      {
+        "t": "Estabilidades",
+        "d": "Gestante (desde a confirmação até 5 meses pós-parto). CIPA. Dirigente sindical. Acidentado (12 meses pós-afastamento). PCD."
+      },
+      {
+        "t": "Processo do Trabalho",
+        "d": "Reclamação trabalhista. Prazos. Comissão de conciliação. Recurso ordinário, revista. Execução trabalhista."
+      }
+    ]
+  },
+  "previdenciario": {
+    "title": "Previdenciário (OAB)",
+    "icon": "🛡️",
+    "items": [
+      {
+        "t": "Seguridade Social (art. 194 CF)",
+        "d": "Previdência, Saúde e Assistência Social. Princípios: universalidade, uniformidade, seletividade, distributividade, equidade, diversidade, caráter democrático."
+      },
+      {
+        "t": "RGPS — Segurados",
+        "d": "Obrigatórios: empregado, doméstico, avulso, contribuinte individual, especial. Facultativo. Filiação automática vs. voluntária."
+      },
+      {
+        "t": "Benefícios",
+        "d": "Aposentadoria por incapacidade permanente, por idade (65H/62M), por tempo de contribuição (reformada pela EC 103/19), especial. Auxílio-doença, salário-maternidade, pensão por morte, auxílio-reclusão, salário-família."
+      },
+      {
+        "t": "Carência e Qualidade de Segurado",
+        "d": "Carência variável por benefício. Período de graça: 12/24/36 meses (obrigatório), 6 meses (facultativo). Perda e reaquisição da qualidade."
+      },
+      {
+        "t": "RPPS — Servidores",
+        "d": "Regime próprio para servidores efetivos e militares. Regras diferenciadas. Contribuição sobre proventos acima do teto RGPS."
+      },
+      {
+        "t": "Processo Administrativo Previdenciário",
+        "d": "Requerimento, indeferimento, recurso ao CRPS. Juizado Especial Federal (causas até 60 salários mínimos). Prescrição quinquenal."
+      }
+    ]
+  },
+  "etica": {
+    "title": "Ética e Estatuto da OAB",
+    "icon": "⚖️",
+    "items": [
+      {
+        "t": "Estatuto da Advocacia (Lei 8.906/94)",
+        "d": "Inscrição na OAB. Impedimentos e incompatibilidades. Prerrogativas do advogado: inviolabilidade, sigilo profissional, não ser preso com algemas."
+      },
+      {
+        "t": "Código de Ética e Disciplina",
+        "d": "Relação com o cliente: mandato, contrato, procuração. Honorários: combinados, sucumbenciais, arbitramento. Vedação à publicidade mercantilista."
+      },
+      {
+        "t": "Honorários Advocatícios",
+        "d": "Fixação: tabela da OAB, valor da causa, complexidade. Honorários de sucumbência pertencem ao advogado (não ao cliente). Cobrança."
+      },
+      {
+        "t": "Infrações e Sanções Disciplinares",
+        "d": "Censura, suspensão (até 12 meses), exclusão. Processo disciplinar. Prescrição (5 anos). TED e CFOAB."
+      },
+      {
+        "t": "Incompatibilidades",
+        "d": "Magistratura, MP, delegados, militares em serviço ativo, servidores em ocupação privativa de bacharel em direito que conflite com a advocacia."
+      },
+      {
+        "t": "Sigilo Profissional",
+        "d": "Absoluto entre advogado e cliente. Abrange comunicações, documentos e informações. Exceção: justa causa."
+      },
+      {
+        "t": "Advocacia Pública",
+        "d": "AGU, PGE, PGM. Independência funcional. Não aplicação do estatuto pleno, mas das prerrogativas essenciais."
+      }
+    ]
+  }
+}

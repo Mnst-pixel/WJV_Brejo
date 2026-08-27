@@ -295,8 +295,12 @@ services:
       - kairos_wordpress_data:/var/www/html
       - ../../wordpress/bootstrap.sh:/bootstrap.sh:ro
       - ../../wordpress/content:/seed:ro
+      - ../../wordpress/assets:/assets:ro
+      - ../../wordpress/config:/config:ro
+      - ../../wordpress/mu-plugins:/mu-plugins:ro
     entrypoint: ["/bin/sh", "/bootstrap.sh"]
     networks:
+      - app
       - data
     depends_on:
       wordpress:

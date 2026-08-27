@@ -1,0 +1,38 @@
+{
+  "system_colors": [
+    {"_id":"primary","title":"Background Abyss","color":"#1E312A"},
+    {"_id":"secondary","title":"Background Cave","color":"#253D32"},
+    {"_id":"text","title":"Primary Text","color":"#EFEAD7"},
+    {"_id":"accent","title":"Gold","color":"#DCC992"}
+  ],
+  "custom_colors": [
+    {"_id":"cave-2b","title":"Cave 2B","color":"#2B3D33"},
+    {"_id":"stone-3f","title":"Stone 3F","color":"#3F4739"},
+    {"_id":"moss-4a","title":"Moss 4A","color":"#4A4E33"},
+    {"_id":"surface-moss","title":"Surface Moss","color":"#465B48"},
+    {"_id":"stone-55","title":"Stone 55","color":"#55583F"},
+    {"_id":"surface-stone","title":"Surface Stone","color":"#5C694D"},
+    {"_id":"stone-68","title":"Stone 68","color":"#687359"},
+    {"_id":"sage","title":"Sage","color":"#747F63"},
+    {"_id":"sage-light","title":"Sage Light","color":"#818A6F"},
+    {"_id":"olive","title":"Olive","color":"#918D64"},
+    {"_id":"oracle-deep","title":"Oracle Deep","color":"#517371"},
+    {"_id":"oracle-mist","title":"Oracle Mist","color":"#5A6F6E"},
+    {"_id":"oracle-stone","title":"Oracle Stone","color":"#677D80"},
+    {"_id":"oracle-water","title":"Oracle Water","color":"#759094"},
+    {"_id":"focus","title":"Focus","color":"#87A7AE"},
+    {"_id":"earth","title":"Earth","color":"#755E42"},
+    {"_id":"bronze","title":"Bronze","color":"#928566"},
+    {"_id":"bronze-light","title":"Bronze Light","color":"#B4A977"},
+    {"_id":"gold-muted","title":"Gold Muted","color":"#C9BA89"},
+    {"_id":"secondary-text","title":"Secondary Text","color":"#C2B9A3"},
+    {"_id":"parchment-deep","title":"Parchment Deep","color":"#D5CAAD"},
+    {"_id":"parchment-soft","title":"Parchment Soft","color":"#E2DAC3"}
+  ],
+  "system_typography": [
+    {"_id":"primary","title":"Primary","typography_typography":"custom","typography_font_family":"Montserrat","typography_font_weight":"700"},
+    {"_id":"secondary","title":"Secondary","typography_typography":"custom","typography_font_family":"Montserrat","typography_font_weight":"600"},
+    {"_id":"text","title":"Text","typography_typography":"custom","typography_font_family":"Montserrat","typography_font_weight":"400"},
+    {"_id":"accent","title":"Accent","typography_typography":"custom","typography_font_family":"Montserrat","typography_font_weight":"600"}
+  ]
+}

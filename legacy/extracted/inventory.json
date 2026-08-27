@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "source": {
+    "file": "cantinho_estudos_v2.html",
+    "sha256": "3ca391d210e5edca9c8a05d42399c3010b915d32392dd0ca72230fb8dc2b3733",
+    "bytes": 288409,
+    "lines": 3852,
+    "encoding": "UTF-8",
+    "legal_status": "legacy_unverified"
+  },
+  "counts": {
+    "questions_total": 101,
+    "questions_by_dataset": {
+      "diQs": 30,
+      "pvQs": 20,
+      "svQs": 31,
+      "dc5Qs": 20
+    },
+    "oab_sections": 14,
+    "oab_summary_items": 95,
+    "panels": 20,
+    "headings": 41,
+    "interactive_controls": 44,
+    "storage_keys": 15
+  },
+  "reconciliation": {
+    "question_datasets_parsed": 4,
+    "question_records_equal_dataset_sum": true,
+    "all_answer_indexes_valid": true,
+    "javascript_executed": false
+  }
+}
