@@ -50,7 +50,14 @@ iptables-save > "$output_dir/iptables.txt" 2>&1 || true
 ip6tables-save > "$output_dir/ip6tables.txt" 2>&1 || true
 
 find /etc/nginx -xdev -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > "$output_dir/nginx-config-hashes.txt"
-find /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly /var/spool/cron -xdev -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > "$output_dir/cron-hashes.txt"
+cron_roots=()
+for cron_root in /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly /var/spool/cron; do
+  [[ -d "$cron_root" ]] && cron_roots+=("$cron_root")
+done
+: > "$output_dir/cron-hashes.txt"
+if [[ ${#cron_roots[@]} -gt 0 ]]; then
+  find "${cron_roots[@]}" -xdev -type f -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > "$output_dir/cron-hashes.txt"
+fi
 find /etc/letsencrypt -xdev -type f \( -name 'cert.pem' -o -name 'fullchain.pem' -o -name '*.conf' \) -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > "$output_dir/public-certificate-hashes.txt"
 
 : > "$output_dir/compose-config-hashes.txt"
