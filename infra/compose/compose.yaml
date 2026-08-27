@@ -1,0 +1,382 @@
+name: kairos
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  edge:
+    <<: *service-defaults
+    image: caddy:2.11.4-alpine
+    ports:
+      - "${KAIROS_BIND_ADDRESS:-0.0.0.0}:${KAIROS_PUBLIC_PORT:-4080}:80"
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - kairos_caddy_data:/data
+      - kairos_caddy_config:/config
+    networks:
+      - edge
+      - app
+    depends_on:
+      wordpress:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    mem_limit: 192m
+    cpus: 0.35
+    pids_limit: 128
+
+  web:
+    <<: *service-defaults
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      INTERNAL_API_URL: http://api:8000
+      NEXT_PUBLIC_BASE_PATH: /app
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/app/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    mem_limit: 512m
+    cpus: 0.75
+    pids_limit: 256
+
+  api:
+    <<: *service-defaults
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    command: ["api"]
+    env_file:
+      - /opt/kairos/secrets/.env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET_NAME: documents
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
+      HERMES_BASE_URL: http://hermes:8642
+      MCP_GATEWAY_URL: http://mcp-gateway:3000
+    networks:
+      - app
+      - data
+      - ai
+      - mcp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/live', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    mem_limit: 768m
+    cpus: 1.0
+    pids_limit: 256
+
+  worker:
+    <<: *service-defaults
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    command: ["worker"]
+    env_file:
+      - /opt/kairos/secrets/.env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET_NAME: documents
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
+      HERMES_BASE_URL: http://hermes:8642
+      MCP_GATEWAY_URL: http://mcp-gateway:3000
+    networks:
+      - data
+      - ai
+      - mcp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+    mem_limit: 768m
+    cpus: 1.0
+    pids_limit: 256
+
+  postgres:
+    <<: *service-defaults
+    image: pgvector/pgvector:0.8.6-pg17-trixie
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - kairos_postgres_data:/var/lib/postgresql/data
+      - ../../database/postgres/init.sql:/docker-entrypoint-initdb.d/10-kairos.sql:ro
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
+
+  redis:
+    <<: *service-defaults
+    image: redis:8.8.0-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["/bin/sh", "-c", "exec redis-server --appendonly yes --save 60 1000 --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - kairos_redis_data:/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 128
+
+  minio:
+    <<: *service-defaults
+    build:
+      context: ../minio
+      dockerfile: Dockerfile
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER: "off"
+    volumes:
+      - kairos_minio_data:/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    cpus: 0.75
+    pids_limit: 256
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    restart: "no"
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_APP_USER: ${MINIO_APP_USER}
+      MINIO_APP_PASSWORD: ${MINIO_APP_PASSWORD}
+    volumes:
+      - ../minio/documents-policy.json:/policy.json:ro
+      - ../minio/bootstrap.sh:/bootstrap.sh:ro
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    networks:
+      - data
+    mem_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+
+  mariadb:
+    <<: *service-defaults
+    image: mariadb:12.3.3
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - kairos_mariadb_data:/var/lib/mysql
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    mem_limit: 640m
+    cpus: 0.75
+    pids_limit: 256
+
+  wordpress:
+    <<: *service-defaults
+    image: wordpress:7.1.0-php8.3-apache
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_NAME: ${MARIADB_DATABASE}
+      WORDPRESS_DB_USER: ${MARIADB_USER}
+      WORDPRESS_DB_PASSWORD: ${MARIADB_PASSWORD}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('DISALLOW_FILE_EDIT', true);
+        define('WP_AUTO_UPDATE_CORE', false);
+        define('FORCE_SSL_ADMIN', false);
+    volumes:
+      - kairos_wordpress_data:/var/www/html
+    networks:
+      - app
+      - data
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r '$$c=@fsockopen(\"127.0.0.1\",80,$$e,$$s,2); exit($$c?0:1);'"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    mem_limit: 768m
+    cpus: 0.75
+    pids_limit: 256
+
+  wordpress-bootstrap:
+    image: wordpress:cli-2.12.0-php8.3
+    restart: "no"
+    init: true
+    user: "33:33"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_NAME: ${MARIADB_DATABASE}
+      WORDPRESS_DB_USER: ${MARIADB_USER}
+      WORDPRESS_DB_PASSWORD: ${MARIADB_PASSWORD}
+      KAIROS_BASE_URL: ${KAIROS_BASE_URL}
+      WORDPRESS_ADMIN_USER: ${WORDPRESS_ADMIN_USER}
+      WORDPRESS_ADMIN_PASSWORD: ${WORDPRESS_ADMIN_PASSWORD}
+      WORDPRESS_ADMIN_EMAIL: ${WORDPRESS_ADMIN_EMAIL:-vinicius@kairos.invalid}
+    volumes:
+      - kairos_wordpress_data:/var/www/html
+      - ../../wordpress/bootstrap.sh:/bootstrap.sh:ro
+      - ../../wordpress/content:/seed:ro
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    networks:
+      - data
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    mem_limit: 192m
+    cpus: 0.35
+    pids_limit: 96
+
+  clamav:
+    <<: *service-defaults
+    image: clamav/clamav:1.5.3
+    volumes:
+      - kairos_clamav_data:/var/lib/clamav
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 3 | grep -q PONG"]
+      start_period: 120s
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    mem_limit: 1g
+    cpus: 0.75
+    pids_limit: 256
+
+networks:
+  edge:
+    name: kairos-edge
+    labels:
+      com.kairos.scope: edge
+  app:
+    name: kairos-app
+    labels:
+      com.kairos.scope: app
+  data:
+    name: kairos-data
+    internal: true
+    labels:
+      com.kairos.scope: data
+  ai:
+    name: kairos-ai
+    internal: true
+    labels:
+      com.kairos.scope: ai
+  mcp:
+    name: kairos-mcp
+    internal: true
+    labels:
+      com.kairos.scope: mcp
+
+volumes:
+  kairos_postgres_data:
+    name: kairos_postgres_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/postgres}
+  kairos_redis_data:
+    name: kairos_redis_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/redis}
+  kairos_minio_data:
+    name: kairos_minio_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/minio}
+  kairos_mariadb_data:
+    name: kairos_mariadb_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/mariadb}
+  kairos_wordpress_data:
+    name: kairos_wordpress_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/wordpress}
+  kairos_clamav_data:
+    name: kairos_clamav_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/clamav}
+  kairos_caddy_data:
+    name: kairos_caddy_data
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/caddy-data}
+  kairos_caddy_config:
+    name: kairos_caddy_config
+    driver: local
+    driver_opts: {type: none, o: bind, device: /srv/kairos/caddy-config}

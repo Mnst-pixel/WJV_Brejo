@@ -1,0 +1,52 @@
+{
+	auto_https off
+	admin off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+	}
+
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle /admin* {
+		reverse_proxy api:8000
+	}
+
+	handle /static/* {
+		reverse_proxy api:8000
+	}
+
+	handle /media/* {
+		reverse_proxy api:8000
+	}
+
+	handle /app* {
+		reverse_proxy web:3000
+	}
+
+	handle {
+		reverse_proxy wordpress:80
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

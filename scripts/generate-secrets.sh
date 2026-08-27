@@ -17,6 +17,7 @@ umask 077
 mkdir -p -- "$(dirname -- "$target")"
 
 secret() { openssl rand -base64 48 | tr -d '\n'; }
+fernet_secret() { openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'; }
 
 {
   echo 'COMPOSE_PROJECT_NAME=kairos'
@@ -34,6 +35,8 @@ secret() { openssl rand -base64 48 | tr -d '\n'; }
   printf 'REDIS_PASSWORD=%s\n' "$(secret)"
   echo 'MINIO_ROOT_USER=kairos_minio'
   printf 'MINIO_ROOT_PASSWORD=%s\n' "$(secret)"
+  echo 'MINIO_APP_USER=kairos_app'
+  printf 'MINIO_APP_PASSWORD=%s\n' "$(secret)"
   echo 'MARIADB_DATABASE=kairos_wordpress'
   echo 'MARIADB_USER=kairos_wordpress'
   printf 'MARIADB_PASSWORD=%s\n' "$(secret)"
@@ -41,6 +44,11 @@ secret() { openssl rand -base64 48 | tr -d '\n'; }
   echo 'WORDPRESS_ADMIN_USER=vinicius'
   echo 'WORDPRESS_ADMIN_PASSWORD='
   echo 'WORDPRESS_ADMIN_EMAIL='
+  echo 'KAIROS_ADMIN_USERNAME=vinicius'
+  echo 'KAIROS_ADMIN_DISPLAY_NAME=Vinícius'
+  echo 'KAIROS_ADMIN_PASSWORD='
+  echo 'KAIROS_ADMIN_EMAIL='
+  printf 'MFA_ENCRYPTION_KEY=%s\n' "$(fernet_secret)"
   printf 'HERMES_BEARER_TOKEN=%s\n' "$(secret)"
   printf 'LOCALAI_API_KEY=%s\n' "$(secret)"
   printf 'GATEWAY_BEARER_TOKEN=%s\n' "$(secret)"
