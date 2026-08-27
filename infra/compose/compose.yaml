@@ -273,7 +273,7 @@ services:
       CACHE_ENABLED: "true"
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       REDIS_DB: "3"
-      CACHE_PREFIX: kairos:mcp:
+      CACHE_PREFIX: "kairos:mcp:"
       RATE_LIMIT_PER_MIN: "120"
       QUERIDO_DIARIO_ENABLED: "true"
       INLABS_ENABLED: ${INLABS_ENABLED:-false}
