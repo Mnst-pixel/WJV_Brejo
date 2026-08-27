@@ -1,0 +1,24 @@
+model:
+  default: qwen3-1.7b-kairos
+  provider: custom
+  base_url: http://localai:8080/v1
+  api_key: __LOCALAI_API_KEY__
+  api_mode: chat_completions
+  context_length: 8192
+  max_tokens: 900
+
+mcp_servers:
+  jurisprudencio:
+    url: http://mcp-server:3002/mcp/http
+    headers:
+      Authorization: __MCP_AUTHORIZATION__
+    timeout: 120
+    connect_timeout: 60
+    enabled: true
+    supports_parallel_tool_calls: false
+
+tool_loop_guardrails:
+  hard_stop_enabled: true
+  hard_stop_after:
+    exact_failure: 5
+    idempotent_no_progress: 5

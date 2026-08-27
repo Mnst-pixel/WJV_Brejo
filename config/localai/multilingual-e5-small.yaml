@@ -1,0 +1,11 @@
+name: multilingual-e5-small
+description: Embeddings multilíngues de 384 dimensões para recuperação híbrida.
+backend: llama-cpp
+parameters:
+  model: multilingual-e5-small-Q8_0.gguf
+context_size: 512
+threads: 4
+gpu_layers: 0
+f16: false
+mmap: true
+embeddings: true

@@ -16,7 +16,7 @@ fi
 umask 077
 mkdir -p -- "$(dirname -- "$target")"
 
-secret() { openssl rand -base64 48 | tr -d '\n'; }
+secret() { openssl rand -hex 48; }
 fernet_secret() { openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'; }
 
 {
@@ -53,7 +53,8 @@ fernet_secret() { openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'; }
   printf 'LOCALAI_API_KEY=%s\n' "$(secret)"
   printf 'GATEWAY_BEARER_TOKEN=%s\n' "$(secret)"
   printf 'MCP_API_KEY=%s\n' "$(secret)"
-  echo 'DATAJUD_API_KEY='
+  echo 'DATAJUD_API_KEY=cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='
+  echo 'DATAJUD_AUTH_HEADER=APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='
   echo 'INLABS_ENABLED=false'
   echo 'INLABS_EMAIL='
   echo 'INLABS_PASSWORD='

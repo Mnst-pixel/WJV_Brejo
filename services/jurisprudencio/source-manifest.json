@@ -1,0 +1,24 @@
+{
+  "archive": {
+    "filename": "MCP-Jurisprudencio.zip",
+    "sha256": "9ea64f8a04a511ebf569e07ab8c6cee8bcb8202d1fb54f854a1c58d743618800",
+    "entries": 26
+  },
+  "license": {
+    "declared": false,
+    "policy": "private-use-only; do not commit or redistribute without rights confirmation"
+  },
+  "overlay": {
+    "adm-zip": "^0.6.0",
+    "fast-xml-parser": "^5.11.0",
+    "url_secret_transport": "disabled",
+    "audit_gate": "npm audit --audit-level=high"
+  },
+  "validated": {
+    "date": "2026-08-27",
+    "gateway_typescript": "pass",
+    "gateway_npm_audit": "0 vulnerabilities",
+    "mcp_server_node_check": "pass",
+    "mcp_server_npm_audit": "0 vulnerabilities"
+  }
+}

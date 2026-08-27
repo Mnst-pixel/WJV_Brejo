@@ -9,6 +9,7 @@ case "$mode" in
     python manage.py collectstatic --noinput
     python manage.py bootstrap_roles
     python manage.py bootstrap_admin
+    python manage.py bootstrap_ai
     exec gunicorn kairos.wsgi:application \
       --bind 0.0.0.0:8000 \
       --workers "${GUNICORN_WORKERS:-2}" \

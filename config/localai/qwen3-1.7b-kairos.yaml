@@ -1,0 +1,14 @@
+name: qwen3-1.7b-kairos
+description: Modelo local CPU para assistência educacional jurídica em português.
+backend: llama-cpp
+parameters:
+  model: Qwen3-1.7B-Q4_K_M.gguf
+  temperature: 0.1
+  top_p: 0.9
+context_size: 8192
+threads: 4
+gpu_layers: 0
+f16: false
+mmap: true
+stopwords:
+  - "<|im_end|>"

@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 
 import httpx
 from django.conf import settings
-from django.db.models import Q
 from django.utils import timezone as django_timezone
 from rest_framework.exceptions import APIException, ValidationError
 
 from core.audit import record_audit
-from core.models import Agent, AgentRun, Conversation, DocumentChunk, Message, PromptTemplate
+from core.models import Agent, AgentRun, Conversation, Message, PromptTemplate
+from core.services.retrieval import hybrid_retrieve
 
 
 class AIUnavailable(APIException):
@@ -35,11 +35,7 @@ def answer_consultation(*, user, question: str, action: str, context: dict, conv
     if not question.strip() or len(question) > 8000:
         raise ValidationError("Pergunta vazia ou muito extensa.")
 
-    chunks = list(
-        DocumentChunk.objects.select_related("document_version__document")
-        .filter(document_version__state="published")
-        .filter(Q(text__icontains=question[:120]) | Q(source_locator__icontains=question[:120]))[:6]
-    )
+    chunks = hybrid_retrieve(question=question, context=context, limit=6)
     evidence = [
         {
             "text": chunk.text[:2400],
