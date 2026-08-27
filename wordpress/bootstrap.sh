@@ -4,6 +4,16 @@ set -eu
 export WP_CLI_CACHE_DIR="${WP_CLI_CACHE_DIR:-/tmp/wp-cli-cache}"
 mkdir -p "$WP_CLI_CACHE_DIR"
 
+for required in \
+  /assets/Simbolo.png \
+  /assets/Mini-Icone.png \
+  /assets/kairos-site.css \
+  /config/elementor-site-settings.json \
+  /mu-plugins/kairos-brand.php; do
+  [ -r "$required" ] || { echo "Required WordPress seed asset is unreadable: $required" >&2; exit 1; }
+done
+
+
 cd /var/www/html
 
 until [ -f wp-includes/version.php ]; do sleep 2; done
@@ -93,7 +103,7 @@ fi
 
 mkdir -p wp-content/uploads/kairos/fonts wp-content/mu-plugins
 cp /assets/fonts/montserrat-*.woff2 wp-content/uploads/kairos/fonts/
-cp /bootstrap/kairos-site.css wp-content/uploads/kairos/kairos-site.css
+cp /assets/kairos-site.css wp-content/uploads/kairos/kairos-site.css
 cp /mu-plugins/kairos-brand.php wp-content/mu-plugins/kairos-brand.php
 
 if ! wp menu list --fields=slug --format=csv | grep -q '^kairos-primary$'; then
