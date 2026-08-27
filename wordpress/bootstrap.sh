@@ -135,7 +135,7 @@ if ! wp menu item list kairos-primary --fields=title --format=csv | grep -q '^En
 fi
 
 # Location assignment must also run after an interrupted or partial first seed.
-location="$(wp menu location list --fields=location --format=csv | tail -n +2 | head -n 1 || true)"
+location="$(wp menu location list --format=csv | tail -n +2 | head -n 1 | cut -d, -f1 || true)"
 if [ -n "$location" ]; then wp menu location assign kairos-primary "$location" || true; fi
 
 wp cache flush >/dev/null || true
