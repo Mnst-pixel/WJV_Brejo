@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Kairós backup timer
+
+[Timer]
+OnCalendar=*-*-* 03:17:00 America/Sao_Paulo
+Persistent=true
+RandomizedDelaySec=20m
+Unit=kairos-backup.service
+
+[Install]
+WantedBy=timers.target

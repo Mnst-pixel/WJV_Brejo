@@ -1,0 +1,17 @@
+[Unit]
+Description=Kairós encrypted backup and isolated restore verification
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/kairos/current/scripts/backup.sh
+ExecStartPost=/opt/kairos/current/scripts/verify-restore.sh --latest
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=2h
+
+[Install]
+WantedBy=multi-user.target
