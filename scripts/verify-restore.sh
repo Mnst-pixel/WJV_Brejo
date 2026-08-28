@@ -22,7 +22,7 @@ install -d -o root -g root -m 0700 "$restore_dir"
 cleanup() {
   cd -- "$compose_dir"
   docker compose --env-file "$secret_file" exec -T postgres sh -ec "dropdb -U \"\$POSTGRES_USER\" --if-exists '$pg_db'" >/dev/null 2>&1 || true
-  docker compose --env-file "$secret_file" exec -T mariadb sh -ec "mariadb --user=\"\$MARIADB_USER\" --password=\"\$MARIADB_PASSWORD\" -e 'DROP DATABASE IF EXISTS $my_db'" >/dev/null 2>&1 || true
+  docker compose --env-file "$secret_file" exec -T mariadb sh -ec "mariadb --user=root --password=\"\$MARIADB_ROOT_PASSWORD\" -e 'DROP DATABASE IF EXISTS $my_db'" >/dev/null 2>&1 || true
   docker run --rm --network kairos-data --env-file "$secret_file" --entrypoint /bin/sh minio/mc:RELEASE.2025-08-13T08-35-41Z -ec \
     "mc alias set kairos http://minio:9000 \"\$MINIO_ROOT_USER\" \"\$MINIO_ROOT_PASSWORD\" >/dev/null; mc rm --recursive --force kairos/$bucket >/dev/null 2>&1 || true; mc rb --force kairos/$bucket >/dev/null 2>&1 || true" || true
   [[ "$restore_dir" == "$backup_root"/.restore-* ]] && rm -rf -- "$restore_dir"
@@ -43,11 +43,11 @@ docker compose --env-file "$secret_file" exec -T postgres sh -ec "psql -U \"\$PO
   | grep -Eq '^[1-9][0-9]*$'
 
 docker compose --env-file "$secret_file" exec -T mariadb sh -ec \
-  "mariadb --user=\"\$MARIADB_USER\" --password=\"\$MARIADB_PASSWORD\" -e 'CREATE DATABASE $my_db'"
+  "mariadb --user=root --password=\"\$MARIADB_ROOT_PASSWORD\" -e 'CREATE DATABASE $my_db'"
 docker compose --env-file "$secret_file" exec -T mariadb sh -ec \
-  "mariadb --user=\"\$MARIADB_USER\" --password=\"\$MARIADB_PASSWORD\" '$my_db'" < "$restore_dir/mariadb.sql"
+  "mariadb --user=root --password=\"\$MARIADB_ROOT_PASSWORD\" '$my_db'" < "$restore_dir/mariadb.sql"
 docker compose --env-file "$secret_file" exec -T mariadb sh -ec \
-  "mariadb --user=\"\$MARIADB_USER\" --password=\"\$MARIADB_PASSWORD\" -N '$my_db' -e 'SELECT COUNT(*) FROM wp_options'" \
+  "mariadb --user=root --password=\"\$MARIADB_ROOT_PASSWORD\" -N '$my_db' -e 'SELECT COUNT(*) FROM wp_options'" \
   | grep -Eq '^[1-9][0-9]*$'
 
 docker run --rm --network kairos-data --env-file "$secret_file" \

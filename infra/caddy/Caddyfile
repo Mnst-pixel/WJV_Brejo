@@ -21,6 +21,12 @@
 		respond "ok" 200
 	}
 
+	@legacy_access {
+		not header X-Forwarded-Proto https
+		not path /healthz
+	}
+	redir @legacy_access https://kairos.2-24-215-183.sslip.io{uri} permanent
+
 	handle /api/* {
 		reverse_proxy api:8000
 	}

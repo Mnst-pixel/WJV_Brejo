@@ -25,6 +25,24 @@ def test_wrong_password_is_generic_and_audited(client):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("identifier", ["Vinícius", "vinicius@example.test"])
+def test_login_accepts_display_spelling_or_email(identifier, client):
+    User.objects.create_user(
+        username="vinicius",
+        email="vinicius@example.test",
+        password="Strong-passphrase-123",
+        display_name="Vinícius",
+    )
+    response = client.post(
+        "/api/auth/login",
+        {"username": identifier, "password": "Strong-passphrase-123"},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert response.json()["username"] == "vinicius"
+
+
+@pytest.mark.django_db
 def test_audit_log_is_append_only(student):
     entry = AuditLog.objects.create(actor=student, action="test")
     entry.action = "tampered"

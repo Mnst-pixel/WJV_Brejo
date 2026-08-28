@@ -1,4 +1,5 @@
 import hashlib
+import unicodedata
 import uuid
 from datetime import timedelta
 from pathlib import Path
@@ -120,6 +121,22 @@ def _login_event(request, username, outcome, user=None):
     )
 
 
+def _resolve_login_identifier(value: str):
+    raw = value.strip()
+    canonical = raw.casefold()
+    candidate = User.objects.filter(username__iexact=canonical).first()
+    if not candidate and "@" in canonical:
+        candidate = User.objects.filter(email__iexact=canonical).first()
+    if not candidate:
+        folded = "".join(
+            character
+            for character in unicodedata.normalize("NFKD", canonical)
+            if not unicodedata.combining(character)
+        )
+        candidate = User.objects.filter(username__iexact=folded).first()
+    return candidate, candidate.username if candidate else canonical
+
+
 def _establish_session(request, user, *, mfa_verified=False):
     login(request, user)
     request.session["user_session_version"] = user.session_version
@@ -141,7 +158,7 @@ class SessionLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = str(request.data.get("username", "")).strip().lower()
+        candidate, username = _resolve_login_identifier(str(request.data.get("username", "")))
         password = str(request.data.get("password", ""))
         code = str(request.data.get("totp", ""))
         throttle_key = f"login:{hashlib.sha256(f'{_client_ip(request)}:{username}'.encode()).hexdigest()}"
@@ -150,7 +167,6 @@ class SessionLoginView(APIView):
             _login_event(request, username, LoginEvent.Outcome.LOCKED)
             return Response({"detail": "Muitas tentativas. Tente novamente mais tarde."}, status=429)
 
-        candidate = User.objects.filter(username=username).first()
         if candidate and candidate.locked_until and candidate.locked_until > timezone.now():
             cache.set(throttle_key, failures + 1, 3600)
             _login_event(request, username, LoginEvent.Outcome.LOCKED, candidate)
