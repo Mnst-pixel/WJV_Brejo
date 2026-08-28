@@ -11,3 +11,7 @@ The small mandatory MU plugin only enqueues the versioned brand stylesheet and e
 Initial pages: Início, O Kairós, Estudar, Primeira Fase OAB, Segunda Fase OAB, Simulados, Casos Práticos, Biblioteca Jurídica, Consultor Kairós, Meu Desempenho, Como Funciona, Termos, Privacidade, and Contato.
 
 The primary menu sends authenticated destinations directly to `/app`. Public pages remain editable with WordPress blocks and can be opened in Elementor. Popup Builder is intentionally pending because no Elementor Pro license was supplied.
+
+The production editorial shell was visually reconciled with the accepted Kairós concept on desktop and a 390×844 mobile viewport: compact brand mark, full-width dark cave/moss hero, parchment and bronze accents, visible primary navigation, responsive menu toggle, and no horizontal overflow. The canonical WordPress URL is `https://kairos.2-24-215-183.sslip.io/`; the administrative surface is `/wp-admin/`.
+
+The learning application login accepts the owner-facing spelling `Vinícius`, the canonical internal username, or the assigned administrative email. Administrative access requires MFA enrollment after the password is accepted. Legacy HTTP/IP entry points redirect to the canonical HTTPS login.

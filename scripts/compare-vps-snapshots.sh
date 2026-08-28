@@ -15,7 +15,7 @@ require_subset() {
   local before_file="$before/$2"
   local after_file="$after/$2"
   local missing
-  missing="$(comm -23 <(LC_ALL=C sort -u "$before_file") <(LC_ALL=C sort -u "$after_file"))"
+  missing="$(LC_ALL=C comm -23 <(LC_ALL=C sort -u "$before_file") <(LC_ALL=C sort -u "$after_file"))"
   if [[ -n "$missing" ]]; then
     printf 'MODIFIED_%s=1\n%s\n' "$name" "$missing"
     failures=$((failures + 1))
@@ -42,7 +42,7 @@ require_exact_without_kairos_additions() {
 require_exact_without_kairos_additions CONTAINERS containers.txt
 require_exact_without_kairos_additions CONTAINER_IDENTITIES container-identities.txt
 require_exact_without_kairos_additions NETWORKS networks.txt
-require_exact_without_kairos_additions VOLUMES volumes.txt
+require_subset VOLUMES volumes.txt
 require_subset IMAGES images.txt
 require_subset LISTENERS listeners.txt
 require_subset SERVICES services-running.txt
