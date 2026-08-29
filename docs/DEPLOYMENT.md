@@ -9,7 +9,7 @@ Deployment is intentionally gated.
 5. Build Kairós-owned images under `COMPOSE_PROJECT_NAME=kairos`.
 6. Validate the rendered Compose model and resource names before starting anything.
 7. Start data services, run health checks and migrations, then start application, WordPress, MCP, AI, and edge tiers in dependency order.
-8. Bootstrap the two human administrator identities without printing their passwords.
+8. Provision every owner-approved human administrator in both the Kairós application and WordPress without printing or committing passwords. Application administrators must enroll their own MFA factor before administrative access.
 9. Run smoke, persistence, authorization, upload, RAG, MCP, AI, backup, and restore checks.
 10. Capture the post-deploy snapshot and run the no-touch comparator.
 11. Run one encrypted backup, run its isolated restore verification, and run `scripts/health-report.sh` manually.
