@@ -10,6 +10,15 @@ before="$(realpath -- "$1")"
 after="$(realpath -- "$2")"
 failures=0
 
+# Process substitutions do not propagate missing-input errors to comm/diff.
+# Reject incomplete snapshots before any comparison can report a false PASS.
+for file in containers.txt container-identities.txt networks.txt volumes.txt images.txt \
+  listeners.txt services-running.txt nginx-config-hashes.txt compose-config-hashes.txt \
+  cron-hashes.txt public-certificate-hashes.txt iptables.txt ip6tables.txt nft-ruleset.txt; do
+  [[ -f "$before/$file" && -r "$before/$file" && -f "$after/$file" && -r "$after/$file" ]] \
+    || { echo "missing snapshot file: $file" >&2; exit 1; }
+done
+
 require_subset() {
   local name="$1"
   local before_file="$before/$2"
@@ -27,16 +36,21 @@ require_subset() {
 require_exact_without_kairos_additions() {
   local name="$1"
   local file="$2"
-  local filtered_after
+  local filtered_before filtered_after
+  [[ -r "$before/$file" && -r "$after/$file" ]] || { echo "missing snapshot file: $file" >&2; exit 1; }
+  filtered_before="$(mktemp)"
   filtered_after="$(mktemp)"
-  grep -viE '(^|[|_/.-])kairos([|_/.-]|$)' "$after/$file" > "$filtered_after" || true
-  if ! diff -u "$before/$file" "$filtered_after"; then
+  # These three inventories identify the resource name in column two. Filter
+  # both snapshots, including an already deployed Kairós in the baseline.
+  awk -F '|' '$2 !~ /^\/?kairos([_-]|$)/' "$before/$file" > "$filtered_before"
+  awk -F '|' '$2 !~ /^\/?kairos([_-]|$)/' "$after/$file" > "$filtered_after"
+  if ! diff -u "$filtered_before" "$filtered_after"; then
     printf 'MODIFIED_%s=1\n' "$name"
     failures=$((failures + 1))
   else
     printf 'MODIFIED_%s=0\n' "$name"
   fi
-  rm -f -- "$filtered_after"
+  rm -f -- "$filtered_before" "$filtered_after"
 }
 
 require_normalized_subset() {
