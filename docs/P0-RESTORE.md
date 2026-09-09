@@ -27,7 +27,7 @@ Substituir o nome pelo arquivo explicitamente aprovado. O script não escolhe `-
 - Restore de objetos em MinIO novo, acessível apenas em rede interna exclusiva; download de retorno e comparação exata de caminhos relativos, tamanhos e SHA-256. Zero objetos é permitido somente quando o componente arquivado também está vazio.
 - Containers limitados a 0,5 CPU, 640 MiB sem swap e 128 PIDs, sem Docker socket; bancos são parados sequencialmente. O armazenamento temporário continua sujeito à capacidade de disco do host, sem quota Docker dedicada.
 
-Credenciais dos serviços temporários são novas. SQL, logs internos, nomes de objetos e conteúdos privados não aparecem no relatório nem no Git. Resultados ficam em `/srv/kairos/backups/kairos-restore-<runid>.evidence`, protegidos; contêm IDs de imagens, recursos e contagens. Logs privados transitórios são descartados pela limpeza, inclusive na falha.
+Credenciais dos serviços temporários são novas. SQL, logs internos, nomes de objetos e conteúdos privados não aparecem no relatório nem no Git. Resultados ficam em `/srv/kairos/backups/kairos-restore-<runid>.evidence`, protegidos; contêm IDs de imagens, recursos e contagens. Na falha de comando, `private-error.log` permanece somente no VPS, root:root 0600, para diagnóstico. Pode conter dados pessoais e nunca deve ser publicado ou copiado ao Git. Os demais logs transitórios são descartados pela limpeza.
 
 ## Gates e interpretação
 

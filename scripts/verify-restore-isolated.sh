@@ -65,7 +65,14 @@ trap 'exit 143' TERM
 printf 'run=%s\narchive=%s\n' "$runid" "$(basename "$archive")" > "$evidence/result.txt"
 
 # Never print SQL/server logs: a failed restore can contain personal values.
-quiet() { "$@" > "$work/last-command.log" 2>&1 || die "command failed (private log discarded): $1"; }
+quiet() {
+  local status=0
+  "$@" > "$work/last-command.log" 2>&1 || status=$?
+  if (( status != 0 )); then
+    install -m 0600 "$work/last-command.log" "$evidence/private-error.log"
+    die "command failed: $1 exit=$status (protected diagnostic retained on VPS)"
+  fi
+}
 image_id() {
   local id
   id=$(docker image inspect -f '{{.Id}}' "$2") || die "local image unavailable: $1"
