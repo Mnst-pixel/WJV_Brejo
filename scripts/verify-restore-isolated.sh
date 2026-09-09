@@ -36,7 +36,7 @@ cleanup() {
   trap - EXIT INT TERM
   set +e
   for item in "${containers[@]}"; do
-    actual=$(docker inspect -f "{{index .Config.Labels \"$label\"}}" "$item" 2>/dev/null)
+    actual=$(docker container inspect -f "{{index .Config.Labels \"$label\"}}" "$item" 2>/dev/null)
     if [[ $actual == "$runid" ]]; then docker rm -f "$item" >/dev/null 2>&1 || failed=1; else failed=1; fi
   done
   for item in "${volumes[@]}"; do
@@ -169,7 +169,7 @@ new_volume() {
 }
 create_container() {
   local name="$prefix-$1"; shift
-  docker inspect "$name" >/dev/null 2>&1 && die 'container name collision'
+  docker container inspect "$name" >/dev/null 2>&1 && die 'container name collision'
   quiet docker create --name "$name" --pull never --label "$label=$runid" --label com.kairos.scope=restore \
     --restart no --cpus 0.5 --memory 640m --memory-swap 640m --pids-limit 128 \
     --security-opt no-new-privileges --log-driver none "$@"
@@ -223,7 +223,7 @@ new_volume minio
 create_container minio-init --network none --user 0:0 \
   --mount "type=volume,src=$prefix-minio,dst=/data" --entrypoint /bin/sh "$minio_image" -ec 'chown 1000:1000 /data'
 quiet timeout 30 docker start -a "$prefix-minio-init"
-[[ $(docker inspect -f '{{.State.ExitCode}}' "$prefix-minio-init") == 0 ]] || die 'temporary MinIO volume initialization failed'
+[[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-minio-init") == 0 ]] || die 'temporary MinIO volume initialization failed'
 create_container minio --network "$net" --network-alias restore-minio --env-file "$work/minio.env" \
   --mount "type=volume,src=$prefix-minio,dst=/data" "$minio_image" server /data --console-address :9001
 quiet docker start "$prefix-minio"
@@ -243,7 +243,7 @@ create_container mc --network "$net" --env-file "$work/minio.env" \
     mc mirror restore/documents /returned >/dev/null
   '
 quiet timeout 600 docker start -a "$prefix-mc"
-[[ $(docker inspect -f '{{.State.ExitCode}}' "$prefix-mc") == 0 ]] || die 'MinIO client restore failed'
+[[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-mc") == 0 ]] || die 'MinIO client restore failed'
 python3 "$work/archive-check.py" compare "$work/extracted/minio-documents" "$work/objects-returned" > "$evidence/minio-counts.txt" 2> "$work/object-errors"
 printf 'minio_restore_and_hashes=PASS\n' >> "$evidence/result.txt"
 printf '%s\n' \
