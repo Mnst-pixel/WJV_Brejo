@@ -197,7 +197,7 @@ printf 'POSTGRES_USER=kairos_restore\nPOSTGRES_DB=kairos_restore\nPOSTGRES_PASSW
 new_volume pg
 create_container pg --network none --env-file "$work/pg.env" --mount "type=volume,src=$prefix-pg,dst=/var/lib/postgresql/data" "$pg_image"
 quiet docker start "$prefix-pg"
-wait_ready "$prefix-pg" pg_isready -U kairos_restore -d kairos_restore
+wait_ready "$prefix-pg" pg_isready -h 127.0.0.1 -U kairos_restore -d kairos_restore
 quiet timeout 600 docker exec -i "$prefix-pg" pg_restore -U kairos_restore -d kairos_restore --no-owner --no-privileges --exit-on-error < "$work/extracted/postgres.dump"
 quiet docker exec "$prefix-pg" psql -U kairos_restore -d kairos_restore -v ON_ERROR_STOP=1 -Atc \
   "DO \$\$ BEGIN IF (SELECT count(*) FROM django_migrations)=0 OR (SELECT count(*) FROM core_user)=0 THEN RAISE EXCEPTION 'required database data missing'; END IF; IF EXISTS (SELECT 1 FROM pg_constraint WHERE NOT convalidated) OR EXISTS (SELECT 1 FROM pg_index WHERE NOT indisvalid) THEN RAISE EXCEPTION 'invalid database structures'; END IF; END \$\$;"
