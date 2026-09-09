@@ -146,10 +146,10 @@ def scenario(case):
                 )
             elif args[0] == "bash":
                 if args[1].endswith("vps-snapshot.sh"):
-                    if case == "after_snapshot_failure" and args[-1].endswith("-after"):
+                    if case == "after_snapshot_failure" and args[2].endswith("-after"):
                         code = 1
                     else:
-                        mapped(args[-1]).mkdir(parents=True, exist_ok=True)
+                        mapped(args[2]).mkdir(parents=True, exist_ok=True)
                 elif args[1].endswith("compare-vps-snapshots.sh"):
                     state["comparisons"] += 1
                     if (

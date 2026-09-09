@@ -140,7 +140,7 @@ def release():
             raise RuntimeError("Login accepted a write without CSRF")
 
     def compare(snapshot, filename):
-        execute(["bash", str(source / "scripts/vps-snapshot.sh"), snapshot])
+        execute(["bash", str(source / "scripts/vps-snapshot.sh"), snapshot, before])
         output = execute(["bash", str(source / "scripts/compare-vps-snapshots.sh"), before, snapshot])
         (run / filename).write_text(output + "\n")
 

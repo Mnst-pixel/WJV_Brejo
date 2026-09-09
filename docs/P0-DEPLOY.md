@@ -21,6 +21,8 @@ Um lock exclusivo impede duas execuções simultâneas deste procedimento. `appl
 
 Depois: saúde do container, endpoints públicos HTTPS live/ready e CSS administrativo, recusa de login sem CSRF, hashes dos quatro arquivos dentro da API e snapshot/comparador no-touch. Um release somente é aprovado com todos esses gates. `deploy-result.json` registra resultado e imagem observada. Logs de erro ficam em `deploy-private.log`, protegido, sem publicação automática.
 
+O snapshot posterior recebe o baseline anterior e calcula novamente os hashes de todos os arquivos Compose previamente registrados, inclusive overrides que deixaram de estar ativos. Arquivo removido ou hash alterado continua reprovando o gate. Isso distingue a troca autorizada do caminho ativo da alteração de um arquivo preexistente; nenhum hash antigo é reutilizado sem leitura atual.
+
 O script não atualiza o checkout geral nem muda o default do Compose histórico. **Toda recriação posterior da API deve repetir o override e o ID da imagem do plano ativo.** Rodar o Compose histórico sozinho pode reintroduzir a imagem anterior e seus bootstraps. O caminho do plano ativo deve constar no registro de operação; uma evolução posterior pode consolidar essa configuração após revisão.
 
 ## Rollback
@@ -37,7 +39,7 @@ docker compose --project-name kairos --env-file /opt/kairos/secrets/.env \
   up -d --no-deps --no-build api
 ```
 
-Não restaurar banco para reverter este lote sem migration: isso descartaria atividade posterior. O rollback conserva chaves MFA já ativadas, mas reabre vulnerabilidades corrigidas e exige acompanhamento. Não repetir `apply` cegamente após perda de conexão ou interrupção: inspecionar plano, resultado, imagens e snapshots. SIGKILL/queda do host podem impedir o rollback automático.
+Não restaurar banco para reverter este lote sem migration: isso descartaria atividade posterior. O rollback conserva chaves MFA já ativadas. Voltar à imagem anterior às correções MFA reabre essas vulnerabilidades; a imagem intermediária deste lote já contém as correções. Não repetir `apply` cegamente após perda de conexão ou interrupção: inspecionar plano, resultado, imagens e snapshots. SIGKILL/queda do host podem impedir o rollback automático.
 
 ## Testes do procedimento
 
