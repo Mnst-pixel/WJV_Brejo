@@ -161,7 +161,7 @@ mc_id=$(docker create --name "$prefix-mc" --pull never --restart no --network ka
   --env-file "$work/mc.env" --mount "type=bind,src=$payload/minio-documents,dst=/backup" \
   --security-opt no-new-privileges --cap-drop ALL --cpus 0.35 --memory 256m --memory-swap 256m --pids-limit 64 \
   --log-driver none --entrypoint /bin/sh "$mc_image" -ec \
-  'mc alias set kairos http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null; mc mirror kairos/documents /backup >/dev/null' \
+  'umask 077; mkdir -m 0700 /tmp/kairos-backup-mc; mc --config-dir /tmp/kairos-backup-mc alias set kairos http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null; mc --config-dir /tmp/kairos-backup-mc mirror kairos/documents /backup >/dev/null' \
   2> "$work/private-command.log") || command_failed "$?" minio_create
 [[ $mc_id =~ ^[0-9a-f]{64}$ ]] || die 'invalid backup container ID'
 phase=minio_mirror
