@@ -1,0 +1,6 @@
+# Apply only with the existing production Compose and --no-deps --no-build api.
+services:
+  api:
+    image: ${KAIROS_P0_API_IMAGE:?An inspected immutable API image ID is required}
+    entrypoint: ["gunicorn"]
+    command: ["kairos.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]

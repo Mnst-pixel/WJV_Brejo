@@ -38,6 +38,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 api_image=$(docker container inspect -f '{{.Image}}' kairos-api-1)
+api_image=${KAIROS_TEST_API_IMAGE:-$api_image}
 pg_image=$(docker container inspect -f '{{.Image}}' kairos-postgres-1)
 redis_image=$(docker container inspect -f '{{.Image}}' kairos-redis-1)
 for id in "$api_image" "$pg_image" "$redis_image"; do [[ $id =~ ^sha256:[0-9a-f]{64}$ ]]; done
@@ -51,8 +52,11 @@ KAIROS_TEST_POSTGRES_PASSWORD=$pw
 KAIROS_TEST_REDIS_PASSWORD=$pw
 DJANGO_SECRET_KEY=$pw
 KAIROS_TEST_RUN_ID=$runid
-KAIROS_ALLOWED_HOSTS=testserver,localhost
+KAIROS_ALLOWED_HOSTS=testserver,localhost,127.0.0.1
 EOF
+if [[ -n ${KAIROS_TEST_API_IMAGE:-} ]]; then
+  printf 'KAIROS_TEST_ARTIFACT_MODE=1\n' >> "$work/test.env"
+fi
 new_net="$prefix-net"
 docker network inspect "$new_net" >/dev/null 2>&1 && exit 1
 docker network create --internal --label "$label=$runid" "$new_net" >/dev/null
@@ -89,10 +93,28 @@ create api --user 10001:10001 --read-only --tmpfs /tmp:rw,nosuid,size=256m,uid=1
   --mount "type=bind,src=$wheels_dir,dst=/wheels,readonly" \
   --mount "type=bind,src=$work/results,dst=/results" --workdir /candidate --entrypoint /bin/sh "$api_image" -ec '
     python -m pip install --no-index --find-links /wheels --target /tmp/testlibs pytest==8.4.2 pytest-django==4.11.1
-    export PYTHONPATH=/tmp/testlibs:/candidate
-    python -m pytest --ds=kairos.integration_test_settings -q --tb=short -p no:cacheprovider --junitxml=/results/integration.xml
+    if test -n "${KAIROS_TEST_ARTIFACT_MODE:-}"; then
+      cp /candidate/kairos/integration_test_settings.py /tmp/integration_test_settings.py
+      export PYTHONPATH=/tmp/testlibs:/tmp:/app
+      cd /app
+      python -m pytest /candidate/tests --ds=integration_test_settings -o django_find_project=false -q --tb=short -p no:cacheprovider --junitxml=/results/integration.xml
+    else
+      export PYTHONPATH=/tmp/testlibs:/candidate
+      python -m pytest --ds=kairos.integration_test_settings -q --tb=short -p no:cacheprovider --junitxml=/results/integration.xml
+    fi
   '
 timeout 600 docker start -a "$prefix-api" > "$work/test.log" 2>&1
 test_exit=$(docker container inspect -f '{{.State.ExitCode}}' "$prefix-api")
 [[ $test_exit == 0 ]]
 tail -n 3 "$work/test.log"
+if [[ -n ${KAIROS_TEST_API_IMAGE:-} ]]; then
+  create smoke --user 10001:10001 --read-only --tmpfs /tmp:rw,nosuid,size=64m,uid=10001,gid=10001 "$api_image"
+  docker start "$prefix-smoke" >/dev/null
+  ready=0
+  for ((n=0;n<60;n++)); do
+    if docker exec "$prefix-smoke" python -c 'import http.client; c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("GET","/api/health/live"); assert c.getresponse().status==200; c.close(); c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("POST","/api/auth/login",body="{}",headers={"Content-Type":"application/json"}); assert c.getresponse().status==403' >/dev/null 2>&1; then ready=1; break; fi
+    sleep 1
+  done
+  [[ $ready == 1 ]]
+  printf 'artifact_code_hashes=PASS\ngunicorn_smoke=PASS\n' >> "$work/result.txt"
+fi

@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from django.core.exceptions import ImproperlyConfigured
 
-from .test_settings import *  # noqa: F403,F401
+from kairos.test_settings import *  # noqa: F403,F401
 
 
 def _test_setting(name, default=None):
@@ -74,4 +74,3 @@ CELERY_RESULT_BACKEND = "cache+memory://"
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 SMTP_URL = ""
 MFA_ENCRYPTION_KEY = ""  # Every concurrency test generates its own ephemeral key.
-

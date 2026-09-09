@@ -19,3 +19,13 @@ Três testes adicionais usam transações, threads, barreira de início e conex�
 O ensaio do backup de 2026-09-09 06:28:29 UTC já concluiu recuperação dos dados arquivados e cleanup, com os 14 gates no-touch aprovados. Uma segunda falha transitória anterior não teve diagnóstico preservado; não é considerada explicada pelo sucesso posterior. O verificador agora conserva diagnóstico privado em falhas e aguarda PostgreSQL por TCP para evitar prontidão prematura do servidor temporário de inicialização. Executar novamente o conjunto final após qualquer correção, conforme AGENTS.md.
 
 Ainda necessários antes da produção: backup novo e consistente, registro da configuração/imagem anterior, build da imagem candidata, smoke/E2E do login e operação administrativa, plano de troca e rollback sem bootstrap. Não declarar modernização concluída com a aprovação deste ensaio.
+
+## Gate da imagem candidata
+
+`scripts/build-api-p0.sh <source> <commit>` constrói `Dockerfile.p0` sem downloads, sobre o ID da imagem API atual, preservado em tag própria. A camada troca somente MFA, views, serializer e settings. O entrypoint passa a ser Gunicorn, sem migration/collectstatic/bootstrap. Os arquivos estáticos vêm da imagem anterior, pois este lote não os altera.
+
+Definir `KAIROS_TEST_API_IMAGE` com o ID SHA-256 da candidata ativa o modo artefato de `test-api-isolated.sh`. Nesse modo, os testes importam a aplicação de `/app` dentro da imagem, e os settings isolados ficam em `/tmp`. A descoberta automática de projeto do pytest-django fica desativada. Um teste confere o caminho real e SHA-256 dos quatro módulos carregados contra a exportação Git. A fonte montada fornece somente testes e configuração de teste; não substitui o código importado.
+
+Depois da suíte, um container separado inicia o entrypoint/CMD reais da candidata sem montar código ou settings. O smoke exige HTTP 200 em health/live e 403 no login sem CSRF. A suíte inclui também login/cadastro MFA completo por HTTP real com cookie jar. Esse teste HTTP não equivale a automação visual do frontend, que permanece sem alteração neste lote.
+
+`infra/compose/p0-api.override.yaml` substitui explicitamente imagem, entrypoint e command da API. É obrigatório combinar esse override com o Compose atual e limitar a operação a `--no-deps --no-build api`; o command histórico `["api"]` não pode ser passado diretamente ao Gunicorn. A configuração/revisão efetiva por serviço deve constar na entrega, pois o checkout geral e os serviços não alterados podem permanecer na revisão anterior.

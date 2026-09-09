@@ -1,0 +1,11 @@
+# Incremental security release: reuse the inspected production runtime, no pulls.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+ARG SOURCE_REVISION
+LABEL org.opencontainers.image.revision=${SOURCE_REVISION} \
+      com.kairos.release.scope="p0-auth"
+COPY --chown=10001:10001 core/mfa.py core/views.py core/serializers.py /app/core/
+COPY --chown=10001:10001 kairos/settings.py /app/kairos/settings.py
+USER 10001:10001
+ENTRYPOINT ["gunicorn"]
+CMD ["kairos.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]
