@@ -29,11 +29,11 @@ python manage.py check --settings=kairos.test_settings
 python manage.py makemigrations --check --dry-run --settings=kairos.test_settings
 ```
 
-Os testes usam chaves efêmeras e dados sintéticos. As regressões iniciais produziram 25 falhas e 2 sucessos no código anterior. Após correção e teste adicional de recuperação do orçamento MFA, a verificação A completa passou com 43 testes, Ruff e Django check limpos, sem migrations pendentes. Avisos locais: diretório `staticfiles` ausente, sem falha funcional da suíte.
+Os testes usam chaves efêmeras e dados sintéticos. As regressões iniciais produziram 25 falhas e 2 sucessos no código anterior. Na rodada final, a suíte local passou com 44 testes e quatro skips explícitos; Ruff e Django check limpos, sem migrations pendentes. Avisos locais: diretório `staticfiles` ausente, sem falha funcional da suíte. Na imagem candidata com PostgreSQL/Redis isolados, os 48 testes passaram sem skips e o smoke confirmou manifesto/CSS reais.
 
 Cobertura: pré-sessões simultâneas/antigas, expiração/revogação, segredo pendente, limite entre clientes/IPs, reinício do cadastro, OTP reutilizado, falha de cache, CSRF ausente/origem indevida/fluxo válido, ownership e imutabilidade de tentativas. Testes existentes também verificam aluno impedido de consultar auditoria e dados de outro aluno.
 
-A suíte usa SQLite/LocMem. Não comprova concorrência de bloqueios PostgreSQL/Redis reais nem E2E do navegador. Esses gates de homologação devem passar antes da implantação. A revisão independente B e o estado do deploy devem ser registrados na entrega, sem presumir aprovação a partir desta documentação.
+A suíte local usa SQLite/LocMem e não comprova concorrência de bloqueios PostgreSQL/Redis reais nem E2E do navegador. A homologação isolada e as revisões independentes A/B foram executadas conforme `P0-INTEGRATION.md`; resultados, limitações e implantação constam em `P0-ENTREGA-2026-09-09.md`. Os testes HTTP não substituem automação visual do frontend.
 
 ## Deploy e rollback
 
