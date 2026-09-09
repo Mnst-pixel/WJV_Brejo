@@ -17,15 +17,15 @@ O modo prepare cria `deploy-plan.json` protegido com commit, IDs de imagens, has
 
 ## Aplicação e comprovação
 
-Um lock exclusivo impede duas execuções simultâneas deste procedimento. `apply` exige igualdade com o plano preparado e gera snapshot anterior. Executa somente `docker compose ... up -d --no-deps --no-build api`, usando `p0-api.override.yaml`. O Gunicorn inicia diretamente, sem migration, collectstatic ou bootstraps. Há uma breve indisponibilidade possível durante a substituição desse único container.
+Um lock exclusivo impede duas execuções simultâneas deste procedimento. `apply` exige igualdade com o plano preparado e gera snapshot anterior. Executa somente `docker compose ... up -d --no-deps --no-build api`, usando `p0-api.override.yaml`. O override gera estáticos com collectstatic e inicia Gunicorn com exec, sem migrations ou bootstraps. Isso atende também imagens antigas usadas em rollback, cujos assets podem ter existido apenas na camada gravável do container removido. Há uma breve indisponibilidade possível durante a substituição desse único container.
 
-Depois: saúde do container, endpoints públicos HTTPS live/ready, recusa de login sem CSRF, hashes dos quatro arquivos dentro da API e snapshot/comparador no-touch. Um release somente é aprovado com todos esses gates. `deploy-result.json` registra resultado e imagem observada. Logs de erro ficam em `deploy-private.log`, protegido, sem publicação automática.
+Depois: saúde do container, endpoints públicos HTTPS live/ready e CSS administrativo, recusa de login sem CSRF, hashes dos quatro arquivos dentro da API e snapshot/comparador no-touch. Um release somente é aprovado com todos esses gates. `deploy-result.json` registra resultado e imagem observada. Logs de erro ficam em `deploy-private.log`, protegido, sem publicação automática.
 
 O script não atualiza o checkout geral nem muda o default do Compose histórico. **Toda recriação posterior da API deve repetir o override e o ID da imagem do plano ativo.** Rodar o Compose histórico sozinho pode reintroduzir a imagem anterior e seus bootstraps. O caminho do plano ativo deve constar no registro de operação; uma evolução posterior pode consolidar essa configuração após revisão.
 
 ## Rollback
 
-Falha no apply, saúde, smoke, hash, snapshot posterior ou no-touch provoca tentativa de rollback somente da API. Reaplica o ID anterior com Gunicorn direto, verifica readiness e executa novo snapshot/comparador. Nunca modifica recursos alheios para fazer o comparador passar. Falha do próprio rollback fica explícita no resultado; o operador deve inspecionar a imagem observada antes de qualquer retentativa.
+Falha no apply, saúde, smoke, hash, snapshot posterior ou no-touch provoca tentativa de rollback somente da API. Reaplica o ID anterior com coleta de estáticos e Gunicorn, verifica readiness/CSS e executa novo snapshot/comparador. Nunca modifica recursos alheios para fazer o comparador passar. Falha do próprio rollback fica explícita no resultado; o operador deve inspecionar a imagem observada antes de qualquer retentativa.
 
 Rollback manual do lote, com valores conferidos em `deploy-plan.json`:
 
@@ -41,4 +41,4 @@ Não restaurar banco para reverter este lote sem migration: isso descartaria ati
 
 ## Testes do procedimento
 
-`python3 scripts/tests/test_deploy_api_p0.py` executa 22 cenários sintéticos sem Docker/rede: preparação, gates de recusa, plano alterado, sucesso, lock e falhas de up/saúde/HTTP/hash/no-touch/snapshot/rollback. Os mocks não substituem a rodada real. Rodar também Ruff, compilação Python, revisão independente e os testes Linux do comparador. O primeiro apply real continua exigindo evidências próprias; aprovação de testes não equivale a implantação.
+`python3 scripts/tests/test_deploy_api_p0.py` executa 25 cenários sintéticos sem Docker/rede: preparação, gates de recusa, plano alterado, sucesso, lock e falhas de up/saúde/HTTP/CSS/hash/no-touch/snapshot/rollback. Os mocks não substituem a rodada real. Rodar também Ruff, compilação Python, revisão independente e os testes Linux do comparador. Cada apply real exige evidências próprias; aprovação de testes não equivale a implantação.

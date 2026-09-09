@@ -82,7 +82,7 @@ def scenario(case):
         )
         write(
             tested / "result.txt",
-            "test_exit=0\ncleanup_failed=0\nartifact_code_hashes=PASS\ngunicorn_smoke=PASS\n",
+            "test_exit=0\ncleanup_failed=0\nartifact_code_hashes=PASS\ngunicorn_smoke=PASS\nadmin_static_smoke=PASS\n",
         )
         write(tested / "images.txt", "api=" + NEW)
         xml = (
@@ -133,7 +133,10 @@ def scenario(case):
                     raise AssertionError(args)
             elif args[:2] == ["docker", "exec"]:
                 result = json.dumps(
-                    {} if case in {"hash_failure", "rollback_failure"} else hashes
+                    {}
+                    if case
+                    in {"hash_failure", "rollback_failure", "rollback_static_failure"}
+                    else hashes
                 )
             elif args[0] == "git":
                 result = (
@@ -179,6 +182,11 @@ def scenario(case):
             url = request if isinstance(request, str) else request.full_url
             if url.endswith("/api/auth/login"):
                 raise HTTPError(url, 403, "synthetic CSRF rejection", None, None)
+            if url.endswith("/static/admin/css/base.css") and (
+                (case == "static_failure" and state["image"] == NEW)
+                or (case == "rollback_static_failure" and state["image"] == OLD)
+            ):
+                raise HTTPError(url, 404, "synthetic missing static asset", None, None)
             if (
                 case == "smoke_failure"
                 and state["image"] == NEW
@@ -215,9 +223,15 @@ def scenario(case):
                 "scope_change",
                 "production_changed",
                 "dirty_git",
+                "static_gate_missing",
             }
             if case == "expired":
                 os.utime(archive, (time.time() - 3601,) * 2)
+            if case == "static_gate_missing":
+                target = tested / "result.txt"
+                write(
+                    target, target.read_text().replace("admin_static_smoke=PASS\n", "")
+                )
             if case == "bad_checksum":
                 write(archive.with_name(archive_name + ".sha256"), "bad")
             if case == "restore_failure":
@@ -274,11 +288,15 @@ def scenario(case):
                 assert (
                     failed and state["ups"] == [NEW, OLD] and not outcome["deployed"]
                 ), (case, state, outcome)
-                assert outcome["rollback_failed"] == (case == "rollback_failure"), (
+                assert outcome["rollback_failed"] == (
+                    case in {"rollback_failure", "rollback_static_failure"}
+                ), (
                     case,
                     outcome,
                 )
-                assert outcome["rolled_back"] == (case != "rollback_failure"), (
+                assert outcome["rolled_back"] == (
+                    case not in {"rollback_failure", "rollback_static_failure"}
+                ), (
                     case,
                     outcome,
                 )
@@ -318,6 +336,9 @@ def lock_scenario(blocked):
 
 if __name__ == "__main__":
     cases = [
+        "static_gate_missing",
+        "static_failure",
+        "rollback_static_failure",
         "prepare",
         "expired",
         "bad_checksum",

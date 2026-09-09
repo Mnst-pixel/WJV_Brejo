@@ -112,9 +112,9 @@ if [[ -n ${KAIROS_TEST_API_IMAGE:-} ]]; then
   docker start "$prefix-smoke" >/dev/null
   ready=0
   for ((n=0;n<60;n++)); do
-    if docker exec "$prefix-smoke" python -c 'import http.client; c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("GET","/api/health/live"); assert c.getresponse().status==200; c.close(); c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("POST","/api/auth/login",body="{}",headers={"Content-Type":"application/json"}); assert c.getresponse().status==403' >/dev/null 2>&1; then ready=1; break; fi
+    if docker exec "$prefix-smoke" python -c 'import http.client; from pathlib import Path; assert Path("/app/staticfiles/staticfiles.json").is_file(); c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("GET","/api/health/live"); assert c.getresponse().status==200; c.close(); c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("GET","/static/admin/css/base.css"); assert c.getresponse().status==200; c.close(); c=http.client.HTTPConnection("127.0.0.1",8000,timeout=3); c.request("POST","/api/auth/login",body="{}",headers={"Content-Type":"application/json"}); assert c.getresponse().status==403' >/dev/null 2>&1; then ready=1; break; fi
     sleep 1
   done
   [[ $ready == 1 ]]
-  printf 'artifact_code_hashes=PASS\ngunicorn_smoke=PASS\n' >> "$work/result.txt"
+  printf 'artifact_code_hashes=PASS\ngunicorn_smoke=PASS\nadmin_static_smoke=PASS\n' >> "$work/result.txt"
 fi

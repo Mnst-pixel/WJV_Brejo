@@ -39,7 +39,7 @@ A suíte usa SQLite/LocMem. Não comprova concorrência de bloqueios PostgreSQL/
 
 Antes do deploy: repetir Regra Zero, obter backup atual dos bancos/storage/configuração, registrar imagens por ID e commit implantado, executar recuperação isolada conforme `P0-RESTORE.md`, homologar a imagem candidata e registrar snapshots no-touch. Não iniciar o Compose produtivo como ambiente de desenvolvimento.
 
-O entrypoint histórico executa migrations e bootstraps a cada início. Para este lote sem migration, preparar uma implantação que inicie apenas Gunicorn sobre a configuração validada, preservando os arquivos estáticos. Não reiniciar com bootstrap administrativo implícito: ele pode reativar/promover contas.
+O entrypoint histórico executa migrations e bootstraps a cada início. Para este lote sem migration, gerar os estáticos e iniciar Gunicorn sobre a configuração validada. A imagem também gera os assets no build. Não reiniciar com bootstrap administrativo implícito: ele pode reativar/promover contas.
 
 Rollback de código: aplicar `git revert` dos commits deste lote em branch própria; não reescrever histórico. Rollback de serviço: reaplicar somente a imagem/configuração API anterior previamente registrada, sem bootstrap. Não restaurar banco para desfazer um lote sem migration: isso descartaria atividade posterior. As chaves ativadas continuam compatíveis; pré-sessões podem exigir novo login. O rollback reabre os achados corrigidos e deve ser registrado como incidente, com mitigação e novo prazo.
 

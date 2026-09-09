@@ -25,6 +25,9 @@ def test_candidate_imports_match_the_git_sources():
         relative = actual.relative_to("/app")
         expected = Path("/candidate") / relative
         assert hashlib.sha256(actual.read_bytes()).digest() == hashlib.sha256(expected.read_bytes()).digest()
+    static_root = Path("/app/staticfiles")
+    manifest = json.loads((static_root / "staticfiles.json").read_text())
+    assert (static_root / manifest["paths"]["admin/css/base.css"]).is_file()
 
 
 @pytest.mark.django_db(transaction=True)

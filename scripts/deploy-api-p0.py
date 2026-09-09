@@ -69,6 +69,7 @@ def release():
     result = values(tested / "result.txt")
     require(result.get("test_exit") == "0" and result.get("cleanup_failed") == "0", "Integration or cleanup failed")
     require(result.get("artifact_code_hashes") == "PASS" and result.get("gunicorn_smoke") == "PASS", "Artifact gates missing")
+    require(result.get("admin_static_smoke") == "PASS", "Admin static asset gate missing")
     require(values(tested / "images.txt")["api"] == candidate, "Integration tested a different image")
     cases = ET.parse(tested / "results/integration.xml").findall(".//testcase")
     require(len(cases) >= 48 and all(not list(case) for case in cases), "Full candidate suite did not pass without skips")
@@ -97,7 +98,7 @@ def release():
     require(original == proposed, "Compose changes extend beyond API image/entrypoint/command")
     expected_hashes = {name: digest(source / "apps/api" / name) for name in ("core/mfa.py", "core/views.py", "core/serializers.py", "kairos/settings.py")}
     plan = {
-        "scope": "api only; no migrations or bootstrap",
+        "scope": "api only; collect static assets; no migrations or bootstrap",
         "source_revision": build["source_revision"], "old_image": old_image, "candidate_image": candidate,
         "production_checkout": execute(["git", "-C", "/opt/kairos/current", "rev-parse", "HEAD"]),
         "compose_sha256": digest(compose_file), "override_sha256": digest(override),
@@ -128,7 +129,7 @@ def release():
 
     def smoke():
         base = "https://kairos.2-24-215-183.sslip.io"
-        for path in ("/api/health/live", "/api/health/ready"):
+        for path in ("/api/health/live", "/api/health/ready", "/static/admin/css/base.css"):
             with urlopen(base + path, timeout=10) as response:
                 require(response.status == 200, "Public health check failed")
         try:
@@ -157,8 +158,9 @@ def release():
         try:
             apply(old_image)
             # The old API lacks CSRF protection; rollback checks availability only.
-            with urlopen("https://kairos.2-24-215-183.sslip.io/api/health/ready", timeout=10) as response:
-                require(response.status == 200, "Rollback readiness failed")
+            for path in ("/api/health/ready", "/static/admin/css/base.css"):
+                with urlopen("https://kairos.2-24-215-183.sslip.io" + path, timeout=10) as response:
+                    require(response.status == 200, "Rollback readiness/static check failed")
             outcome["rolled_back"] = True
         except Exception:
             outcome["rollback_failed"] = True
