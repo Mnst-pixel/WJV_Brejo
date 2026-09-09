@@ -24,6 +24,9 @@ runid="$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 6)"
 prefix="kairos-backup-$runid"
 work=$(mktemp -d "$root/$prefix.XXXXXXXX")
 [[ $(realpath -e "$work") == "$root/$prefix."* ]] || die 'invalid staging directory'
+evidence="$root/$prefix.evidence"
+mkdir -m 0700 "$evidence"
+[[ $(realpath -e "$evidence") == "$evidence" ]] || die 'invalid evidence directory'
 payload="$work/payload"
 mkdir -m 0700 "$payload"
 archive="$root/kairos-predeploy-$runid.tar.gz.enc"
@@ -32,23 +35,40 @@ checksum_pending="$archive.sha256.pending"
 [[ ! -e $archive && ! -e $pending && ! -e $archive.sha256 && ! -e $checksum_pending ]] || die 'backup name collision'
 mc_id=''
 passphrase=''
+phase=preflight
+failed_command=''
+failed_command_exit=''
 cleanup() {
   local status=$? failed=0 owner
   trap - EXIT INT TERM
   set +e
+  if (( status != 0 )) && [[ -f $work/private-command.log ]]; then
+    install -m 0600 "$work/private-command.log" "$evidence/private-error.log" || failed=1
+  fi
   if [[ -n $mc_id ]]; then
     owner=$(docker container inspect -f '{{index .Config.Labels "com.kairos.backup.run"}}' "$mc_id" 2>/dev/null)
-    if [[ $owner == "$runid" ]]; then docker rm -f "$mc_id" >/dev/null 2>&1 || failed=1; else failed=1; fi
+    if [[ $owner == "$runid" ]]; then
+      # State.Error can contain private paths: project only these fields into a
+      # protected file; never print a raw inspect or container output.
+      docker container inspect -f '{"ExitCode":{{.State.ExitCode}},"OOMKilled":{{json .State.OOMKilled}},"Error":{{json .State.Error}}}' "$mc_id" \
+        > "$evidence/private-mc-state.json" 2> "$evidence/private-inspect-error.log" || failed=1
+      chmod 0600 "$evidence/private-mc-state.json" "$evidence/private-inspect-error.log" || failed=1
+      docker rm -f "$mc_id" > /dev/null 2> "$evidence/private-cleanup-error.log" || failed=1
+      chmod 0600 "$evidence/private-cleanup-error.log" || failed=1
+    else failed=1; fi
   fi
   if [[ -d $work && ! -L $work && $(realpath -e "$work") == "$root/$prefix."* ]]; then
     rm -rf --one-file-system -- "$work" || failed=1
   else failed=1; fi
   unset passphrase
+  printf 'run=%s\nphase=%s\nexit_status=%s\nfailed_command=%s\nfailed_command_exit=%s\ncleanup_failed=%s\n' \
+    "$runid" "$phase" "$status" "$failed_command" "$failed_command_exit" "$failed" > "$evidence/result.txt"
+  chmod 0600 "$evidence/result.txt" || failed=1
   if (( status == 0 && failed == 0 )); then
     printf 'KAIROS_PREDEPLOY_BACKUP=PASS scope=archive_created archive=%s\n' "$archive"
     printf 'RECOVERABILITY=NOT_YET_VERIFIED run_the_isolated_restore_for_this_exact_archive\n'
   else
-    printf 'KAIROS_PREDEPLOY_BACKUP=FAIL cleanup_failed=%s pending_if_present=%s\n' "$failed" "$pending" >&2
+    printf 'KAIROS_PREDEPLOY_BACKUP=FAIL cleanup_failed=%s pending_if_present=%s evidence=%s\n' "$failed" "$pending" "$evidence" >&2
     status=1
   fi
   exit "$status"
@@ -57,8 +77,18 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# Diagnostics can contain SQL/private filenames; never echo them to the caller.
-quiet() { "$@" > "$work/private-command.log" 2>&1 || die "command failed: $1 (private transient diagnostics discarded)"; }
+# Diagnostics can contain SQL/private filenames; preserve them privately before
+# cleanup. Record only the executable/step name, never command arguments.
+command_failed() {
+  failed_command_exit=$1
+  failed_command=$2
+  die "command failed: $failed_command exit=$failed_command_exit (protected diagnostic retained on VPS)"
+}
+quiet() {
+  local command_status=0
+  "$@" > "$work/private-command.log" 2>&1 || command_status=$?
+  if (( command_status != 0 )); then command_failed "$command_status" "$1"; fi
+}
 container_id() {
   local id info
   id=$(docker container inspect -f '{{.Id}}' "kairos-$1-1") || die "missing Kairos service: $1"
@@ -105,8 +135,9 @@ else:
         raise ValueError('backup passphrase is too short')
     print(value, end='')
 PY
-passphrase=$(python3 "$work/env-value.py" "$secret" BACKUP_ENCRYPTION_PASSPHRASE 2> "$work/private-command.log") || die 'cannot read backup passphrase'
-python3 "$work/env-value.py" "$secret" mc > "$work/mc.env" 2> "$work/private-command.log" || die 'cannot prepare minimal MinIO credentials'
+phase=credentials
+passphrase=$(python3 "$work/env-value.py" "$secret" BACKUP_ENCRYPTION_PASSPHRASE 2> "$work/private-command.log") || command_failed "$?" credential_parser
+python3 "$work/env-value.py" "$secret" mc > "$work/mc.env" 2> "$work/private-command.log" || command_failed "$?" minio_credential_parser
 
 git -C "$code" rev-parse HEAD > "$payload/git-revision.txt"
 git -C "$code" status --porcelain > "$payload/git-status.txt"
@@ -114,13 +145,16 @@ git -C "$code" status --porcelain > "$payload/git-status.txt"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$payload/capture-started-at.txt"
 printf 'mc_image=%s\npostgres_container=%s\nmariadb_container=%s\nminio_container=%s\n' "$mc_image" "$pg_id" "$my_id" "$minio_id" > "$payload/backup-identities.txt"
 
+phase=postgres_dump
 timeout 900 docker exec "$pg_id" sh -ec 'exec pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' \
-  > "$payload/postgres.dump" 2> "$work/private-command.log" || die 'PostgreSQL dump failed'
+  > "$payload/postgres.dump" 2> "$work/private-command.log" || command_failed "$?" postgres_dump
+phase=mariadb_dump
 timeout 900 docker exec "$my_id" sh -ec 'exec mariadb-dump --single-transaction --quick --routines --events --triggers --user="$MARIADB_USER" --password="$MARIADB_PASSWORD" "$MARIADB_DATABASE"' \
-  > "$payload/mariadb.sql" 2> "$work/private-command.log" || die 'MariaDB dump failed'
+  > "$payload/mariadb.sql" 2> "$work/private-command.log" || command_failed "$?" mariadb_dump
 [[ -s $payload/postgres.dump && -s $payload/mariadb.sql ]] || die 'database dump missing or empty'
 
 mkdir -m 0700 "$payload/minio-documents"
+phase=minio_create
 docker container inspect "$prefix-mc" >/dev/null 2>&1 && die 'backup container name collision'
 mc_id=$(docker create --name "$prefix-mc" --pull never --restart no --network kairos-data \
   --label "com.kairos.backup.run=$runid" --label com.kairos.scope=backup \
@@ -128,19 +162,23 @@ mc_id=$(docker create --name "$prefix-mc" --pull never --restart no --network ka
   --security-opt no-new-privileges --cap-drop ALL --cpus 0.35 --memory 256m --memory-swap 256m --pids-limit 64 \
   --log-driver none --entrypoint /bin/sh "$mc_image" -ec \
   'mc alias set kairos http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null; mc mirror kairos/documents /backup >/dev/null' \
-  2> "$work/private-command.log") || die 'cannot create backup reader container'
+  2> "$work/private-command.log") || command_failed "$?" minio_create
 [[ $mc_id =~ ^[0-9a-f]{64}$ ]] || die 'invalid backup container ID'
+phase=minio_mirror
 quiet timeout 900 docker start -a "$mc_id"
-[[ $(docker container inspect -f '{{.State.ExitCode}}' "$mc_id") == 0 ]] || die 'MinIO mirror failed'
+mc_exit=$(docker container inspect -f '{{.State.ExitCode}}' "$mc_id")
+[[ $mc_exit == 0 ]] || command_failed "$mc_exit" minio_mirror
 
 # Files can change during capture. GNU tar exit 1 is treated as failure, not PASS.
 for component in wordpress hermes; do
+  phase="${component}_archive"
   [[ -d /srv/kairos/$component && ! -L /srv/kairos/$component && $(realpath -e "/srv/kairos/$component") == "/srv/kairos/$component" ]] || die 'unexpected storage path'
   quiet tar -C "/srv/kairos/$component" --one-file-system -cf "$payload/$component.tar" .
 done
 install -m 0600 "$secret" "$payload/secrets.env"
 
 mkdir -m 0700 "$payload/configuration"
+phase=configuration
 copy_config() {
   local source=$1 destination=$2 resolved
   [[ -f $source ]] || die 'required Kairos configuration is missing'
@@ -159,6 +197,7 @@ for unit in kairos-backup.service kairos-backup.timer kairos-health.service kair
   copy_config "/etc/systemd/system/$unit" "$unit"
 done
 
+phase=metadata
 python3 - "$payload" <<'PY'
 import json, pathlib, subprocess, sys
 
@@ -188,11 +227,13 @@ printf '%s\n' 'CONSISTENCY=per_database_snapshot_and_live_file_capture' \
 (cd "$payload" && sha256sum --check --status MANIFEST.sha256)
 
 # An interrupted encrypted file retains .pending and is never reported accepted.
+phase=encryption
 tar -C "$payload" -czf - . 2> "$work/private-command.log" \
   | KAIROS_BACKUP_PASSPHRASE="$passphrase" openssl enc -aes-256-cbc -salt -pbkdf2 -iter 300000 \
       -pass env:KAIROS_BACKUP_PASSPHRASE -out "$pending" 2>> "$work/private-command.log"
 [[ -s $pending ]] || die 'encrypted archive missing or empty'
 hash=$(sha256sum "$pending" | cut -d ' ' -f 1)
+phase=checksum_and_publish
 printf '%s  %s\n' "$hash" "$pending" > "$work/pending.sha256"
 sha256sum --check --status "$work/pending.sha256"
 printf '%s  %s\n' "$hash" "$archive" > "$checksum_pending"
@@ -203,4 +244,5 @@ mv -T --no-clobber -- "$pending" "$archive"
 [[ -s $archive && -s $archive.sha256 ]] || die 'final archive pair missing'
 sha256sum --check --status "$archive.sha256"
 [[ $(stat -c '%u:%a' "$archive") == 0:600 && $(stat -c '%u:%a' "$archive.sha256") == 0:600 ]] || die 'unexpected archive ownership or mode'
+phase=complete
 # Cleanup emits PASS only after removing the owned temporary reader and plaintext.
