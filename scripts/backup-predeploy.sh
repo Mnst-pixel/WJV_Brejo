@@ -197,6 +197,27 @@ for unit in kairos-backup.service kairos-backup.timer kairos-health.service kair
   copy_config "/etc/systemd/system/$unit" "$unit"
 done
 
+copy_api_compose_configs() {
+  local api_id config_files path resolved baseline extra=0
+  local -a paths
+  api_id=$(container_id api)
+  config_files=$(docker container inspect -f '{{index .Config.Labels "com.docker.compose.project.config_files"}}' "$api_id")
+  [[ -n $config_files && $config_files != '<no value>' && $config_files != ,* && $config_files != *, && $config_files != *,,* ]] || die 'API Compose configuration list missing or malformed'
+  [[ $config_files != *[[:cntrl:]]* ]] || die 'API Compose configuration list contains control characters'
+  baseline=$(realpath -e -- "$code/infra/compose/compose.yaml")
+  IFS=',' read -r -a paths <<< "$config_files"
+  printf '%s\n' "$config_files" > "$payload/configuration/api-compose-config-files.txt"
+  for path in "${paths[@]}"; do
+    [[ $path == /opt/kairos/* ]] || die 'API Compose configuration path is outside Kairos'
+    resolved=$(realpath -e -- "$path")
+    [[ $resolved == /opt/kairos/* ]] || die 'API Compose configuration resolves outside Kairos'
+    [[ $resolved == "$baseline" ]] && continue
+    extra=$((extra + 1))
+    copy_config "$path" "api-compose-extra-$extra.yaml"
+  done
+}
+copy_api_compose_configs
+
 phase=metadata
 python3 - "$payload" <<'PY'
 import json, pathlib, subprocess, sys
@@ -217,7 +238,8 @@ for identifier in sorted({row['image_id'] for row in containers}):
     # Explicit projections exclude environment, arguments and credentials.
     tags = json.loads(output(['docker', 'image', 'inspect', '-f', '{{json .RepoTags}}', identifier]))
     digests = json.loads(output(['docker', 'image', 'inspect', '-f', '{{json .RepoDigests}}', identifier]))
-    images.append({'id': identifier, 'tags': tags, 'digests': digests})
+    revision = json.loads(output(['docker', 'image', 'inspect', '-f', '{{json (index .Config.Labels "org.opencontainers.image.revision")}}', identifier]))
+    images.append({'id': identifier, 'tags': tags, 'digests': digests, 'revision': revision})
 (dest / 'docker-metadata.json').write_text(json.dumps({'containers': containers, 'images': images}, indent=2) + '\n')
 PY
 date -u +%Y-%m-%dT%H:%M:%SZ > "$payload/capture-finished-at.txt"
