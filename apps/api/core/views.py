@@ -4,7 +4,6 @@ import uuid
 from datetime import timedelta
 from pathlib import Path
 
-import pyotp
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
@@ -12,12 +11,14 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.db import connection
+from django.db import connection, transaction
 from django.middleware.csrf import get_token
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
+from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -27,7 +28,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .audit import record_audit
-from .mfa import decrypt_secret, encrypt_secret, provisioning_uri, verify_totp
+from .mfa import begin_enrollment, clear_enrollment, decrypt_secret, enrollment_user, provisioning_uri, verify_totp
 from .models import (
     Attempt,
     AuditLog,
@@ -154,9 +155,11 @@ def _establish_session(request, user, *, mfa_verified=False):
     )
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class SessionLoginView(APIView):
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request):
         candidate, username = _resolve_login_identifier(str(request.data.get("username", "")))
         password = str(request.data.get("password", ""))
@@ -184,9 +187,13 @@ class SessionLoginView(APIView):
             _login_event(request, username, LoginEvent.Outcome.FAILED, candidate)
             return Response({"detail": "Credenciais inválidas ou acesso temporariamente bloqueado."}, status=401)
 
+        password_proof = user.get_session_auth_hash()
+        user = User.objects.select_for_update().filter(pk=user.pk, is_active=True).first()
+        if user is None or not constant_time_compare(password_proof, user.get_session_auth_hash()):
+            return Response({"detail": "Credenciais inválidas ou acesso temporariamente bloqueado."}, status=401)
+
         if user.is_staff and not user.mfa_enabled:
-            request.session["pre_mfa_user_id"] = str(user.id)
-            request.session["pre_mfa_password_at"] = timezone.now().isoformat()
+            begin_enrollment(request, user)
             return Response({"detail": "Configuração MFA obrigatória.", "mfa_setup_required": True}, status=428)
         if user.is_staff and not verify_totp(user, code):
             _login_event(request, username, LoginEvent.Outcome.MFA_FAILED, user)
@@ -202,38 +209,31 @@ class SessionLoginView(APIView):
         return Response(UserSerializer(user).data)
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class MFASetupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        user_id = request.session.get("pre_mfa_user_id")
-        if not user_id:
-            raise PermissionDenied("Autenticação de senha necessária.")
-        user = User.objects.get(pk=user_id, is_staff=True, is_active=True)
-        if user.mfa_secret_encrypted:
-            secret = decrypt_secret(user.mfa_secret_encrypted)
-        else:
-            secret = pyotp.random_base32()
-            user.mfa_secret_encrypted = encrypt_secret(secret)
-            user.save(update_fields=["mfa_secret_encrypted", "updated_at"])
+        user, pending = enrollment_user(request)
+        secret = decrypt_secret(pending["secret"])
         return Response({"secret": secret, "provisioning_uri": provisioning_uri(user, secret)})
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class MFAVerifyView(APIView):
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request):
-        user_id = request.session.get("pre_mfa_user_id")
-        if not user_id:
-            raise PermissionDenied("Autenticação de senha necessária.")
-        user = User.objects.get(pk=user_id, is_staff=True, is_active=True)
-        if not verify_totp(user, str(request.data.get("totp", ""))):
+        user, pending = enrollment_user(request, lock=True)
+        if not verify_totp(user, str(request.data.get("totp", "")), encrypted_secret=pending["secret"]):
             _login_event(request, user.username, LoginEvent.Outcome.MFA_FAILED, user)
             return Response({"detail": "Código MFA inválido."}, status=400)
         user.mfa_enabled = True
-        user.save(update_fields=["mfa_enabled", "updated_at"])
-        request.session.pop("pre_mfa_user_id", None)
-        request.session.pop("pre_mfa_password_at", None)
+        user.mfa_secret_encrypted = pending["secret"]
+        user.session_version += 1
+        user.save(update_fields=["mfa_enabled", "mfa_secret_encrypted", "session_version", "updated_at"])
+        clear_enrollment(request)
         _establish_session(request, user, mfa_verified=True)
         record_audit("auth.mfa.enabled", actor=user, request=request, target=user)
         return Response(UserSerializer(user).data)
