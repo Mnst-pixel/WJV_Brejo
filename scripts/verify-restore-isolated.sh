@@ -84,6 +84,14 @@ pg_image=$(image_id postgres "${KAIROS_RESTORE_PG_IMAGE:-pgvector/pgvector:0.8.6
 my_image=$(image_id mariadb "${KAIROS_RESTORE_MY_IMAGE:-mariadb:12.3.3}")
 minio_image=$(image_id minio "${KAIROS_RESTORE_MINIO_IMAGE:-kairos-minio}")
 mc_image=$(image_id mc "${KAIROS_RESTORE_MC_IMAGE:-minio/mc:RELEASE.2025-08-13T08-35-41Z}")
+probe_image=''
+if [[ -n ${KAIROS_RESTORE_API_IMAGE:-} || -n ${KAIROS_RESTORE_API_REVISION:-} ]]; then
+  [[ ${KAIROS_RESTORE_API_IMAGE:-} =~ ^sha256:[0-9a-f]{64}$ && ${KAIROS_RESTORE_API_REVISION:-} =~ ^[0-9a-f]{40}$ ]] || die 'exact migration candidate image and revision required'
+  probe_image=$(image_id migration-api "$KAIROS_RESTORE_API_IMAGE")
+  [[ $(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$probe_image") == "$KAIROS_RESTORE_API_REVISION" ]] || die 'migration candidate revision mismatch'
+  probe_source=$(realpath -e "$(dirname "${BASH_SOURCE[0]}")/restore-migration-probe.py")
+  [[ $probe_source == /opt/kairos/runtime/p0/*/source/scripts/restore-migration-probe.py || $probe_source == /opt/kairos/current/scripts/restore-migration-probe.py ]] || die 'unsupported migration probe source'
+fi
 
 cat > "$work/archive-check.py" <<'PY'
 import hashlib, os, pathlib, re, sys, tarfile
@@ -203,6 +211,20 @@ quiet docker exec "$prefix-pg" psql -U kairos_restore -d kairos_restore -v ON_ER
   "DO \$\$ BEGIN IF (SELECT count(*) FROM django_migrations)=0 OR (SELECT count(*) FROM core_user)=0 THEN RAISE EXCEPTION 'required database data missing'; END IF; IF EXISTS (SELECT 1 FROM pg_constraint WHERE NOT convalidated) OR EXISTS (SELECT 1 FROM pg_index WHERE NOT indisvalid) THEN RAISE EXCEPTION 'invalid database structures'; END IF; END \$\$;"
 docker exec "$prefix-pg" psql -U kairos_restore -d kairos_restore -v ON_ERROR_STOP=1 -Atc \
   "SELECT 'tables='||count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'; SELECT 'users='||count(*) FROM core_user; SELECT 'migrations='||count(*) FROM django_migrations;" > "$evidence/postgres-counts.txt" 2> "$work/pg-errors"
+if [[ -n $probe_image ]]; then
+  # Share only the network-none namespace created above. Loopback reaches this
+  # disposable PostgreSQL; there is no production network, broker or storage.
+  cp -- "$work/pg.env" "$work/probe.env"
+  printf 'POSTGRES_HOST=127.0.0.1\nDJANGO_SECRET_KEY=%s\nKAIROS_RESTORE_RUN_ID=%s\nPYTHONPATH=/app\n' "$pw" "$runid" >> "$work/probe.env"
+  create_container migration-probe --network "container:$prefix-pg" --user 10001:10001 --cap-drop ALL --read-only \
+    --tmpfs /tmp:rw,nosuid,size=64m,uid=10001,gid=10001 --env-file "$work/probe.env" \
+    --mount "type=bind,src=$probe_source,dst=/probe.py,readonly" --entrypoint python "$probe_image" /probe.py
+  quiet timeout 300 docker start -a "$prefix-migration-probe"
+  [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-migration-probe") == 0 ]] || die 'migration probe failed'
+  install -m 0600 "$work/last-command.log" "$evidence/migration-probe.json"
+  quiet python3 -c 'import json,sys; assert json.load(open(sys.argv[1]))["status"] == "PASS"' "$evidence/migration-probe.json"
+  printf 'candidate_forward_migrations=PASS\ncandidate_revision=%s\n' "$KAIROS_RESTORE_API_REVISION" >> "$evidence/result.txt"
+fi
 quiet docker stop -t 30 "$prefix-pg"
 printf 'postgres_restore=PASS\n' >> "$evidence/result.txt"
 
