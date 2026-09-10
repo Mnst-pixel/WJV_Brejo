@@ -280,7 +280,7 @@ def test_expired_claim_cleans_recorded_orphan_before_retry(student):
 
 
 def parser_module():
-    root = Path(os.getenv("KAIROS_TEST_REPOSITORY", Path(__file__).resolve().parents[3]))
+    root = Path(os.getenv("KAIROS_TEST_REPOSITORY") or Path(__file__).resolve().parents[3])
     path = root / "services" / "parser" / "child.py"
     spec = importlib.util.spec_from_file_location("parser_child_fixture", path)
     module = importlib.util.module_from_spec(spec)
@@ -338,6 +338,7 @@ def test_api_owner_boundary_and_private_metadata(student, other_student, client_
     assert "processed/private.txt" not in str(data)
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_is_same_origin_private_and_rechecks_release(student, other_student, client_for):
     asset = upload_for(student, data=b"private study bytes")
     uploads.process_upload(str(asset.pk))

@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Exists, OuterRef
+from django.db.models.fields.json import KeyTextTransform
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -88,10 +89,12 @@ def transition_document_version(*, version_id, actor, next_state: str, justifica
 
 def published_document_versions():
     """Shared read gate: flags cannot replace a matching human approval receipt."""
-    approval = PublicationApproval.objects.filter(
+    approval = PublicationApproval.objects.annotate(
+        receipt_source_hash=KeyTextTransform("source_hash", "evidence"),
+    ).filter(
         content_type=ContentType.objects.get_for_model(SourceDocumentVersion),
         object_id=OuterRef("pk"), reviewer_id=OuterRef("approved_by_id"), decision="approved",
-        evidence__source_hash=OuterRef("source_hash"), evidence__has_key="version_sha256",
+        receipt_source_hash=OuterRef("source_hash"), evidence__has_key="version_sha256",
     ).exclude(evidence__version_sha256="")
     now = timezone.now()
     return SourceDocumentVersion.objects.filter(state="published", approved_by__isnull=False,

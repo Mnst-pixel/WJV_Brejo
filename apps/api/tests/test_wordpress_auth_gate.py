@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -112,7 +113,8 @@ def test_missing_signing_key_is_fail_closed(configured, settings):
 
 
 def test_caddy_internal_route_is_private_and_attestation_not_public():
-    source = (Path(__file__).parents[3] / 'infra/caddy/Caddyfile').read_text()
+    root = Path(os.getenv('KAIROS_TEST_REPOSITORY') or Path(__file__).parents[3])
+    source = (root / 'infra/caddy/Caddyfile').read_text()
     assert 'handle /api/internal/*' in source and 'respond "Not found" 404' in source
     assert 'request_header -X-Kairos-Wp-Gate' in source
     assert 'copy_headers X-Kairos-Wp-Gate' in source
