@@ -211,6 +211,7 @@ class Content(TimeStampedModel):
     class Status(models.TextChoices):
         DRAFT = "draft", "Rascunho"
         REVIEW = "review", "Em revisão"
+        APPROVED = "approved", "Aprovado"
         PUBLISHED = "published", "Publicado"
         ARCHIVED = "archived", "Arquivado"
 
@@ -835,3 +836,8 @@ class CoverageRecord(TimeStampedModel):
         if not self.expected_count:
             return None
         return min(100, round(self.documents_count * 100 / self.expected_count, 2))
+
+
+from .upload_models import Enrollment, Plan, UploadPolicy  # noqa: E402,F401
+from .study_models import BrowserImportReceipt, StudyActivity, StudyMark, StudyPanelState, StudyProgress  # noqa: E402,F401
+from .content_models import ContentWorkflow, LegacyContentImport, LegacyContentItem  # noqa: E402,F401
