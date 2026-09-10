@@ -58,9 +58,13 @@ class UserRolesView(APIView):
         if target.pk == actor.pk:
             raise PermissionDenied("Não é permitido alterar os próprios papéis.")
         previous = active_role_slugs(target)
+        # Account protection is based on persisted assignments, even if the
+        # account is disabled or its privileged grant has expired. Effective
+        # permissions remain based on active grants for the acting user.
+        assigned = set(target.role_assignments.values_list("role__slug", flat=True))
         desired = set(payload.validated_data["roles"])
         is_super = actor.is_superuser or "superadministrador" in active_role_slugs(actor)
-        if not is_super and (target.is_superuser or (previous | desired) & PRIVILEGED_ROLES):
+        if not is_super and (target.is_superuser or (assigned | desired) & PRIVILEGED_ROLES):
             raise PermissionDenied("Somente superadministrador pode atribuir ou alterar papéis privilegiados.")
         if is_service_account(actor):
             raise PermissionDenied("Conta de serviço não pode conceder papéis.")

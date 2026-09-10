@@ -97,7 +97,8 @@ class KairosUserAdmin(PolicyAdmin, UserAdmin):
         if obj.pk == request.user.pk:
             return False
         actor_super = request.user.is_superuser or "superadministrador" in active_role_slugs(request.user)
-        return actor_super or not (obj.is_superuser or active_role_slugs(obj) & PRIVILEGED_ROLES)
+        protected_assignment = obj.role_assignments.filter(role__slug__in=PRIVILEGED_ROLES).exists()
+        return actor_super or not (obj.is_superuser or protected_assignment)
 
     def save_model(self, request, obj, form, change):
         # Profile edits can invalidate authorization; invalidate every existing session.

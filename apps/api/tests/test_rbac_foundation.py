@@ -143,3 +143,49 @@ def test_django_permissions_do_not_grant_domain_access(student):
     student.user_permissions.add(DjangoPermission.objects.get(codename="change_user"))
     assert not admin.site._registry[User].has_change_permission(request_for(student))
 
+
+@pytest.mark.parametrize("state", ["inactive", "expired"])
+def test_privileged_account_protection_does_not_expire_with_grant(state):
+    from datetime import timedelta
+    from django.utils import timezone
+
+    actor = principal("administrador")
+    target = principal("superadministrador")
+    if state == "inactive":
+        target.is_active = False
+        target.save()
+    else:
+        target.role_assignments.update(expires_at=timezone.now() - timedelta(seconds=1))
+    assert change_roles(actor, target, ["editor"]).status_code == 403
+    target.refresh_from_db()
+    assert list(target.role_assignments.values_list("role__slug", flat=True)) == ["superadministrador"]
+    assert target.session_version == 1
+    assert not admin.site._registry[User].has_change_permission(request_for(actor), target)
+
+
+def test_inactive_privileged_profile_cannot_be_changed_through_admin(client_for):
+    actor = principal("administrador")
+    actor.is_staff = True
+    actor.mfa_enabled = True
+    actor.save()
+    target = principal("superadministrador")
+    target.is_active = False
+    target.email = "original@example.test"
+    target.save()
+    response = client_for(actor).post(f"/admin/core/user/{target.pk}/change/", {
+        "username": target.username, "display_name": "Unauthorized change", "email": "controlled@example.test", "_save": "Save",
+    })
+    assert response.status_code == 403
+    target.refresh_from_db()
+    assert target.email == "original@example.test"
+    assert target.session_version == 1
+
+
+def test_superadministrator_can_manage_inactive_privileged_account():
+    actor = principal("superadministrador")
+    target = principal("superadministrador")
+    target.is_active = False
+    target.save()
+    assert admin.site._registry[User].has_change_permission(request_for(actor), target)
+    assert change_roles(actor, target, ["editor"]).status_code == 200
+
