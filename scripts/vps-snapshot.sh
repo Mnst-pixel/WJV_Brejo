@@ -41,6 +41,27 @@ done | LC_ALL=C sort > "$output_dir/container-identities.txt"
 docker image ls --no-trunc --digests --format '{{.ID}}|{{.Repository}}:{{.Tag}}|{{.Digest}}' | LC_ALL=C sort > "$output_dir/images.txt"
 docker network ls --no-trunc --format '{{.ID}}|{{.Name}}|{{.Driver}}|{{.Scope}}' | LC_ALL=C sort > "$output_dir/networks.txt"
 docker volume ls --format '{{.Name}}|{{.Driver}}' | LC_ALL=C sort > "$output_dir/volumes.txt"
+python3 "$(dirname -- "${BASH_SOURCE[0]}")/snapshot-network-ownership.py" > "$output_dir/network-ownership.json"
+
+# Explicit Kairós operational paths missing from the historical Compose inventory.
+: > "$output_dir/release-config-hashes.txt"
+for config in /opt/kairos/current/infra/caddy/Caddyfile \
+  /etc/nginx/sites-available/kairos-sslip.conf /etc/nginx/sites-enabled/kairos-sslip.conf \
+  /etc/systemd/system/kairos-backup.service /etc/systemd/system/kairos-backup.timer \
+  /etc/systemd/system/kairos-health.service /etc/systemd/system/kairos-health.timer; do
+  if [[ -f $config ]]; then
+    resolved_config=$(realpath -e -- "$config")
+    case "$config" in
+      /opt/kairos/*)
+        [[ $resolved_config == /opt/kairos/* && $resolved_config != */secrets/* ]] || exit 65 ;;
+      /etc/nginx/*)
+        [[ $resolved_config == /etc/nginx/sites-available/kairos-sslip.conf || $resolved_config == /etc/nginx/sites-enabled/kairos-sslip.conf ]] || exit 65 ;;
+      /etc/systemd/system/kairos-*)
+        [[ $resolved_config == "$config" || $resolved_config == /opt/kairos/*/infra/systemd/kairos-* ]] || exit 65 ;;
+    esac
+    sha256sum "$config" >> "$output_dir/release-config-hashes.txt"
+  fi
+done
 
 ss -H -lntup | sed -E 's/pid=[0-9]+/pid=<dynamic>/g' | LC_ALL=C sort > "$output_dir/listeners.txt"
 ps -eo user,stat,comm --no-headers | LC_ALL=C sort | uniq -c > "$output_dir/process-summary.txt"
