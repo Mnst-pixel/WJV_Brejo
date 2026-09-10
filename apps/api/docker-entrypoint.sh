@@ -5,11 +5,6 @@ mode="${1:-api}"
 
 case "$mode" in
   api)
-    python manage.py migrate --noinput
-    python manage.py collectstatic --noinput
-    python manage.py bootstrap_roles
-    python manage.py bootstrap_admin
-    python manage.py bootstrap_ai
     exec gunicorn kairos.wsgi:application \
       --bind 0.0.0.0:8000 \
       --workers "${GUNICORN_WORKERS:-2}" \
@@ -21,7 +16,14 @@ case "$mode" in
   worker)
     exec celery -A kairos worker --loglevel="${KAIROS_LOG_LEVEL:-INFO}" --concurrency="${CELERY_CONCURRENCY:-1}"
     ;;
+  beat)
+    exec celery -A kairos beat --loglevel=INFO --schedule=/tmp/kairos-celerybeat
+    ;;
+  migrate)
+    exec python manage.py migrate --noinput
+    ;;
   *)
-    exec "$@"
+    echo 'Unsupported runtime mode; use api, worker or explicit migrate job.' >&2
+    exit 64
     ;;
 esac
