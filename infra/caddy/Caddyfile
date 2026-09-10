@@ -34,6 +34,10 @@
 	}
 	redir @legacy_access https://kairos.2-24-215-183.sslip.io{uri} permanent
 
+	handle /api/internal/* {
+		respond "Not found" 404
+	}
+
 	handle /api/* {
 		header Cache-Control "private, no-store"
 		reverse_proxy api:8000 {
@@ -64,7 +68,23 @@
 	}
 
 	handle {
-		reverse_proxy wordpress:80
+		route {
+			request_header -X-Kairos-Wp-Gate
+			forward_auth api:8000 {
+				uri /api/internal/wordpress-auth
+				copy_headers X-Kairos-Wp-Gate
+				header_up X-Real-IP {client_ip}
+				header_up X-Kairos-Proxy {$KAIROS_PROXY_TOKEN}
+				transport http {
+					dial_timeout 3s
+					response_header_timeout 5s
+				}
+			}
+			reverse_proxy wordpress:80 {
+				header_up -X-Kairos-Proxy
+				header_down -X-Kairos-Wp-Gate
+			}
+		}
 	}
 
 	log {

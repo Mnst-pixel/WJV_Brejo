@@ -689,6 +689,15 @@
           "target": "/var/www/html",
           "type": "volume",
           "volume": {}
+        },
+        {
+          "type": "bind",
+          "source": "/opt/kairos/current/wordpress/mu-plugins/kairos-admin-gate.php",
+          "target": "/var/www/html/wp-content/mu-plugins/kairos-admin-gate.php",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
         }
       ],
       "pull_policy": "never",

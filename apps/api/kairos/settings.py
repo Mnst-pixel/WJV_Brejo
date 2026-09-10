@@ -204,11 +204,12 @@ KAIROS_MCP_PRINCIPALS = json.loads(os.getenv("KAIROS_MCP_PRINCIPALS", "{}"))
 
 SMTP_URL = os.getenv("SMTP_URL", "")
 globals().update(smtp_configuration(SMTP_URL))
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Kairós <no-reply@kairos.invalid>")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "KairÃ³s <no-reply@kairos.invalid>")
 KAIROS_BASE_URL = os.getenv("KAIROS_BASE_URL", "http://localhost:4080")
 KAIROS_LEGACY_DATA_DIR = os.getenv("KAIROS_LEGACY_DATA_DIR", str(BASE_DIR.parent.parent / "legacy/extracted"))
 KAIROS_TRUST_PROXY_HEADERS = os.getenv("KAIROS_TRUST_PROXY_HEADERS", "false").lower() == "true"
 KAIROS_PROXY_TOKEN = os.getenv("KAIROS_PROXY_TOKEN", "")
+KAIROS_WORDPRESS_GATE_KEY = os.getenv("KAIROS_WORDPRESS_GATE_KEY", "")
 
 LOGGING = {
     "version": 1,

@@ -28,7 +28,7 @@ def read_env(path):
         key, separator, value = row.partition("=")
         if not separator or not re.fullmatch(r"[A-Z][A-Z0-9_]*", key) or key in values:
             raise ValueError("Malformed or duplicate secret variable")
-        # Existing Kairós secrets use unquoted, single-line dotenv values.
+        # Existing KairÃ³s secrets use unquoted, single-line dotenv values.
         if any(ord(char) < 32 for char in value) or value.startswith(("'", '"')):
             raise ValueError("Unsupported secret value encoding")
         values[key] = value
@@ -101,6 +101,7 @@ def prepare(master, destination, spec_path):
     additions["KAIROS_MCP_DELEGATION_KEY"] = secrets.token_hex(48)
     additions["PARSER_API_TOKEN"] = secrets.token_hex(48)
     additions["KAIROS_PROXY_TOKEN"] = secrets.token_hex(48)
+    additions["KAIROS_WORDPRESS_GATE_KEY"] = secrets.token_hex(48)
     for name in ("CACHE", "API_BROKER", "WORKER_BROKER", "BEAT_BROKER"):
         additions[f"KAIROS_REDIS_{name}_PASSWORD"] = secrets.token_hex(48)
     additions.update(

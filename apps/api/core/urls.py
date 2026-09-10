@@ -6,6 +6,7 @@ from .rbac_views import RoleCatalogView, UserRolesView
 from .mcp_views import MCPDelegationView, MCPToolCallView
 from .study_views import BrowserImportView, StudyActivityView, StudyPanelView, StudyRecordView, StudySummaryView
 from .integration_views import IntegrationStatusView
+from .wordpress_auth import wordpress_auth_gate
 from .content_views import AdminContentListView, ContentRevisionView, ContentTransitionView, LegacyContentPreviewView, LegacyContentConfirmView
 
 router = DefaultRouter()
@@ -27,6 +28,7 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("internal/wordpress-auth", wordpress_auth_gate, name="wordpress-auth-gate"),
     path("admin/content/", AdminContentListView.as_view()),
     path("admin/content/<uuid:content_id>/versions/", ContentRevisionView.as_view()),
     path("admin/content-versions/<uuid:version_id>/transition/", ContentTransitionView.as_view()),
