@@ -353,6 +353,14 @@ html[data-reduce-motion="true"] *::after {
 html[data-focus-mode="true"] .performance,
 html[data-focus-mode="true"] .legal-base { display: none; }
 
+/* Explicit account preferences only; the default layout remains unchanged. */
+html[data-reduced-density="true"] .agenda-item,
+html[data-reduced-density="true"] .open-row,
+html[data-reduced-density="true"] .switch-row { padding-block: 14px; }
+html[data-reduced-density="true"] .stack-form { gap: 20px; }
+html[data-comfortable-reading="true"] .reading-surface > p,
+html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
+
 @media (max-width: 1180px) {
   .dashboard { padding-inline: 24px; }
   .next-step { grid-column: span 6; }

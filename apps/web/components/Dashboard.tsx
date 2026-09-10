@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {useEffect, useMemo, useState} from "react";
+import {useStudyTimer} from "@/lib/use-study-timer";
+import {apiRequest} from "@/lib/browser-api";
 
 import {Icon, type IconName} from "./Icon";
 
@@ -14,33 +16,43 @@ const journey: {label: string; icon: IconName; state: "done" | "current" | "futu
   {label: "Evoluir", icon: "trend", state: "future"},
 ];
 
-const initialAgenda = [
-  {time: "19:30", title: "Revisar flashcards", detail: "Direito Administrativo", icon: "note" as IconName},
-  {time: "20:30", title: "20 questões de Constitucional", detail: "Direitos Fundamentais", icon: "question" as IconName},
-  {time: "21:15", title: "Bloco de concentração", detail: "25 min de foco", icon: "clock" as IconName},
-];
+type AgendaGoal = {id: string; title: string; description: string; target_date: string | null; progress: number};
 
 export function Dashboard({userName}: {userName: string}) {
-  const [seconds, setSeconds] = useState(25 * 60);
-  const [running, setRunning] = useState(false);
-  const [completed, setCompleted] = useState<number[]>([]);
+  const {seconds, running, disabled, notice, toggle: toggleTimer, reset: resetTimer} = useStudyTimer();
+  const [agenda, setAgenda] = useState<AgendaGoal[]>([]);
+  const [agendaLoading, setAgendaLoading] = useState(true);
+  const [agendaNotice, setAgendaNotice] = useState("");
+  const [savingGoal, setSavingGoal] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!running || seconds <= 0) return;
-    const timer = window.setInterval(() => setSeconds((value) => value - 1), 1000);
-    return () => window.clearInterval(timer);
-  }, [running, seconds]);
+    const controller = new AbortController();
+    void apiRequest("/api/goals/", {signal: controller.signal}).then(async response => {
+      if (!response.ok) throw new Error();
+      const payload = await response.json() as {results?: AgendaGoal[]} | AgendaGoal[];
+      if (!controller.signal.aborted) setAgenda((Array.isArray(payload) ? payload : payload.results ?? []).slice(0, 3));
+    }).catch(() => {
+      if (!controller.signal.aborted) setAgendaNotice("Não foi possível carregar suas metas. Recarregue a página para tentar novamente.");
+    }).finally(() => {if (!controller.signal.aborted) setAgendaLoading(false);});
+    return () => controller.abort();
+  }, []);
+
+  async function completeGoal(goal: AgendaGoal) {
+    if (savingGoal || goal.progress === 100) return;
+    setSavingGoal(goal.id);
+    setAgendaNotice("");
+    try {
+      const response = await apiRequest(`/api/goals/${goal.id}/`, {method: "PATCH", body: JSON.stringify({progress: 100})});
+      if (!response.ok) throw new Error();
+      const saved = await response.json() as AgendaGoal;
+      setAgenda(items => items.map(item => item.id === saved.id ? saved : item));
+      setAgendaNotice("Meta concluída e salva na sua conta.");
+    } catch {setAgendaNotice("Não foi possível confirmar a conclusão. Recarregue a página para conferir antes de tentar novamente.");}
+    finally {setSavingGoal(null);}
+  }
 
   const clock = useMemo(() => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`, [seconds]);
   const timerActive = running && seconds > 0;
-  const toggleTimer = () => {
-    if (seconds === 0) {
-      setSeconds(25 * 60);
-      setRunning(true);
-    } else {
-      setRunning(!running);
-    }
-  };
 
   return (
     <div className="dashboard">
@@ -52,15 +64,16 @@ export function Dashboard({userName}: {userName: string}) {
 
       <div className="dashboard-layout">
         <section className="next-step" aria-labelledby="next-step-title">
-          <div className="section-label">Seu próximo passo</div>
+          <div className="section-label">Próximo passo · demonstração</div>
           <h2 id="next-step-title">Ética Profissional</h2>
-          <div aria-label="45% concluído" aria-valuemax={100} aria-valuemin={0} aria-valuenow={45} className="progress" role="progressbar"><span/></div>
-          <p><strong>45% concluído</strong><span aria-hidden="true">·</span>9 de 20 tópicos</p>
+          <div aria-label="Exemplo demonstrativo: 45% concluído, sem relação com seu progresso" aria-valuemax={100} aria-valuemin={0} aria-valuenow={45} className="progress" role="progressbar"><span/></div>
+          <p><strong>Exemplo: 45%</strong><span aria-hidden="true">·</span>9 de 20 tópicos ilustrativos</p>
           <Link className="primary-button" href="/estudar"><Icon name="book"/>Continuar estudo<Icon name="arrow"/></Link>
         </section>
 
         <section className="journey" aria-labelledby="journey-title">
-          <h2 className="visually-hidden" id="journey-title">Sua jornada</h2>
+          <h2 className="visually-hidden" id="journey-title">Exemplo demonstrativo de jornada</h2>
+          <span className="section-label">Jornada ilustrativa</span>
           <div className="journey-track">
             {journey.map((step) => (
               <div className={`journey-step ${step.state}`} key={step.label}>
@@ -72,29 +85,34 @@ export function Dashboard({userName}: {userName: string}) {
         </section>
 
         <section className="today parchment-panel" aria-labelledby="today-title">
-          <h2 id="today-title">Hoje</h2>
+          <h2 id="today-title">Minhas metas</h2>
           <div className="agenda-list">
-            {initialAgenda.map((item, index) => (
-              <button className={completed.includes(index) ? "agenda-item completed" : "agenda-item"} key={item.title} onClick={() => setCompleted((items) => items.includes(index) ? items.filter((itemIndex) => itemIndex !== index) : [...items, index])} type="button">
-                <time>{item.time}</time><span className="agenda-icon"><Icon name={completed.includes(index) ? "check" : item.icon}/></span><span className="agenda-copy"><strong>{item.title}</strong><small>{item.detail}</small></span><Icon className="agenda-arrow" name="arrow"/>
+            {agendaLoading && <p aria-live="polite">Carregando suas metas…</p>}
+            {!agendaLoading && !agenda.length && !agendaNotice && <p>Você ainda não tem metas. Crie a primeira para organizar seu estudo.</p>}
+            {agenda.map(item => (
+              <button aria-label={item.progress === 100 ? `Meta concluída: ${item.title}` : `Concluir meta: ${item.title}`} className={item.progress === 100 ? "agenda-item completed" : "agenda-item"} disabled={savingGoal !== null || item.progress === 100} key={item.id} onClick={() => void completeGoal(item)} type="button">
+                <time dateTime={item.target_date ?? undefined}>{item.target_date ? new Date(`${item.target_date}T12:00:00`).toLocaleDateString("pt-BR", {day: "2-digit", month: "2-digit"}) : "—"}</time><span className="agenda-icon"><Icon name={item.progress === 100 ? "check" : "target"}/></span><span className="agenda-copy"><strong>{item.title}</strong><small>{savingGoal === item.id ? "Salvando…" : `${item.progress}% · ${item.description || "Meta pessoal"}`}</small></span><Icon className="agenda-arrow" name="arrow"/>
               </button>
             ))}
           </div>
-          <Link className="text-link" href="/metas">Ver agenda completa <Icon name="arrow"/></Link>
+          <p aria-live="polite" className="form-notice">{agendaNotice}</p>
+          <Link className="text-link" href="/metas">Ver todas as metas <Icon name="arrow"/></Link>
         </section>
 
         <section className="focus-panel" aria-labelledby="focus-title">
           <div><h2 id="focus-title">Foco <span>(Pomodoro)</span></h2><strong className="timer" aria-live="polite">{clock}</strong></div>
-          <button aria-label={timerActive ? "Pausar foco" : "Iniciar foco"} className="timer-control" onClick={toggleTimer} type="button"><Icon name={timerActive ? "pause" : "play"}/></button>
-          <button className="secondary-button" onClick={toggleTimer} type="button">{timerActive ? "Pausar foco" : seconds === 0 ? "Reiniciar foco" : "Iniciar foco"}</button>
-          <button className="focus-settings" onClick={() => {setRunning(false); setSeconds(25 * 60);}} type="button"><Icon name="settings"/>Ajustes<span>25 minutos</span></button>
+          <button disabled={disabled} aria-label={timerActive ? "Pausar foco" : "Iniciar foco"} className="timer-control" onClick={toggleTimer} type="button"><Icon name={timerActive ? "pause" : "play"}/></button>
+          <button disabled={disabled} className="secondary-button" onClick={toggleTimer} type="button">{timerActive ? "Pausar foco" : seconds === 0 ? "Reiniciar foco" : "Iniciar foco"}</button>
+          <button disabled={disabled} className="focus-settings" onClick={resetTimer} type="button"><Icon name="settings"/>Ajustes<span>25 minutos</span></button>
+          <p aria-live="polite">{notice}</p>
         </section>
 
         <section className="performance parchment-panel" aria-labelledby="performance-title">
-          <div className="performance-heading"><h2 id="performance-title">Desempenho recente</h2><label>Período<select defaultValue="7"><option value="7">7 dias</option><option value="30">30 dias</option></select></label></div>
+          <div className="performance-heading"><h2 id="performance-title">Desempenho · demonstração</h2><label>Período ilustrativo<select defaultValue="7" disabled><option value="7">7 dias</option><option value="30">30 dias</option></select></label></div>
+          <p>Dados ilustrativos. Este gráfico ainda não representa suas respostas.</p>
           <div className="chart-legend"><span><i className="legend-solid"/>Questões respondidas</span><span><i className="legend-dashed"/>Questões corretas (%)</span></div>
           <svg aria-labelledby="chart-title chart-desc" className="performance-chart" role="img" viewBox="0 0 560 215">
-            <title id="chart-title">Desempenho nos últimos sete dias</title><desc id="chart-desc">As questões respondidas aumentaram durante a semana e recuaram levemente no último dia.</desc>
+            <title id="chart-title">Exemplo demonstrativo de desempenho</title><desc id="chart-desc">Valores e datas ilustrativos, sem relação com o histórico do aluno.</desc>
             <g className="grid-lines"><path d="M42 25H540M42 75H540M42 125H540M42 175H540"/></g>
             <path className="chart-area" d="M42 158 C85 146 98 158 130 134 S190 119 220 124 S280 105 310 100 S360 72 395 82 S455 88 480 94 S520 88 540 122 L540 175 L42 175Z"/>
             <path className="chart-line" d="M42 158 C85 146 98 158 130 134 S190 119 220 124 S280 105 310 100 S360 72 395 82 S455 88 480 94 S520 88 540 122"/>
