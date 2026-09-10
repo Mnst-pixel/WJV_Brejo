@@ -86,6 +86,26 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class SimulationSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        from core.services.attempts import validate_question_ids
+        phase = attrs.get("exam_phase", getattr(self.instance, "exam_phase", None))
+        ids = attrs.get("question_ids", getattr(self.instance, "question_ids", []))
+        if phase:
+            attrs["question_ids"] = validate_question_ids(ids, phase.pk)
+        duration = attrs.get("duration_minutes", getattr(self.instance, "duration_minutes", 300))
+        if not 1 <= duration <= 1440:
+            raise serializers.ValidationError("Duração deve estar entre 1 e 1440 minutos.")
+        return attrs
+
+    def update(self, instance, validated_data):
+        from django.db import transaction
+        with transaction.atomic():
+            locked = Simulation.objects.select_for_update().get(pk=instance.pk)
+            structural = ("exam_phase", "mode", "question_ids", "duration_minutes")
+            if locked.attempts.exists() and any(key in validated_data and validated_data[key] != getattr(locked, key) for key in structural):
+                raise serializers.ValidationError("A estrutura do simulado não pode mudar após iniciar uma tentativa.")
+            return super().update(locked, validated_data)
+
     class Meta:
         model = Simulation
         fields = ["id", "exam_phase", "mode", "title", "question_ids", "duration_minutes", "created_at", "updated_at"]
@@ -101,7 +121,16 @@ class AttemptAnswerSerializer(serializers.ModelSerializer):
 
 class AttemptSerializer(serializers.ModelSerializer):
     answers = AttemptAnswerSerializer(many=True, read_only=True)
-    mode = serializers.CharField(source="simulation.mode", read_only=True)
+    mode = serializers.SerializerMethodField()
+    questions = serializers.SerializerMethodField()
+
+    def get_mode(self, obj):
+        return obj.frozen_definition.get("mode", obj.simulation.mode)
+
+    def get_questions(self, obj):
+        # The frozen answer key is never serialized before submission.
+        visible = ("question", "version", "version_number", "statement", "source_hash", "alternatives")
+        return [{key: item[key] for key in visible} for item in obj.frozen_definition.get("questions", [])]
 
     def validate_simulation(self, simulation):
         if simulation.owner_id != self.context["request"].user.pk:
@@ -110,13 +139,27 @@ class AttemptSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("O simulado de uma tentativa não pode ser alterado.")
         return simulation
 
+    def validate(self, attrs):
+        protected = {"status", "elapsed_seconds", "version", "answers", "frozen_definition", "result_snapshot", "snapshot_origin", "idempotency_key", "submitted_at", "started_at"}
+        if protected & set(self.initial_data):
+            raise serializers.ValidationError("Estado, tempo e respostas só podem mudar pelos comandos da tentativa.")
+        return attrs
+
+    def create(self, validated_data):
+        from core.services.attempts import create_attempt
+        request = self.context["request"]
+        return create_attempt(simulation=validated_data["simulation"], owner=request.user, idempotency_key=request.headers.get("Idempotency-Key"))
+
+    def update(self, instance, validated_data):
+        raise serializers.ValidationError("Tentativas só podem mudar pelos comandos transacionais de autosave e submissão.")
+
     class Meta:
         model = Attempt
         fields = [
             "id", "simulation", "mode", "status", "started_at", "submitted_at", "last_autosave_at",
-            "elapsed_seconds", "version", "answers",
+            "elapsed_seconds", "version", "answers", "questions", "snapshot_origin",
         ]
-        read_only_fields = ["id", "status", "started_at", "submitted_at", "last_autosave_at", "version", "answers"]
+        read_only_fields = ["id", "status", "started_at", "submitted_at", "last_autosave_at", "elapsed_seconds", "version", "answers", "questions", "snapshot_origin"]
 
 
 class OwnedSerializer(serializers.ModelSerializer):

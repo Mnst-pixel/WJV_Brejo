@@ -363,6 +363,9 @@ class SimulationViewSet(OwnedViewSet):
 class AttemptViewSet(viewsets.ModelViewSet):
     permission_classes = [CanStudy]
     serializer_class = AttemptSerializer
+    # Mutations go through locked commands; generic updates can save stale
+    # model fields and reopen a submitted attempt. Historical attempts persist.
+    http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
         return Attempt.objects.filter(owner=self.request.user).select_related("simulation").prefetch_related("answers")
@@ -378,9 +381,9 @@ class AttemptViewSet(viewsets.ModelViewSet):
         attempt = autosave_attempt(
             attempt_id=pk,
             owner=request.user,
-            expected_version=int(request.data.get("version", 0)),
-            answers=list(request.data.get("answers", [])),
-            elapsed_seconds=int(request.data.get("elapsed_seconds", 0)),
+            expected_version=request.data.get("version"),
+            answers=request.data.get("answers"),
+            elapsed_seconds=request.data.get("elapsed_seconds"),
         )
         return Response(AttemptSerializer(attempt).data)
 

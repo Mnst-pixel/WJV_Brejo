@@ -480,6 +480,12 @@ class Simulation(TimeStampedModel):
     question_ids = models.JSONField(default=list)
     duration_minutes = models.PositiveSmallIntegerField(default=300)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(duration_minutes__gte=1) & Q(duration_minutes__lte=1440), name="simulation_duration_range"),
+            models.CheckConstraint(condition=Q(mode__in=["formal", "training", "free"]), name="simulation_valid_mode"),
+        ]
+
 
 class Attempt(TimeStampedModel):
     class Status(models.TextChoices):
@@ -496,6 +502,22 @@ class Attempt(TimeStampedModel):
     last_autosave_at = models.DateTimeField(null=True, blank=True)
     elapsed_seconds = models.PositiveIntegerField(default=0)
     version = models.PositiveIntegerField(default=1)
+    frozen_definition = models.JSONField(default=dict, blank=True)
+    snapshot_origin = models.CharField(max_length=32, default="pending", choices=[
+        ("pending", "Captura pendente"), ("creation", "Capturado na criação"),
+        ("deferred", "Capturado na primeira ação"), ("legacy_unverified", "Histórico não comprovado"),
+    ])
+    result_snapshot = models.JSONField(default=dict, blank=True)
+    idempotency_key = models.CharField(max_length=96, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "idempotency_key"], name="unique_attempt_owner_request"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="attempt_version_positive"),
+            models.CheckConstraint(condition=Q(status__in=["active", "submitted", "graded", "abandoned"]), name="attempt_valid_status"),
+            models.CheckConstraint(condition=~Q(status="active") | Q(submitted_at__isnull=True), name="active_attempt_not_submitted"),
+        ]
+        indexes = [models.Index(fields=["owner", "status", "-started_at"], name="attempt_owner_status_started")]
 
 
 class AttemptAnswer(TimeStampedModel):
@@ -507,7 +529,7 @@ class AttemptAnswer(TimeStampedModel):
     answered_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["attempt", "question"], name="unique_attempt_question")]
+        constraints = [models.UniqueConstraint(fields=["attempt", "question"], name="unique_attempt_question"), models.CheckConstraint(condition=Q(answer_version__gte=1), name="attempt_answer_version_positive")]
 
 
 class AttemptCheckpoint(UUIDModel):
@@ -517,7 +539,7 @@ class AttemptCheckpoint(UUIDModel):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["attempt", "version"], name="unique_attempt_checkpoint")]
+        constraints = [models.UniqueConstraint(fields=["attempt", "version"], name="unique_attempt_checkpoint"), models.CheckConstraint(condition=Q(version__gte=1), name="attempt_checkpoint_version_positive")]
 
 
 class Correction(TimeStampedModel):
