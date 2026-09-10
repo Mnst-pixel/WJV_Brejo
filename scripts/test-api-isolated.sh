@@ -81,6 +81,13 @@ MINIO_ROOT_USER=kairos_test
 MINIO_ROOT_PASSWORD=$pw
 PARSER_API_TOKEN=$pw
 KAIROS_PROXY_TOKEN=$pw
+MARIADB_ROOT_PASSWORD=$pw
+MARIADB_DATABASE=kairos_gate_test
+MARIADB_USER=kairos_gate_test
+MARIADB_PASSWORD=$pw
+KAIROS_TEST_WP_DB_HOST=kairos-test-mariadb
+KAIROS_TEST_WP_DB_NAME=kairos_gate_test
+KAIROS_TEST_WP_DB_PASSWORD=$pw
 KAIROS_TEST_LIVE_UPLOAD=1
 KAIROS_TEST_CLAMAV_HOST=kairos-test-clamav
 EOF
@@ -251,6 +258,25 @@ create wp-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m --tmpfs /
 timeout 60 docker start -a "$prefix-wp-contract" > "$work/wordpress-contract.log" 2>&1
 [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-wp-contract") == 0 ]]
 tail -n 3 "$work/wordpress-contract.log"
+mysql_image=$(docker container inspect -f '{{.Image}}' kairos-mariadb-1)
+[[ $mysql_image =~ ^sha256:[0-9a-f]{64}$ ]]
+printf 'wordpress=%s\nmariadb=%s\n' "$wp_image" "$mysql_image" >> "$work/images.txt"
+create mariadb --network-alias kairos-test-mariadb --memory 512m --memory-swap 512m \
+  --tmpfs /var/lib/mysql:rw,size=256m --tmpfs /run/mysqld:rw,size=16m \
+  "$mysql_image" --innodb-buffer-pool-size=64M --skip-log-bin
+docker start "$prefix-mariadb" >/dev/null
+ready=0
+for ((n=0;n<60;n++)); do
+  if docker exec "$prefix-mariadb" healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then ready=1; break; fi
+  sleep 1
+done
+[[ $ready == 1 ]]
+create wp-mariadb --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m --tmpfs /var/www/html:rw,size=1m \
+  --mount "type=bind,src=$repository_dir/wordpress,dst=/candidate,readonly" \
+  --workdir /candidate --entrypoint php "$wp_image" tests/test-admin-gate-mariadb.php
+timeout 90 docker start -a "$prefix-wp-mariadb" > "$work/wordpress-mariadb.log" 2>&1
+[[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-wp-mariadb") == 0 ]]
+tail -n 3 "$work/wordpress-mariadb.log"
 create edge-contract --cap-drop ALL --cap-add NET_BIND_SERVICE --read-only --tmpfs /tmp:rw,size=16m --tmpfs /data:rw,size=4m --tmpfs /config:rw,size=4m \
   --mount "type=bind,src=$repository_dir/infra/caddy/Caddyfile,dst=/etc/caddy/Caddyfile,readonly" \
   --entrypoint caddy "$edge_image" validate --config /etc/caddy/Caddyfile --adapter caddyfile
