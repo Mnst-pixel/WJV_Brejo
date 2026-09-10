@@ -3,6 +3,7 @@
 
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -76,8 +77,9 @@ def kairos_path(value):
 def manifest_changes(manifest):
     if (
         not isinstance(manifest, dict)
-        or set(manifest) != {"version", "release_commit", "config_changes"}
-        or manifest["version"] != 1
+        or manifest.get("version") not in (1, 2)
+        or set(manifest) != ({"version", "release_commit", "config_changes"} |
+            ({"network_changes", "edge_binding_change"} if manifest.get("version") == 2 else set()))
     ):
         raise GateError("invalid_manifest_schema")
     if not re.fullmatch(r"[a-f0-9]{40}", manifest["release_commit"]):
@@ -122,6 +124,22 @@ def foreign_rows(text, column=1):
     return sorted(rows)
 
 
+def foreign_projected_rows(text, projection, kind):
+    own = {
+        (row["id"], row["name"].lstrip("/"))
+        for row in projection[kind]
+        if row.get("project") == "kairos" and OWN_NAME.match(row["name"])
+    }
+    rows = []
+    for line in text.splitlines():
+        parts = line.split("|")
+        if len(parts) < 2:
+            raise GateError("malformed_resource_inventory")
+        if (parts[0], parts[1].lstrip("/")) not in own:
+            rows.append(line)
+    return sorted(rows)
+
+
 def normalized_firewall(text, nft=False):
     result = []
     for line in text.splitlines():
@@ -155,6 +173,20 @@ def compare(before, after, manifest):
             read(after / "release-config-hashes.txt"),
         )
     failures = []
+    network_report = None
+    if manifest["version"] == 2:
+        spec = importlib.util.spec_from_file_location("release_network_policy", Path(__file__).with_name("release_network_policy.py"))
+        policy = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(policy)
+        try:
+            projections = [json.loads(read(folder / "network-ownership.json")) for folder in (before, after)]
+            network_report = policy.evaluate(*projections, manifest, inventories, normalized_firewall)
+        except (ValueError, KeyError, TypeError) as error:
+            reason = str(error) if re.fullmatch(r"[a-z_]+", str(error)) else "invalid_projection_value"
+            raise GateError("network_policy_denied:" + reason) from None
+        failures.extend(network_report["failures"])
+        inventories.update(network_report["firewalls"])
+        inventories["listeners.txt"] = network_report["listeners"]
     observed = {}
     all_hashes = [{}, {}]
     for name in HASH_FILES:
@@ -181,7 +213,13 @@ def compare(before, after, manifest):
             failures.append("manifest:unobserved_or_wrong_expected_change")
 
     for name in ("containers.txt", "container-identities.txt", "networks.txt"):
-        if foreign_rows(inventories[name][0]) != foreign_rows(inventories[name][1]):
+        if network_report:
+            kind = "networks" if name == "networks.txt" else "containers"
+            rows = [foreign_projected_rows(text, projections[index], kind)
+                    for index, text in enumerate(inventories[name])]
+        else:
+            rows = [foreign_rows(text) for text in inventories[name]]
+        if rows[0] != rows[1]:
             failures.append(name + ":unrelated_identity_changed")
     for name in ("volumes.txt", "images.txt"):
         # Preserve every old resource; additive Kairós build artifacts are checked by release inventory.
@@ -242,12 +280,13 @@ def compare(before, after, manifest):
                 failures.append(ownership_name + ":unrelated_" + key + "_changed")
     return {
         "result": "FAIL" if failures else "PASS",
-        "phase": "configuration_exceptions_only",
+        "phase": "owned_docker_network_exceptions" if network_report else "configuration_exceptions_only",
         "release_commit": manifest["release_commit"],
         "authorized_config_changes": len(permitted),
         "failures": sorted(set(failures)),
-        "firewall_exceptions": False,
-        "listener_exceptions": False,
+        "firewall_exceptions": bool(network_report and network_report["audit"]["networks"]),
+        "listener_exceptions": bool(network_report and manifest["edge_binding_change"]),
+        "network_attribution": network_report["audit"] if network_report else None,
     }
 
 
@@ -278,5 +317,5 @@ if __name__ == "__main__":
     try:
         sys.exit(run(args.before, args.after, args.manifest))
     except Exception as exc:
-        print(json.dumps({"result": "FAIL", "error": type(exc).__name__}))
+        print(json.dumps({"result": "FAIL", "error": type(exc).__name__, "reason": str(exc) if isinstance(exc, GateError) else "invalid_input"}))
         sys.exit(1)
