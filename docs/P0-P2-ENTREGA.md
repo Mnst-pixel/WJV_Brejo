@@ -76,7 +76,11 @@ Primeiro build do candidato `928cebc` falhou antes da criação da imagem: Build
 
 Rollback operacional produtivo continua sendo a release anterior com o backup restaurável acima. Para os commits locais, usar revert sem reescrita de histórico. Reversão de dependências ou do gate WordPress pode reabrir riscos conhecidos: manter os endpoints administrativos bloqueados até uma alternativa validada. Não remover volumes nem apagar conteúdo para reverter código.
 
-O benchmark versionado `scripts/benchmark-foundations.py` mede serialmente p50/p95 de rotas públicas via loopback do VPS; ainda falta registrar resultados. Ele não representa carga autenticada, contagem de queries ou teste N+1. Otimizações adicionais dependem de medições.
+O benchmark versionado `scripts/benchmark-foundations.py` mede serialmente p50/p95 de rotas públicas via loopback do VPS. Ele não representa carga autenticada, contagem de queries ou teste N+1. Otimizações adicionais dependem de medições.
+
+Baseline de performance às 21:13 UTC, 30 amostras após duas de aquecimento, concorrência 1, API produtiva `078a0937`: live p50/p95 **2,721/4,686 ms**; ready (PostgreSQL/Redis) **3,734/7,564 ms**; `/app` **10,213/19,971 ms**, todas respostas 307 (mede redirecionamento, não renderização autenticada); WordPress `/` **77,462/100,340 ms**, HTTP 200. API usava 198,5 MiB, web 72,41 MiB, PostgreSQL 43,23 MiB, Redis 6,566 MiB, worker 30,9 MiB, MinIO 126 MiB no snapshot posterior. A coleta coincidiu com o ensaio candidato; não serve como comparação de carga controlada. Evidência: `modernizacao/evidencias/p0p2-performance-baseline.json`.
+
+Segundo candidato `e6b45dc`: build PASS, API `sha256:8407f1b0a48ce449623766c7bea707f1bc73fd39466540acc1affeb1c0f1826c`, parser `sha256:0ea06b30d3dea31d90175ebb61528d0585fe63efa5b9af194b8e0796c3a7b302`. Suíte Linux: **414 passed, 32 failed**, sem skips; os seis cenários de upload real passaram. Causas encontradas: lookup JSONB de hash comparado a varchar no PostgreSQL; resolução antecipada de path de testes fora da árvore local; fechamento de streaming response dentro da transação sintética do teste. Corrigidas no código/testes e sujeitas à repetição integral. As etapas nativas de privilégio/ACL/PHP/Caddy ainda não executaram porque a API reprovou antes. Cleanup PASS e no-touch PASS. Evidência `modernizacao/evidencias/p0p2-candidate-20260910T211047Z.json`.
 
 ## Dependências externas
 
@@ -92,4 +96,4 @@ SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração
 
 `READY_FOR_PRODUCT_BUILD=NO`
 
-Impedimentos atuais: configuração de deploy ainda ambígua, secrets excessivos em serviços IA, aplicação com privilégio de superusuário, autorização administrativa incompleta, parser com acesso a credenciais, quotas ausentes, histórico de provas mutável e controles de estudo ainda transitórios/demonstrativos. Cada item exige implementação e execução dos testes antes de alterar esses gates.
+Impedimentos atuais: concluir a suíte Linux após as correções, validar privilégios/ACL/backup/restore da release canônica, implementar e provar a transição/rollback integral com plano de rede previamente autorizado, completar E2E e revisão independente, publicar a branch e implantar o commit/imagens exatos. Os controles de backend, quotas, persistência e limites já existem na branch, mas ainda não mitigam os serviços antigos em produção. O limite de uso interrompeu parte da revisão independente; não foi tratado como aprovação. SMTP/INLABS/DataJud/off-host ausentes não são os motivos desse NO.

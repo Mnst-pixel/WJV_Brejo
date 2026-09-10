@@ -2,6 +2,8 @@
 
 Data da consulta: 2026-09-10. Esta entrega é uma alteração de dependências existentes; não adiciona biblioteca funcional nem aplica alteração ao VPS. A revisão independente e os testes Linux da imagem reconstruída são gates separados.
 
+Prova de imagem em 21:19 UTC: a candidata `sha256:8407f1b0a48ce449623766c7bea707f1bc73fd39466540acc1affeb1c0f1826c` contém cryptography 50.0.1, Pillow 12.3.0, pip 26.2.1 e nenhum bleach. `pip check` passou no build. OpenSSL do sistema é 3.5.7 (pacotes Debian `3.5.7-1~deb13u2`), OpenSSL embarcado em cryptography é 4.0.2; lxml usa libxml2 2.14.6 compilada/efetiva, não a libxml2 Debian. Inventário completo protegido: `modernizacao/evidencias/p0p2-runtime-sbom.json`. Essa é uma imagem de teste, não a imagem ainda implantada.
+
 ## Alteração e motivo
 
 O Dockerfile de release também atualiza `openssl`, `libssl3t64` e `openssl-provider-legacy` para `3.5.7-1~deb13u2`, conforme o [Debian Security Tracker](https://security-tracker.debian.org/tracker/source-package/openssl). A imagem observada tinha `3.5.4-1~deb13u2`. O build instala versões exatas no container; não atualiza pacotes do host. A prova efetiva de instalação e o inventário final dependem do build Linux. Zero alertas OSV Python não significa zero vulnerabilidades nos pacotes do sistema operacional.

@@ -2,6 +2,12 @@
 
 Deployment is intentionally gated.
 
+Foundation branch status (2026-09-10): the canonical Compose, image descriptors, scoped credentials and explicit migration command are implemented but not yet activated in production. Use [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md) for the actual live revision and pending gates. The checklist below describes required outcomes, not evidence of a completed deploy.
+
+New releases must use `scripts/release-manifest.py` and `scripts/kairos-compose.py` with a protected descriptor below `/opt/kairos/runtime/releases/`; `/opt/kairos/runtime/active-release` is a root-owned 0600 file containing its exact directory. Every image is an inspected SHA256. The wrapper validates Git, configuration and image source revision and selects explicit services. Do not run the historical Compose alone or resurrect historical bootstrap profiles. Missing descriptor variables fail closed.
+
+Candidate builds use `scripts/build-foundations.sh` and `test-api-isolated.sh`: source comes from a Git archive, Python wheels match the hash lock, production volumes are not mounted into test services, and every temporary resource has a unique Kairós test label. The scanner uses a separate copy of signatures. Before production cutover, require forward/back migrations on PostgreSQL, real Redis ACL and uploads, PHP/Caddy validation, a fresh recoverable backup, release no-touch plan, health, rollback rehearsal and independent verification. The whole-release cutover/rollback coordinator and the preapproved topology plan remain gates; the API-only historical deploy script is insufficient for this transition.
+
 1. Capture a fresh read-only snapshot with `scripts/vps-snapshot.sh` and verify the target host and free port.
 2. Verify artifact hashes and the repository secret scan.
 3. Create only `/opt/kairos` and `/srv/kairos` subdirectories with restrictive ownership.

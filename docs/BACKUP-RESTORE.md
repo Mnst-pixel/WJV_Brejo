@@ -1,5 +1,7 @@
 # Backup e recuperação — rotina P0/P1
 
+Estado de implantação: esta é a rotina candidata. O ensaio real de 18:39 UTC em 2026-09-10 validou o backup e restore da rotina anterior; ainda não comprova o coordenador novo com credenciais segregadas. Consultar [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md) antes de instalar units ou afirmar que a produção usa este fluxo.
+
 ## Contrato operacional
 
 `scripts/backup-routine.py` coordena os scripts já validados `backup-predeploy.sh` e `verify-restore-isolated.sh`. O serviço `kairos-backup.service` passa a executar o coordenador; seu timer diário existente permanece às 03:17 em America/Sao_Paulo, com atraso aleatório de até 20 minutos e recuperação de execução perdida. Não existe segundo timer de restore: **cada backup diário novo é restaurado em recursos temporários exclusivos antes de entrar no catálogo**.
