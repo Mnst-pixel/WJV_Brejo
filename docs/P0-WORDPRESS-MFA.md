@@ -14,6 +14,8 @@ O MU-plugin obrigatório `kairos-admin-gate.php`, montado read-only individualme
 
 A atestação dura no máximo 10 segundos, tolera somente 2 segundos futuros e vincula método, URI exata, hashes de Cookie, Authorization e method override, classe de autorização e nonce aleatório de 128 bits. O Caddy remove qualquer atestação enviada pelo cliente, copia exclusivamente a resposta interna e remove o cabeçalho da resposta WordPress. Nenhuma chave, cookie ou senha integra o token.
 
+O filtro de access log remove também os cabeçalhos internos de atestação/proxy, usando o [filtro de campos do Caddy](https://caddyserver.com/docs/caddyfile/directives/log#filter). A redaction de IA inclui a nova chave de assinatura, credenciais de banco, broker/cache e SMTP, mesmo quando aparecem sem um rótulo de atribuição. São defesas adicionais; agentes continuam sem acesso de leitura ao filesystem/secrets.
+
 Atestações administrativas têm uso único: INSERT em option_name único no MariaDB reclama o nonce atomicamente entre processos Apache. Registros próprios `_kairos_gate_nonce_*` expirados são removidos em lotes de 256, sem autoload; capacidade de 4096 registros falha fechada. Não há migration Django nem alteração de conteúdo WordPress. Provas públicas permitem apenas leitura sem identidade WordPress e expiram em 10 segundos; não usam registro de replay. O MU-plugin impede obtenção de identidade por prova pública, bloqueia administração/REST de escrita sem classe administrativa e desabilita application passwords/XML-RPC nativos. WP-CLI continua uma operação privilegiada local, fora do fluxo HTTP.
 
 ## Operação e impactos

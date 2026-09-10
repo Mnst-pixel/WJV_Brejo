@@ -89,6 +89,13 @@
 
 	log {
 		output stdout
-		format json
+		format filter {
+			wrap json
+			fields {
+				request>headers>X-Kairos-Wp-Gate delete
+				request>headers>X-Kairos-Proxy delete
+				resp_headers>X-Kairos-Wp-Gate delete
+			}
+		}
 	}
 }

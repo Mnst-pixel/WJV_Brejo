@@ -3,6 +3,7 @@
 import re
 from datetime import date
 from uuid import UUID
+from urllib.parse import unquote, urlsplit
 
 from django.conf import settings
 from django.utils import timezone
@@ -92,6 +93,7 @@ def authorize_consultation(*, user, question, action, context, conversation):
 def redact(text):
     """Remove configured service credentials and common credential assignments."""
     text = str(text)
+    configured = []
     for name in (
         "SECRET_KEY",
         "LOCALAI_API_KEY",
@@ -100,16 +102,30 @@ def redact(text):
         "MFA_ENCRYPTION_KEY",
         "KAIROS_MCP_DELEGATION_KEY",
         "KAIROS_PROXY_TOKEN",
+        "KAIROS_WORDPRESS_GATE_KEY",
         "PARSER_API_TOKEN",
         "AWS_SECRET_ACCESS_KEY",
+        "EMAIL_HOST_PASSWORD",
     ):
         secret = getattr(settings, name, "")
-        if isinstance(secret, str) and len(secret) >= 8:
-            text = text.replace(secret, "[REDACTED]")
+        configured.append(secret)
+    for database in getattr(settings, "DATABASES", {}).values():
+        if isinstance(database, dict):
+            configured.append(database.get("PASSWORD", ""))
+    for name in ("REDIS_URL", "CELERY_BROKER_URL", "SMTP_URL"):
+        value = getattr(settings, name, "")
+        if isinstance(value, str):
+            try:
+                password = urlsplit(value).password
+            except ValueError:
+                password = None
+            if password:
+                configured.extend((password, unquote(password)))
     for principal in getattr(settings, "KAIROS_MCP_PRINCIPALS", {}).values():
         secret = principal.get("token", "") if isinstance(principal, dict) else ""
-        if isinstance(secret, str) and len(secret) >= 8:
-            text = text.replace(secret, "[REDACTED]")
+        configured.append(secret)
+    for secret in sorted({value for value in configured if isinstance(value, str) and len(value) >= 8}, key=len, reverse=True):
+        text = text.replace(secret, "[REDACTED]")
     text = re.sub(r"(?i)\bBearer\s+[A-Za-z0-9._~+/-]+=*", "Bearer [REDACTED]", text)
     return re.sub(
         r"(?i)\b(password|secret|api[_-]?key|access[_-]?token)\s*[:=]\s*[^\s,;]+",
