@@ -8,12 +8,11 @@ define('WPINC', 'wp-includes');
 define('WP_DEBUG', false);
 define('DB_CHARSET', 'utf8mb4');
 define('DB_COLLATE', '');
-// Only WordPress hooks/diagnostics are shimmed; SQL, quoting, affected rows,
-// connections and the unique index execute through the vendor wpdb class.
-function add_filter(...$args) { return true; }
-function apply_filters($name, $value, ...$args) { return $value; }
-function has_filter(...$args) { return false; }
-function did_action(...$args) { return 1; }
+// Use real hooks: wpdb removes its escaped SQL placeholders through a query
+// filter. Omitting that filter would silently change LIKE wildcard semantics.
+require ABSPATH . WPINC . '/plugin.php';
+// Only single-site configuration/diagnostics below are shimmed. SQL, quoting,
+// hooks, affected rows, connections and the unique index use vendor code.
 function is_multisite() { return false; }
 function __($value, ...$args) { return $value; }
 function wp_load_translations_early() {}
