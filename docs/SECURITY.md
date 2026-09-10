@@ -23,3 +23,5 @@ Python dependency updates, source-inventory checks and exact package/wheel hashe
 If a secret is found in Git history, treat it as compromised, block deployment, rotate it through the owning provider, and document the incident without reproducing the value.
 
 Bootstrap root and administrator credentials must be rotated by the owner after handoff; Kairós will not rotate them without explicit authorization.
+
+The September 10 value scan matched `DATAJUD_API_KEY` between the live configuration and the existing `.env.example`. Its value was not emitted; the example now leaves the field empty. No external credential was rotated and history was preserved. Confirm the official key's public status and current validity with CNJ before enabling DataJud; the match alone is not proof of a private-user credential compromise. The integration remains externally unverified.
