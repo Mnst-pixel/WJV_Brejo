@@ -29,6 +29,10 @@ $wpdb = new wpdb('kairos_gate_test', getenv('KAIROS_TEST_WP_DB_PASSWORD'), 'kair
 $wpdb->suppress_errors(true);
 $wpdb->set_prefix('kairos_fixture_');
 require dirname(__DIR__) . '/mu-plugins/kairos-admin-gate.php';
+function seed_option($name, $value, $autoload) {
+    global $wpdb;
+    return $wpdb->query($wpdb->prepare("INSERT INTO {$wpdb->options} (option_name,option_value,autoload) VALUES (%s,%s,%s)", $name, $value, $autoload));
+}
 
 if (($argv[1] ?? '') === 'claim') {
     check(preg_match('/^[a-f0-9]{32}$/D', $argv[2] ?? '') === 1, 'synthetic nonce');
@@ -82,10 +86,10 @@ check((int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options} WHERE autoload
 
 $unrelated = ['siteurl', 'XkairosXgateXnonceXunrelated', '_kairos_gate_nonceXunrelated'];
 foreach ($unrelated as $name) {
-    check($wpdb->insert($wpdb->options, ['option_name' => $name, 'option_value' => 'human-content', 'autoload' => 'yes']) === 1, 'unrelated option fixture');
+    check(seed_option($name, 'human-content', 'yes') === 1, 'unrelated option fixture');
 }
 for ($index = 0; $index < 300; $index++) {
-    check($wpdb->insert($wpdb->options, ['option_name' => '_kairos_gate_nonce_' . bin2hex(random_bytes(16)), 'option_value' => (string) (time() - 60), 'autoload' => 'no']) === 1, 'expired nonce fixture');
+    check(seed_option('_kairos_gate_nonce_' . bin2hex(random_bytes(16)), (string) (time() - 60), 'no') === 1, 'expired nonce fixture');
 }
 check(kairos_gate_claim(['nonce' => bin2hex(random_bytes(16)), 'issued' => time()]), 'claim prunes expired nonces');
 check((int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options} WHERE autoload = 'no' AND CAST(option_value AS UNSIGNED) < UNIX_TIMESTAMP() - 12") === 44, 'cleanup limited to 256');
