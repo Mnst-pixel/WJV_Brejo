@@ -18,11 +18,16 @@ from core.services.ai_transport import AIUnavailable, localai_json
 from rest_framework.exceptions import Throttled
 
 
+def _approved_versions():
+    from core.services.documents import published_document_versions
+    return published_document_versions()
+
+
 def _published_chunks(context: dict) -> QuerySet[DocumentChunk]:
     context = validated_context(context)
     queryset = DocumentChunk.objects.select_related(
         "document_version__document", "document_version__document__source_registry"
-    ).filter(document_version__state=SourceDocumentVersion.PipelineState.PUBLISHED)
+    ).filter(document_version__in=_approved_versions())
     if jurisdiction := str(context.get("jurisdiction", "")).strip():
         queryset = queryset.filter(
             document_version__document__jurisdiction=jurisdiction
@@ -127,8 +132,10 @@ def hybrid_retrieve(
 def index_published_version(version: SourceDocumentVersion) -> int:
     """Create immutable-model embeddings only for an already published version."""
 
-    if version.state != SourceDocumentVersion.PipelineState.PUBLISHED:
-        raise ValueError("only published document versions may be indexed")
+    if not _approved_versions().filter(pk=version.pk).exists():
+        raise ValueError(
+            "only published and human-approved document versions may be indexed"
+        )
     chunks = list(version.chunks.order_by("ordinal"))
     if not chunks:
         return 0
@@ -151,6 +158,8 @@ def index_published_version(version: SourceDocumentVersion) -> int:
                 raise ValueError("invalid embedding")
             vectors.append(vector)
     with transaction.atomic():
+        if not _approved_versions().select_for_update().filter(pk=version.pk).exists():
+            raise ValueError("publication approval changed during indexing")
         for chunk, vector in zip(chunks, vectors, strict=True):
             existing, created = Embedding.objects.get_or_create(
                 chunk=chunk,

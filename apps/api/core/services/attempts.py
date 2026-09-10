@@ -11,7 +11,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from core.exceptions import Conflict
-from core.models import AnswerKey, Annulment, Attempt, AttemptAnswer, AttemptCheckpoint, Question, Simulation, User
+from core.models import AnswerKey, Annulment, Attempt, AttemptAnswer, AttemptCheckpoint, Question, Simulation
+from core.permissions import lock_study_user
 
 
 class AnswerInput(serializers.Serializer):
@@ -81,7 +82,7 @@ def _definition(simulation, *, require_approval):
 @transaction.atomic
 def create_attempt(*, simulation, owner, idempotency_key=None):
     # Owner lock also serializes the same idempotency key across distinct simulations.
-    User.objects.select_for_update().get(pk=owner.pk)
+    lock_study_user(owner)
     simulation = get_object_or_404(Simulation.objects.select_for_update(), pk=simulation.pk, owner=owner)
     if idempotency_key is not None:
         if not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 96 or not idempotency_key.isascii():
@@ -105,6 +106,7 @@ def _ensure_definition(attempt):
 
 @transaction.atomic
 def autosave_attempt(*, attempt_id, owner, expected_version, answers, elapsed_seconds):
+    lock_study_user(owner)
     attempt_id = serializers.UUIDField().run_validation(attempt_id)
     payload = AutosaveInput(data={"version": expected_version, "answers": answers, "elapsed_seconds": elapsed_seconds})
     payload.is_valid(raise_exception=True)
@@ -164,6 +166,7 @@ def _score(attempt):
 
 @transaction.atomic
 def submit_attempt(*, attempt_id, owner):
+    lock_study_user(owner)
     attempt_id = serializers.UUIDField().run_validation(attempt_id)
     attempt = get_object_or_404(Attempt.objects.select_for_update().select_related("simulation"), pk=attempt_id, owner=owner)
     if attempt.status in {Attempt.Status.SUBMITTED, Attempt.Status.GRADED}:
@@ -179,7 +182,9 @@ def submit_attempt(*, attempt_id, owner):
     return attempt
 
 
+@transaction.atomic
 def attempt_results(*, attempt_id, owner):
+    lock_study_user(owner)
     attempt_id = serializers.UUIDField().run_validation(attempt_id)
     attempt = get_object_or_404(Attempt, pk=attempt_id, owner=owner)
     if attempt.status == Attempt.Status.ACTIVE:
