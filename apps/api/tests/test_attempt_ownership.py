@@ -22,7 +22,7 @@ def test_attempt_cannot_be_relinked_to_another_user(student, other_student, clie
     foreign = simulation_factory(other_student, "Privado")
     attempt = Attempt.objects.create(owner=student, simulation=own)
     response = getattr(client_for(student), method)(f"/api/attempts/{attempt.id}/", {"simulation": str(foreign.id)}, format="json")
-    assert response.status_code in {400, 403}
+    assert response.status_code == 405
     attempt.refresh_from_db()
     assert attempt.simulation_id == own.id
 
@@ -33,7 +33,7 @@ def test_attempt_simulation_is_immutable_even_for_same_owner(student, client_for
     another = simulation_factory(student, "Outro")
     attempt = Attempt.objects.create(owner=student, simulation=own)
     response = client_for(student).patch(f"/api/attempts/{attempt.id}/", {"simulation": str(another.id)}, format="json")
-    assert response.status_code == 400
+    assert response.status_code == 405
     attempt.refresh_from_db()
     assert attempt.simulation_id == own.id
 

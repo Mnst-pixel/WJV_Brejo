@@ -63,7 +63,7 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
         "KEY_PREFIX": f"kairos-test:{secrets.token_hex(12)}",
-        "OPTIONS": {"socket_connect_timeout": 5, "socket_timeout": 5},
+        "OPTIONS": {"socket_connect_timeout": 5, "socket_timeout": 5, "serializer": "core.cache_serialization.StrictJSONSerializer"},
     }
 }
 

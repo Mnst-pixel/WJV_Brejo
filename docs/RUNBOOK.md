@@ -9,7 +9,9 @@
 
 ## Safe restart
 
-Operate only from `/opt/kairos/current/infra/compose` with project name `kairos`. Name the exact Kairós service. Never use system-wide Docker restart, daemon restart, prune, or host service commands.
+After canonical release activation, operate through `scripts/kairos-compose.py` with project `kairos`, a verified descriptor and explicit service names. Never execute historical Compose alone: it can recreate an older API or bootstrap. Until that activation, preserve the effective image/override documented in [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md); restarting an existing identified container is different from recreating it from the historical checkout. Never use system-wide Docker restart, daemon restart, prune, or host service commands.
+
+The September 10 candidate has not changed live timers yet. New backup/health behavior documented in this branch must first pass its manual isolated verification. `configured_unverified` and `unconfigured` integration states are not service readiness. Missing external credentials belong in the external-blocker register, not in a fabricated successful health result.
 
 ## Incidents
 
@@ -26,4 +28,3 @@ Any failed probe, service outage, OOM, suspected crash loop, disk use at or abov
 - `journalctl -u kairos-health.service --since today`
 - `sed -n '1,240p' /srv/kairos/observability/latest.status`
 If the no-touch comparator reports a pre-existing resource change, halt acceptance, remove only the Kairós-introduced change, investigate, and invalidate both final verifications.
-

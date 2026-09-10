@@ -21,6 +21,7 @@ RUN chmod 0555 /app/docker-entrypoint.sh \
     && chown -R kairos:kairos /app
 
 USER 10001:10001
+RUN DJANGO_SECRET_KEY=static-build-only python manage.py collectstatic --noinput --verbosity 0
 EXPOSE 8000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["api"]

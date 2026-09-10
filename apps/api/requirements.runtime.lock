@@ -1,0 +1,8 @@
+# Reviewed Linux x86_64 CPython 3.13 / ABI3 upgrades; install with --no-deps --require-hashes.
+# Source: PyPI JSON SHA256 verified against downloaded wheels, 2026-09-10.
+# cryptography-50.0.1-cp311-abi3-manylinux_2_28_x86_64.whl
+cryptography==50.0.1 --hash=sha256:51593d180cf6d179bde5c5d065bed81386b1f381656ae7d042b7ffc87a9895ad
+# pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+Pillow==12.3.0 --hash=sha256:0847a763afefb695bc912d7c131e7e0632d4edc1d8698f58ddabec8e46b8b6d3
+# pip-26.2.1-py3-none-any.whl (existing build tool)
+pip==26.2.1 --hash=sha256:71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e

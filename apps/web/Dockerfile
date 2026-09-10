@@ -11,6 +11,8 @@ COPY . .
 RUN npm run build
 
 FROM node:24.19.0-alpine3.23 AS runner
+ARG SOURCE_REVISION
+LABEL org.opencontainers.image.revision=$SOURCE_REVISION
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

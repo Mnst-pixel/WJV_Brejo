@@ -1,5 +1,7 @@
 # Pending external decisions
 
+2026-09-10 foundations note: missing SMTP, INLABS, DataJud and off-host credentials remain `EXTERNAL_BLOCKER` only for their respective integrations. They do not block independent implementation or tests. The current reasons for `READY_FOR_PRODUCT_BUILD=NO` are technical release, recovery, HTTP/E2E and verification gates in [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md). The Hermes hardware entry below describes the historical production stack; the candidate uses a bounded LocalAI adapter and has not yet replaced that stack.
+
 | Dependency | Status | Impact | Completion path |
 |---|---|---|---|
 | Public FQDN and TLS | `COMPLETE` | Kairós is published at `https://kairos.2-24-215-183.sslip.io`; certificate renewal is scheduled. | Replace the sslip.io hostname later only if the owner supplies a managed DNS record. |

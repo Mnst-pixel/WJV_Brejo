@@ -55,8 +55,8 @@ fernet_secret() { openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'; }
   printf 'GATEWAY_BEARER_TOKEN=%s\n' "$(secret)"
   printf 'MCP_API_KEY=%s\n' "$(secret)"
   printf 'BACKUP_ENCRYPTION_PASSPHRASE=%s\n' "$(secret)"
-  echo 'DATAJUD_API_KEY=cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='
-  echo 'DATAJUD_AUTH_HEADER=APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='
+  echo 'DATAJUD_API_KEY='
+  echo 'DATAJUD_AUTH_HEADER='
   echo 'INLABS_ENABLED=false'
   echo 'INLABS_EMAIL='
   echo 'INLABS_PASSWORD='

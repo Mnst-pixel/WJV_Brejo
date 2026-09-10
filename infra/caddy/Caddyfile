@@ -3,6 +3,7 @@
 	admin off
 	servers {
 		trusted_proxies static private_ranges
+		trusted_proxies_strict
 	}
 }
 
@@ -16,6 +17,11 @@
 		X-Frame-Options "SAMEORIGIN"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+		-X-Powered-By
+	}
+	request_body {
+		max_size 27MB
 	}
 
 	handle /healthz {
@@ -28,12 +34,24 @@
 	}
 	redir @legacy_access https://kairos.2-24-215-183.sslip.io{uri} permanent
 
+	handle /api/internal/* {
+		respond "Not found" 404
+	}
+
 	handle /api/* {
-		reverse_proxy api:8000
+		header Cache-Control "private, no-store"
+		reverse_proxy api:8000 {
+			header_up X-Real-IP {client_ip}
+			header_up X-Kairos-Proxy {$KAIROS_PROXY_TOKEN}
+		}
 	}
 
 	handle /admin* {
-		reverse_proxy api:8000
+		header Cache-Control "private, no-store"
+		reverse_proxy api:8000 {
+			header_up X-Real-IP {client_ip}
+			header_up X-Kairos-Proxy {$KAIROS_PROXY_TOKEN}
+		}
 	}
 
 	handle /static/* {
@@ -41,19 +59,43 @@
 	}
 
 	handle /media/* {
-		reverse_proxy api:8000
+		respond "Not found" 404
 	}
 
 	handle /app* {
+		header Cache-Control "private, no-store"
 		reverse_proxy web:3000
 	}
 
 	handle {
-		reverse_proxy wordpress:80
+		route {
+			request_header -X-Kairos-Wp-Gate
+			forward_auth api:8000 {
+				uri /api/internal/wordpress-auth
+				copy_headers X-Kairos-Wp-Gate
+				header_up X-Real-IP {client_ip}
+				header_up X-Kairos-Proxy {$KAIROS_PROXY_TOKEN}
+				transport http {
+					dial_timeout 3s
+					response_header_timeout 5s
+				}
+			}
+			reverse_proxy wordpress:80 {
+				header_up -X-Kairos-Proxy
+				header_down -X-Kairos-Wp-Gate
+			}
+		}
 	}
 
 	log {
 		output stdout
-		format json
+		format filter {
+			wrap json
+			fields {
+				request>headers>X-Kairos-Wp-Gate delete
+				request>headers>X-Kairos-Proxy delete
+				resp_headers>X-Kairos-Wp-Gate delete
+			}
+		}
 	}
 }

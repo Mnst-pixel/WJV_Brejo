@@ -1,599 +1,1086 @@
-name: kairos
-
-x-service-defaults: &service-defaults
-  restart: unless-stopped
-  init: true
-  security_opt:
-    - no-new-privileges:true
-  logging:
-    driver: json-file
-    options:
-      max-size: 10m
-      max-file: "3"
-
-services:
-  edge:
-    <<: *service-defaults
-    image: caddy:2.11.4-alpine
-    ports:
-      - "${KAIROS_BIND_ADDRESS:-0.0.0.0}:${KAIROS_PUBLIC_PORT:-4080}:80"
-    volumes:
-      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - kairos_caddy_data:/data
-      - kairos_caddy_config:/config
-    networks:
-      - edge
-      - app
-    depends_on:
-      wordpress:
-        condition: service_healthy
-      web:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-    mem_limit: 192m
-    cpus: 0.35
-    pids_limit: 128
-
-  web:
-    <<: *service-defaults
-    build:
-      context: ../../apps/web
-      dockerfile: Dockerfile
-    environment:
-      NODE_ENV: production
-      NEXT_TELEMETRY_DISABLED: "1"
-      INTERNAL_API_URL: http://api:8000
-      NEXT_PUBLIC_BASE_PATH: /app
-    networks:
-      - app
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/app/api/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 8
-    mem_limit: 512m
-    cpus: 0.75
-    pids_limit: 256
-
-  api:
-    <<: *service-defaults
-    build:
-      context: ../../apps/api
-      dockerfile: Dockerfile
-    command: ["api"]
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: "5432"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_BUCKET_NAME: documents
-      CLAMAV_HOST: clamav
-      CLAMAV_PORT: "3310"
-      HERMES_BASE_URL: http://hermes:8642
-      MCP_GATEWAY_URL: http://mcp-gateway:3000
-    networks:
-      - app
-      - data
-      - ai
-      - mcp
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/live', timeout=3)"]
-      interval: 15s
-      timeout: 5s
-      retries: 8
-    mem_limit: 768m
-    cpus: 1.0
-    pids_limit: 256
-
-  worker:
-    <<: *service-defaults
-    build:
-      context: ../../apps/api
-      dockerfile: Dockerfile
-    command: ["worker"]
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: "5432"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_BUCKET_NAME: documents
-      CLAMAV_HOST: clamav
-      CLAMAV_PORT: "3310"
-      HERMES_BASE_URL: http://hermes:8642
-      MCP_GATEWAY_URL: http://mcp-gateway:3000
-    networks:
-      - data
-      - ai
-      - mcp
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-      clamav:
-        condition: service_healthy
-    mem_limit: 768m
-    cpus: 1.0
-    pids_limit: 256
-
-  localai:
-    <<: *service-defaults
-    image: localai/localai:v4.9.0
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      LOCALAI_MODELS_PATH: /models
-      LOCALAI_BACKENDS_PATH: /backends
-      LOCALAI_DATA_PATH: /data
-      LOCALAI_DISABLE_WEBUI: "true"
-      LOCALAI_SUBTLE_KEY_COMPARISON: "true"
-      LOCALAI_LOG_LEVEL: info
-    volumes:
-      - kairos_localai_models:/models
-      - kairos_localai_backends:/backends
-      - kairos_localai_data:/data
-    networks:
-      - ai
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -H \"Authorization: Bearer $$LOCALAI_API_KEY\" http://127.0.0.1:8080/readyz >/dev/null"]
-      start_period: 10m
-      interval: 30s
-      timeout: 15s
-      retries: 20
-    mem_limit: 3g
-    cpus: 3.0
-    pids_limit: 512
-
-  hermes-bootstrap:
-    image: nousresearch/hermes-agent:v2026.8.19
-    restart: "no"
-    init: true
-    user: "10000:10000"
-    security_opt:
-      - no-new-privileges:true
-    env_file:
-      - /opt/kairos/secrets/.env
-    entrypoint: ["/opt/hermes/.venv/bin/python", "/bootstrap/bootstrap-hermes-config.py"]
-    volumes:
-      - kairos_hermes_data:/opt/data
-      - ../../scripts/bootstrap-hermes-config.py:/bootstrap/bootstrap-hermes-config.py:ro
-      - ../../config/hermes/config.template.yaml:/bootstrap/config.template.yaml:ro
-      - ../../config/hermes/SOUL.md:/bootstrap/SOUL.md:ro
-    mem_limit: 256m
-    cpus: 0.25
-    networks:
-      - ai
-    pids_limit: 64
-
-  hermes:
-    <<: *service-defaults
-    image: nousresearch/hermes-agent:v2026.8.19
-    command: ["gateway", "run"]
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      HERMES_UID: "10000"
-      HERMES_GID: "10000"
-      API_SERVER_ENABLED: "true"
-      API_SERVER_HOST: 0.0.0.0
-      API_SERVER_PORT: "8642"
-      API_SERVER_KEY: ${HERMES_BEARER_TOKEN}
-      API_SERVER_MODEL_NAME: qwen3-1.7b-kairos
-      API_SERVER_CORS_ORIGINS: ${KAIROS_BASE_URL}
-      GATEWAY_ALLOW_ALL_USERS: "false"
-      HERMES_DASHBOARD: "0"
-    volumes:
-      - kairos_hermes_data:/opt/data
-    networks:
-      - ai
-      - mcp
-    depends_on:
-      hermes-bootstrap:
-        condition: service_completed_successfully
-      localai:
-        condition: service_healthy
-      mcp-server:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -H \"Authorization: Bearer $$API_SERVER_KEY\" http://127.0.0.1:8642/health >/dev/null"]
-      start_period: 90s
-      interval: 20s
-      timeout: 10s
-      retries: 12
-    mem_limit: 1g
-    cpus: 1.0
-    pids_limit: 384
-
-  mcp-brasil:
-    <<: *service-defaults
-    build:
-      context: ../../services/jurisprudencio
-      dockerfile: mcp-brasil.Dockerfile
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      MCP_BRASIL_TOOL_SEARCH: none
-      MCP_BRASIL_HTTP_TIMEOUT: "30.0"
-      MCP_BRASIL_HTTP_MAX_RETRIES: "3"
-      MCP_BRASIL_DATASET_REFRESH: auto
-      MCP_BRASIL_DATASET_CACHE_DIR: /cache
-    volumes:
-      - kairos_mcp_brasil_cache:/cache
-    networks:
-      - app
-      - mcp
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -o /dev/null -X POST http://127.0.0.1:8000/mcp/ -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"healthcheck\",\"version\":\"1\"}}}'"]
-      start_period: 60s
-      interval: 30s
-      timeout: 15s
-      retries: 8
-    cap_drop:
-      - ALL
-    mem_limit: 768m
-    cpus: 0.75
-    pids_limit: 192
-
-  mcp-gateway:
-    <<: *service-defaults
-    build:
-      context: ../../services/jurisprudencio
-      dockerfile: gateway.Dockerfile
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      NODE_ENV: production
-      HOST: 0.0.0.0
-      PORT: "3000"
-      PUBLIC_BASE_URL: http://mcp-gateway:3000
-      CORS_ORIGIN: ${KAIROS_BASE_URL}
-      DATAJUD_BASE_URL: https://api-publica.datajud.cnj.jus.br
-      MCP_BRASIL_ENABLED: "true"
-      MCP_BRASIL_URL: http://mcp-brasil:8000/mcp
-      MCP_BRASIL_TIMEOUT_MS: "60000"
-      CACHE_ENABLED: "true"
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      REDIS_DB: "3"
-      CACHE_PREFIX: "kairos:mcp:"
-      RATE_LIMIT_PER_MIN: "120"
-      QUERIDO_DIARIO_ENABLED: "true"
-      INLABS_ENABLED: ${INLABS_ENABLED:-false}
-    networks:
-      - app
-      - data
-      - mcp
-    depends_on:
-      redis:
-        condition: service_healthy
-      mcp-brasil:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/health"]
-      interval: 20s
-      timeout: 10s
-      retries: 8
-    cap_drop:
-      - ALL
-    mem_limit: 384m
-    cpus: 0.5
-    pids_limit: 192
-
-  mcp-server:
-    <<: *service-defaults
-    build:
-      context: ../../services/jurisprudencio
-      dockerfile: mcp-server.Dockerfile
-    env_file:
-      - /opt/kairos/secrets/.env
-    environment:
-      MCP_HOST: 0.0.0.0
-      MCP_PORT: "3002"
-      GATEWAY_BASE_URL: http://mcp-gateway:3000
-      MCP_REQUEST_TIMEOUT_MS: "60000"
-    networks:
-      - mcp
-    depends_on:
-      mcp-gateway:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider --header=\"Authorization: Bearer $$MCP_API_KEY\" http://127.0.0.1:3002/mcp/health"]
-      interval: 20s
-      timeout: 10s
-      retries: 8
-    cap_drop:
-      - ALL
-    mem_limit: 256m
-    cpus: 0.35
-    pids_limit: 128
-
-  postgres:
-    <<: *service-defaults
-    image: pgvector/pgvector:0.8.6-pg17-trixie
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
-    volumes:
-      - kairos_postgres_data:/var/lib/postgresql/data
-      - ../../database/postgres/init.sql:/docker-entrypoint-initdb.d/10-kairos.sql:ro
-    networks:
-      - data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    mem_limit: 1g
-    cpus: 1.0
-    pids_limit: 256
-
-  redis:
-    <<: *service-defaults
-    image: redis:8.8.0-alpine
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    command: ["/bin/sh", "-c", "exec redis-server --appendonly yes --save 60 1000 --requirepass \"$$REDIS_PASSWORD\""]
-    volumes:
-      - kairos_redis_data:/data
-    networks:
-      - data
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    mem_limit: 384m
-    cpus: 0.5
-    pids_limit: 128
-
-  minio:
-    <<: *service-defaults
-    build:
-      context: ../minio
-      dockerfile: Dockerfile
-    command: ["server", "/data", "--console-address", ":9001"]
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BROWSER: "off"
-    volumes:
-      - kairos_minio_data:/data
-    networks:
-      - data
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    mem_limit: 512m
-    cpus: 0.75
-    pids_limit: 256
-
-  minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
-    restart: "no"
-    init: true
-    security_opt:
-      - no-new-privileges:true
-    depends_on:
-      minio:
-        condition: service_healthy
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_APP_USER: ${MINIO_APP_USER}
-      MINIO_APP_PASSWORD: ${MINIO_APP_PASSWORD}
-    volumes:
-      - ../minio/documents-policy.json:/policy.json:ro
-      - ../minio/bootstrap.sh:/bootstrap.sh:ro
-    entrypoint: ["/bin/sh", "/bootstrap.sh"]
-    networks:
-      - data
-    mem_limit: 128m
-    cpus: 0.25
-    pids_limit: 64
-
-  mariadb:
-    <<: *service-defaults
-    image: mariadb:12.3.3
-    environment:
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-    volumes:
-      - kairos_mariadb_data:/var/lib/mysql
-    networks:
-      - data
-    healthcheck:
-      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-    mem_limit: 640m
-    cpus: 0.75
-    pids_limit: 256
-
-  wordpress:
-    <<: *service-defaults
-    image: wordpress:7.1.0-php8.3-apache
-    environment:
-      WORDPRESS_DB_HOST: mariadb:3306
-      WORDPRESS_DB_NAME: ${MARIADB_DATABASE}
-      WORDPRESS_DB_USER: ${MARIADB_USER}
-      WORDPRESS_DB_PASSWORD: ${MARIADB_PASSWORD}
-      WORDPRESS_CONFIG_EXTRA: |
-        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
-          $$_SERVER['HTTPS'] = 'on';
+{
+  "name": "kairos",
+  "networks": {
+    "ai": {
+      "internal": true,
+      "labels": {
+        "com.kairos.scope": "ai"
+      },
+      "name": "kairos-ai"
+    },
+    "app": {
+      "labels": {
+        "com.kairos.scope": "app"
+      },
+      "name": "kairos-app"
+    },
+    "data": {
+      "internal": true,
+      "labels": {
+        "com.kairos.scope": "data"
+      },
+      "name": "kairos-data"
+    },
+    "edge": {
+      "labels": {
+        "com.kairos.scope": "edge"
+      },
+      "name": "kairos-edge"
+    },
+    "mcp": {
+      "internal": true,
+      "labels": {
+        "com.kairos.scope": "mcp"
+      },
+      "name": "kairos-mcp"
+    },
+    "parser": {
+      "name": "kairos-parser",
+      "internal": true,
+      "labels": {
+        "com.kairos.scope": "parser"
+      }
+    }
+  },
+  "services": {
+    "api": {
+      "command": [
+        "api"
+      ],
+      "cpus": 1,
+      "depends_on": {
+        "postgres": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "redis": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "minio": {
+          "condition": "service_healthy",
+          "required": true
         }
-        define('DISALLOW_FILE_EDIT', true);
-        define('WP_AUTO_UPDATE_CORE', false);
-        define('FORCE_SSL_ADMIN', true);
-    volumes:
-      - kairos_wordpress_data:/var/www/html
-    networks:
-      - app
-      - data
-    depends_on:
-      mariadb:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "php -r '$$c=@fsockopen(\"127.0.0.1\",80,$$e,$$s,2); exit($$c?0:1);'"]
-      interval: 15s
-      timeout: 5s
-      retries: 15
-    mem_limit: 768m
-    cpus: 0.75
-    pids_limit: 256
-
-  wordpress-bootstrap:
-    image: wordpress:cli-2.12.0-php8.3
-    restart: "no"
-    init: true
-    user: "33:33"
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      WORDPRESS_DB_HOST: mariadb:3306
-      WORDPRESS_DB_NAME: ${MARIADB_DATABASE}
-      WORDPRESS_DB_USER: ${MARIADB_USER}
-      WORDPRESS_DB_PASSWORD: ${MARIADB_PASSWORD}
-      KAIROS_BASE_URL: ${KAIROS_BASE_URL}
-      WORDPRESS_ADMIN_USER: ${WORDPRESS_ADMIN_USER}
-      WORDPRESS_ADMIN_PASSWORD: ${WORDPRESS_ADMIN_PASSWORD}
-      WORDPRESS_ADMIN_EMAIL: ${WORDPRESS_ADMIN_EMAIL:-vinicius@kairos.invalid}
-    volumes:
-      - kairos_wordpress_data:/var/www/html
-      - ../../wordpress/bootstrap.sh:/bootstrap.sh:ro
-      - ../../wordpress/content:/seed:ro
-      - ../../wordpress/assets:/assets:ro
-      - ../../wordpress/config:/config:ro
-      - ../../wordpress/mu-plugins:/mu-plugins:ro
-    entrypoint: ["/bin/sh", "/bootstrap.sh"]
-    networks:
-      - app
-      - data
-    depends_on:
-      wordpress:
-        condition: service_healthy
-    mem_limit: 192m
-    cpus: 0.35
-    pids_limit: 96
-
-  clamav:
-    <<: *service-defaults
-    image: clamav/clamav:1.5.3
-    volumes:
-      - kairos_clamav_data:/var/lib/clamav
-    networks:
-      - data
-    healthcheck:
-      test: ["CMD-SHELL", "clamdscan --ping 3 | grep -q PONG"]
-      start_period: 120s
-      interval: 30s
-      timeout: 10s
-      retries: 10
-    mem_limit: 1g
-    cpus: 0.75
-    pids_limit: 256
-
-networks:
-  edge:
-    name: kairos-edge
-    labels:
-      com.kairos.scope: edge
-  app:
-    name: kairos-app
-    labels:
-      com.kairos.scope: app
-  data:
-    name: kairos-data
-    internal: true
-    labels:
-      com.kairos.scope: data
-  ai:
-    name: kairos-ai
-    internal: true
-    labels:
-      com.kairos.scope: ai
-  mcp:
-    name: kairos-mcp
-    internal: true
-    labels:
-      com.kairos.scope: mcp
-
-volumes:
-  kairos_localai_models:
-    name: kairos_localai_models
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/models}
-  kairos_localai_backends:
-    name: kairos_localai_backends
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/localai-backends}
-  kairos_localai_data:
-    name: kairos_localai_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/localai-data}
-  kairos_hermes_data:
-    name: kairos_hermes_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/hermes}
-  kairos_mcp_brasil_cache:
-    name: kairos_mcp_brasil_cache
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/mcp-brasil-cache}
-  kairos_postgres_data:
-    name: kairos_postgres_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/postgres}
-  kairos_redis_data:
-    name: kairos_redis_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/redis}
-  kairos_minio_data:
-    name: kairos_minio_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/minio}
-  kairos_mariadb_data:
-    name: kairos_mariadb_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/mariadb}
-  kairos_wordpress_data:
-    name: kairos_wordpress_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/wordpress}
-  kairos_clamav_data:
-    name: kairos_clamav_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/clamav}
-  kairos_caddy_data:
-    name: kairos_caddy_data
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/caddy-data}
-  kairos_caddy_config:
-    name: kairos_caddy_config
-    driver: local
-    driver_opts: {type: none, o: bind, device: /srv/kairos/caddy-config}
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/api.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "environment": {
+        "CLAMAV_HOST": "clamav",
+        "CLAMAV_PORT": "3310",
+        "POSTGRES_HOST": "postgres",
+        "POSTGRES_PORT": "5432",
+        "REDIS_HOST": "redis",
+        "REDIS_PORT": "6379",
+        "S3_BUCKET_NAME": "documents",
+        "S3_ENDPOINT_URL": "http://minio:9000",
+        "KAIROS_BASE_URL": "https://kairos.2-24-215-183.sslip.io",
+        "KAIROS_ALLOWED_HOSTS": "kairos.2-24-215-183.sslip.io,localhost,127.0.0.1,api",
+        "KAIROS_CSRF_TRUSTED_ORIGINS": "https://kairos.2-24-215-183.sslip.io",
+        "KAIROS_CORS_ORIGINS": "https://kairos.2-24-215-183.sslip.io",
+        "KAIROS_TLS_ENABLED": "true",
+        "LOCALAI_BASE_URL": "http://localai:8080",
+        "KAIROS_TRUST_PROXY_HEADERS": "true",
+        "KAIROS_LEGACY_DATA_DIR": "/app/legacy-extracted"
+      },
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 8,
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/live', timeout=3)"
+        ],
+        "timeout": "5s"
+      },
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "768m",
+      "networks": {
+        "app": null,
+        "data": null,
+        "ai": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "image": "${KAIROS_IMAGE_API:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,noexec,size=128m,uid=10001,gid=10001"
+      ]
+    },
+    "clamav": {
+      "cpus": 0.75,
+      "healthcheck": {
+        "interval": "30s",
+        "retries": 10,
+        "start_period": "120s",
+        "test": [
+          "CMD-SHELL",
+          "clamdscan --ping 3 | grep -q PONG"
+        ],
+        "timeout": "10s"
+      },
+      "image": "${KAIROS_IMAGE_CLAMAV:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "data": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_clamav_data",
+          "target": "/var/lib/clamav",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "environment": {}
+    },
+    "edge": {
+      "cpus": 0.35,
+      "depends_on": {
+        "api": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "web": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "wordpress": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 5,
+        "test": [
+          "CMD",
+          "wget",
+          "-q",
+          "--spider",
+          "http://127.0.0.1/healthz"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${KAIROS_IMAGE_EDGE:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "192m",
+      "networks": {
+        "app": null,
+        "edge": null
+      },
+      "pids_limit": 128,
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 80,
+          "published": "4080",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "bind": {
+            "create_host_path": false
+          },
+          "read_only": true,
+          "source": "/opt/kairos/current/infra/caddy/Caddyfile",
+          "target": "/etc/caddy/Caddyfile",
+          "type": "bind"
+        },
+        {
+          "source": "kairos_caddy_data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "kairos_caddy_config",
+          "target": "/config",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "environment": {},
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "cap_add": [
+        "NET_BIND_SERVICE"
+      ],
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,size=32m"
+      ],
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?}/edge.env",
+          "required": true,
+          "format": "raw"
+        }
+      ]
+    },
+    "localai": {
+      "cpus": 3,
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/localai.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "environment": {
+        "LOCALAI_BACKENDS_PATH": "/backends",
+        "LOCALAI_DATA_PATH": "/data",
+        "LOCALAI_DISABLE_WEBUI": "true",
+        "LOCALAI_LOG_LEVEL": "info",
+        "LOCALAI_MODELS_PATH": "/models",
+        "LOCALAI_SUBTLE_KEY_COMPARISON": "true"
+      },
+      "healthcheck": {
+        "interval": "30s",
+        "retries": 20,
+        "start_period": "10m",
+        "test": [
+          "CMD-SHELL",
+          "curl -fsS -H \"Authorization: Bearer $$LOCALAI_API_KEY\" http://127.0.0.1:8080/readyz >/dev/null"
+        ],
+        "timeout": "15s"
+      },
+      "image": "${KAIROS_IMAGE_LOCALAI:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "3g",
+      "networks": {
+        "ai": null
+      },
+      "pids_limit": 512,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_localai_models",
+          "target": "/models",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "kairos_localai_backends",
+          "target": "/backends",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "kairos_localai_data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "type": "volume",
+          "source": "kairos_localai_configuration",
+          "target": "/configuration"
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      }
+    },
+    "mariadb": {
+      "cpus": 0.75,
+      "environment": {},
+      "healthcheck": {
+        "interval": "10s",
+        "retries": 15,
+        "test": [
+          "CMD-SHELL",
+          "healthcheck.sh --connect --innodb_initialized"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${KAIROS_IMAGE_MARIADB:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "640m",
+      "networks": {
+        "data": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_mariadb_data",
+          "target": "/var/lib/mysql",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/mariadb.env",
+          "format": "raw",
+          "required": true
+        }
+      ]
+    },
+    "minio": {
+      "command": [
+        "server",
+        "/data",
+        "--console-address",
+        ":9001"
+      ],
+      "cpus": 0.75,
+      "environment": {
+        "MINIO_BROWSER": "off"
+      },
+      "healthcheck": {
+        "interval": "10s",
+        "retries": 10,
+        "test": [
+          "CMD",
+          "curl",
+          "-fsS",
+          "http://127.0.0.1:9000/minio/health/live"
+        ],
+        "timeout": "5s"
+      },
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "512m",
+      "networks": {
+        "data": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_minio_data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "image": "${KAIROS_IMAGE_MINIO:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/minio.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,size=64m,uid=1000,gid=1000"
+      ]
+    },
+    "postgres": {
+      "cpus": 1,
+      "environment": {
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256"
+      },
+      "healthcheck": {
+        "interval": "10s",
+        "retries": 10,
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${KAIROS_IMAGE_POSTGRES:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "networks": {
+        "data": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_postgres_data",
+          "target": "/var/lib/postgresql/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/postgres.env",
+          "format": "raw",
+          "required": true
+        }
+      ]
+    },
+    "redis": {
+      "command": [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--save",
+        "60",
+        "1000",
+        "--aclfile",
+        "/etc/kairos/users.acl",
+        "--maxmemory",
+        "192mb",
+        "--maxmemory-policy",
+        "noeviction"
+      ],
+      "cpus": 0.5,
+      "environment": {},
+      "healthcheck": {
+        "interval": "10s",
+        "retries": 10,
+        "test": [
+          "CMD-SHELL",
+          "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${KAIROS_IMAGE_REDIS:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "384m",
+      "networks": {
+        "data": null
+      },
+      "pids_limit": 128,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_redis_data",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "type": "bind",
+          "source": "${KAIROS_SECRETS_DIR:?}/runtime/redis.acl",
+          "target": "/etc/kairos/users.acl",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/redis.env",
+          "format": "raw",
+          "required": true
+        }
+      ]
+    },
+    "web": {
+      "cpus": 0.75,
+      "environment": {
+        "INTERNAL_API_URL": "http://api:8000",
+        "NEXT_PUBLIC_BASE_PATH": "/app",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "NODE_ENV": "production"
+      },
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 8,
+        "test": [
+          "CMD",
+          "wget",
+          "-q",
+          "--spider",
+          "http://127.0.0.1:3000/app/api/health"
+        ],
+        "timeout": "5s"
+      },
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "512m",
+      "networks": {
+        "app": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "image": "${KAIROS_IMAGE_WEB:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,size=64m,uid=10001,gid=10001"
+      ]
+    },
+    "wordpress": {
+      "cpus": 0.75,
+      "depends_on": {
+        "mariadb": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "WORDPRESS_CONFIG_EXTRA": "if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {\n  $$_SERVER['HTTPS'] = 'on';\n}\ndefine('DISALLOW_FILE_EDIT', true);\ndefine('WP_AUTO_UPDATE_CORE', false);\ndefine('FORCE_SSL_ADMIN', true);\n",
+        "WORDPRESS_DB_HOST": "mariadb:3306"
+      },
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 15,
+        "test": [
+          "CMD-SHELL",
+          "php -r '$$c=@fsockopen(\"127.0.0.1\",80,$$e,$$s,2); exit($$c?0:1);'"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${KAIROS_IMAGE_WORDPRESS:?Use the versioned release descriptor}",
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "768m",
+      "networks": {
+        "app": null,
+        "data": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "source": "kairos_wordpress_data",
+          "target": "/var/www/html",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "type": "bind",
+          "source": "/opt/kairos/current/wordpress/mu-plugins/kairos-admin-gate.php",
+          "target": "/var/www/html/wp-content/mu-plugins/kairos-admin-gate.php",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/wordpress.env",
+          "format": "raw",
+          "required": true
+        }
+      ]
+    },
+    "worker": {
+      "command": [
+        "worker"
+      ],
+      "cpus": 1,
+      "depends_on": {
+        "clamav": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "postgres": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "redis": {
+          "condition": "service_healthy",
+          "required": true
+        },
+        "minio": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/worker.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "environment": {
+        "CLAMAV_HOST": "clamav",
+        "CLAMAV_PORT": "3310",
+        "POSTGRES_HOST": "postgres",
+        "POSTGRES_PORT": "5432",
+        "REDIS_HOST": "redis",
+        "REDIS_PORT": "6379",
+        "S3_BUCKET_NAME": "documents",
+        "S3_ENDPOINT_URL": "http://minio:9000",
+        "KAIROS_BASE_URL": "https://kairos.2-24-215-183.sslip.io",
+        "KAIROS_ALLOWED_HOSTS": "kairos.2-24-215-183.sslip.io,localhost,127.0.0.1,api",
+        "KAIROS_CSRF_TRUSTED_ORIGINS": "https://kairos.2-24-215-183.sslip.io",
+        "KAIROS_CORS_ORIGINS": "https://kairos.2-24-215-183.sslip.io",
+        "KAIROS_TLS_ENABLED": "true",
+        "PARSER_BASE_URL": "http://parser:8090"
+      },
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "768m",
+      "networks": {
+        "app": null,
+        "data": null,
+        "parser": null
+      },
+      "pids_limit": 256,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "image": "${KAIROS_IMAGE_API:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,noexec,size=128m,uid=10001,gid=10001"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "celery",
+          "-A",
+          "kairos",
+          "inspect",
+          "ping",
+          "--timeout=5"
+        ],
+        "interval": "60s",
+        "timeout": "15s",
+        "retries": 3
+      }
+    },
+    "migrate": {
+      "image": "${KAIROS_IMAGE_API:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "profiles": [
+        "maintenance"
+      ],
+      "command": [
+        "migrate"
+      ],
+      "restart": "no",
+      "user": "10001:10001",
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use protected release secrets}/migrate.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "environment": {
+        "POSTGRES_HOST": "postgres",
+        "POSTGRES_PORT": "5432"
+      },
+      "networks": {
+        "data": null
+      },
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,noexec,size=32m,uid=10001,gid=10001"
+      ],
+      "mem_limit": "512m",
+      "cpus": 0.5,
+      "pids_limit": 128
+    },
+    "parser": {
+      "image": "${KAIROS_IMAGE_PARSER:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "user": "10001:10001",
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "cpus": 0.5,
+      "mem_limit": "640m",
+      "pids_limit": 64,
+      "restart": "unless-stopped",
+      "init": false,
+      "networks": {
+        "parser": null
+      },
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,noexec,size=64m,uid=10001,gid=10001"
+      ],
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/parser.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/healthz',timeout=3)"
+        ],
+        "interval": "30s",
+        "timeout": "5s",
+        "retries": 3
+      },
+      "labels": {
+        "com.kairos.managed": "release"
+      }
+    },
+    "beat": {
+      "command": [
+        "beat"
+      ],
+      "cpus": 0.2,
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        }
+      },
+      "env_file": [
+        {
+          "path": "${KAIROS_SECRETS_DIR:?Use the protected release secrets}/beat.env",
+          "format": "raw",
+          "required": true
+        }
+      ],
+      "environment": {
+        "REDIS_HOST": "redis",
+        "REDIS_PORT": "6379"
+      },
+      "init": true,
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "192m",
+      "networks": {
+        "data": null
+      },
+      "pids_limit": 64,
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "image": "${KAIROS_IMAGE_BEAT:?Use the versioned release descriptor}",
+      "pull_policy": "never",
+      "labels": {
+        "com.kairos.managed": "release"
+      },
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "tmpfs": [
+        "/tmp:rw,nosuid,nodev,noexec,size=128m,uid=10001,gid=10001"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "from pathlib import Path; import time; assert any(time.time()-p.stat().st_mtime<600 for p in Path('/tmp').glob('kairos-celerybeat*'))"
+        ],
+        "interval": "60s",
+        "timeout": "5s",
+        "retries": 3,
+        "start_period": "60s"
+      }
+    }
+  },
+  "volumes": {
+    "kairos_caddy_config": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/caddy-config",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_caddy_config"
+    },
+    "kairos_caddy_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/caddy-data",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_caddy_data"
+    },
+    "kairos_clamav_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/clamav",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_clamav_data"
+    },
+    "kairos_hermes_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/hermes",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_hermes_data"
+    },
+    "kairos_localai_backends": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/localai-backends",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_localai_backends"
+    },
+    "kairos_localai_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/localai-data",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_localai_data"
+    },
+    "kairos_localai_models": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/models",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_localai_models"
+    },
+    "kairos_mariadb_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/mariadb",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_mariadb_data"
+    },
+    "kairos_mcp_brasil_cache": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/mcp-brasil-cache",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_mcp_brasil_cache"
+    },
+    "kairos_minio_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/minio",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_minio_data"
+    },
+    "kairos_postgres_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/postgres",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_postgres_data"
+    },
+    "kairos_redis_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/redis",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_redis_data"
+    },
+    "kairos_wordpress_data": {
+      "driver": "local",
+      "driver_opts": {
+        "device": "/srv/kairos/wordpress",
+        "o": "bind",
+        "type": "none"
+      },
+      "name": "kairos_wordpress_data"
+    },
+    "kairos_localai_configuration": {
+      "name": "kairos_localai_configuration",
+      "labels": {
+        "com.kairos.scope": "ai"
+      }
+    }
+  }
+}

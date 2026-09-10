@@ -23,7 +23,5 @@ def record_audit(action: str, *, actor=None, request=None, target=None, metadata
 
 
 def _client_ip(request):
-    if not request:
-        return None
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    return (forwarded.split(",", 1)[0].strip() or request.META.get("REMOTE_ADDR")) if forwarded else request.META.get("REMOTE_ADDR")
+    from .client_address import client_address
+    return client_address(request)

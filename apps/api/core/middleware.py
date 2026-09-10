@@ -6,6 +6,18 @@ from django.contrib.auth import logout
 current_request = ContextVar("current_request", default=None)
 
 
+class PrivateResponseMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path.startswith(("/api/", "/admin/")):
+            response["Cache-Control"] = "private, no-store"
+            response["Pragma"] = "no-cache"
+        return response
+
+
 class AuditContextMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

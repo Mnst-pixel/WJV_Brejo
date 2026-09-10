@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 import time
@@ -184,11 +185,14 @@ def main():
     import fcntl
 
     require(os.geteuid() == 0, "Root required")
-    lock_path = Path("/opt/kairos/runtime/p0/.deploy-api.lock")
-    require(not lock_path.is_symlink(), "Unsafe deployment lock path")
-    with lock_path.open("a") as lock:
-        fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    lock_path = Path("/opt/kairos/runtime/.operation.lock")
+    descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        require(stat.S_ISREG(os.fstat(descriptor).st_mode), "Unsafe deployment lock path")
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
         release()
+    finally:
+        os.close(descriptor)
 
 
 if __name__ == "__main__":

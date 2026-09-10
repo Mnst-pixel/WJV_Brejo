@@ -1,5 +1,7 @@
 # Security
 
+Implementation and deployment status are distinct. This branch contains the foundation controls below; live activation and acceptance remain pending in [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md). Historical verification does not certify the new code or the still-running legacy services.
+
 ## Core controls
 
 - Independent random credentials per service; no human password reuse.
@@ -9,8 +11,12 @@
 - Administrator MFA is required before final acceptance.
 - Uploads use size limits, magic-byte detection, randomized internal names, immutable hashes, quarantine, ClamAV, parser isolation, and private object storage.
 - Legal sources and retrieved content are untrusted data and cannot instruct the agent.
-- MCP and Hermes use bearer authentication, allowlisted tools, timeouts, output limits, and audited calls.
+- The Django machine boundary uses dedicated service principals, explicit scopes, delegated user authorization, replay protection, allowlisted query tools, timeouts, output limits and persisted audit. Stateless LocalAI calls cannot execute model-supplied tools; historical Hermes/MCP containers are excluded from the canonical release.
 - WordPress disables the file editor, limits login, restricts XML-RPC, uses the minimum plugin set, and keeps uploads non-executable.
+
+The candidate adds current backend administrative MFA to WordPress through Caddy and a request-bound HMAC MU-plugin; the plugin also rejects unsigned direct internal HTTP access. The new signing key is restricted to API/WordPress. API redaction covers configured signing, inference, storage, database, Redis/broker and SMTP credentials. Caddy access logs delete custom internal proof headers in addition to its default cookie/Authorization redaction.
+
+Python dependency updates, source-inventory checks and exact package/wheel hashes are documented in [P0-DEPENDENCIES.md](P0-DEPENDENCIES.md). An OSV result for Python packages is not a complete operating-system vulnerability assessment. No P0 completion claim is permitted while live integration, privilege reconciliation, container/edge verification or an independent security gate remains unresolved.
 
 ## Secret response
 
@@ -18,3 +24,4 @@ If a secret is found in Git history, treat it as compromised, block deployment, 
 
 Bootstrap root and administrator credentials must be rotated by the owner after handoff; Kairós will not rotate them without explicit authorization.
 
+The September 10 value scan matched `DATAJUD_API_KEY` between the live configuration and the existing `.env.example`. Its value was not emitted; the example now leaves the field empty. No external credential was rotated and history was preserved. Confirm the official key's public status and current validity with CNJ before enabling DataJud; the match alone is not proof of a private-user credential compromise. The integration remains externally unverified.

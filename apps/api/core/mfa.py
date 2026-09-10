@@ -8,6 +8,7 @@ import pyotp
 from rest_framework.exceptions import APIException, PermissionDenied, Throttled
 
 from .models import User
+from .permissions import user_requires_mfa
 
 
 class MFAUnavailable(APIException):
@@ -39,11 +40,12 @@ def enrollment_user(request, *, lock=False):
     user = None
     if isinstance(pending, dict):
         query = User.objects.select_for_update() if lock else User.objects
-        user = query.filter(pk=pending.get("user_id"), is_active=True, is_staff=True).first()
+        user = query.filter(pk=pending.get("user_id"), is_active=True).first()
     try:
         age = timezone.now().timestamp() - pending["issued_at"]
         valid = (
             user is not None
+            and user_requires_mfa(user)
             and not user.mfa_enabled
             and 0 <= age < settings.KAIROS_MFA_ENROLLMENT_TTL_SECONDS
             and pending["session_version"] == user.session_version

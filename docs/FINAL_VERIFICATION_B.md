@@ -1,5 +1,7 @@
 # Final Verification B — independent
 
+Current foundations coordination note (2026-09-10): `CURRENT_FOUNDATIONS_VERIFICATION_B=NOT_COMPLETED`. This note is not an independent review. Review agents reached the account usage limit; later corrections require a new complete independent pass under AGENTS.md rule 11. The August verdict below does not apply to the P0/P1/P2 candidate and cannot authorize its deployment. Current evidence and open gates: [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md).
+
 Status: `PASS_WITH_DOCUMENTED_EXTERNAL_AND_HARDWARE_LIMITATIONS`
 
 Reviewed revision: `6c379ae2c26b575a9398179fe8dda36fc7f7427a`

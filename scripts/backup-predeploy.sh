@@ -146,7 +146,7 @@ date -u +%Y-%m-%dT%H:%M:%SZ > "$payload/capture-started-at.txt"
 printf 'mc_image=%s\npostgres_container=%s\nmariadb_container=%s\nminio_container=%s\n' "$mc_image" "$pg_id" "$my_id" "$minio_id" > "$payload/backup-identities.txt"
 
 phase=postgres_dump
-timeout 900 docker exec "$pg_id" sh -ec 'exec pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' \
+timeout 900 python3 "$(dirname -- "${BASH_SOURCE[0]}")/backup-postgres.py" \
   > "$payload/postgres.dump" 2> "$work/private-command.log" || command_failed "$?" postgres_dump
 phase=mariadb_dump
 timeout 900 docker exec "$my_id" sh -ec 'exec mariadb-dump --single-transaction --quick --routines --events --triggers --user="$MARIADB_USER" --password="$MARIADB_PASSWORD" "$MARIADB_DATABASE"' \
@@ -217,6 +217,7 @@ copy_api_compose_configs() {
   done
 }
 copy_api_compose_configs
+quiet python3 "$(dirname -- "${BASH_SOURCE[0]}")/capture-release-config.py" "$payload"
 
 phase=metadata
 python3 - "$payload" <<'PY'

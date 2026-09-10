@@ -6,6 +6,7 @@ import {usePathname} from "next/navigation";
 import {useEffect, useState} from "react";
 
 import {Icon, type IconName} from "./Icon";
+import {useStudyPreferences} from "@/lib/use-study-preferences";
 
 const navigation: {label: string; href: string; icon: IconName}[] = [
   {label: "Visão geral", href: "/", icon: "home"},
@@ -27,15 +28,18 @@ export function AppShell({children, userName}: {children: React.ReactNode; userN
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
-  const [textScale, setTextScale] = useState(100);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
+  const {preferences, save, disabled, notice} = useStudyPreferences();
+  const textScale = preferences.text_scale ?? 100;
+  const reducedMotion = preferences.reduced_motion ?? false;
+  const focusMode = preferences.focus_mode ?? false;
 
   useEffect(() => {
     document.documentElement.style.setProperty("--user-text-scale", `${textScale / 100}`);
     document.documentElement.dataset.reduceMotion = String(reducedMotion);
     document.documentElement.dataset.focusMode = String(focusMode);
-  }, [textScale, reducedMotion, focusMode]);
+    document.documentElement.dataset.reducedDensity = String(preferences.reduced_density ?? false);
+    document.documentElement.dataset.comfortableReading = String(preferences.comfortable_reading ?? false);
+  }, [textScale, reducedMotion, focusMode, preferences.reduced_density, preferences.comfortable_reading]);
 
   const isActive = (href: string) => href === "/" ? pathname === "/app" || pathname === "/app/" : pathname.startsWith(`/app${href}`);
 
@@ -91,9 +95,10 @@ export function AppShell({children, userName}: {children: React.ReactNode; userN
           <section aria-labelledby="accessibility-title" aria-modal="true" className="accessibility-panel" onMouseDown={(event) => event.stopPropagation()} role="dialog">
             <div className="panel-heading"><div><h2 id="accessibility-title">Acessibilidade</h2><p>Ajuste a experiência sem perder seu progresso.</p></div><button aria-label="Fechar" className="icon-button" onClick={() => setAccessibilityOpen(false)} type="button"><Icon name="close"/></button></div>
             <label className="range-control" htmlFor="text-scale"><span>Tamanho do texto</span><strong>{textScale}%</strong></label>
-            <input id="text-scale" max="125" min="90" onChange={(event) => setTextScale(Number(event.target.value))} step="5" type="range" value={textScale}/>
-            <label className="switch-row"><span><strong>Movimento reduzido</strong><small>Remove transições não essenciais.</small></span><input checked={reducedMotion} onChange={(event) => setReducedMotion(event.target.checked)} type="checkbox"/></label>
-            <label className="switch-row"><span><strong>Modo foco</strong><small>Oculta áreas secundárias enquanto você estuda.</small></span><input checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} type="checkbox"/></label>
+            <input disabled={disabled} id="text-scale" max="125" min="90" onChange={(event) => void save({text_scale: Number(event.target.value)})} step="5" type="range" value={textScale}/>
+            <label className="switch-row"><span><strong>Movimento reduzido</strong><small>Remove transições não essenciais.</small></span><input disabled={disabled} checked={reducedMotion} onChange={(event) => void save({reduced_motion: event.target.checked})} type="checkbox"/></label>
+            <label className="switch-row"><span><strong>Modo foco</strong><small>Oculta áreas secundárias enquanto você estuda.</small></span><input disabled={disabled} checked={focusMode} onChange={(event) => void save({focus_mode: event.target.checked})} type="checkbox"/></label>
+            <p aria-live="polite">{notice}</p>
           </section>
         </div>
       )}

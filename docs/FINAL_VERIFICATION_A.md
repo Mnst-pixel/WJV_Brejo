@@ -1,5 +1,7 @@
 # Final Verification A — implementation
 
+Current foundations coordination note (2026-09-10): `CURRENT_FOUNDATIONS_VERIFICATION_A=PARTIAL`. The historical result below is limited to the August identity change and is not approval of the P0/P1/P2 candidate. Fresh isolated execution, exact candidate images, recovery rehearsals and remaining release/HTTP/E2E gates are recorded in [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md). No foundations cutover has been performed. Preserve the historical evidence below without inheriting its verdict.
+
 Status: `PASS_WITH_DOCUMENTED_EXTERNAL_AND_HARDWARE_LIMITATIONS`
 
 Reviewed revision: `6d509d25a7022fbcf481da5cdecfb9e83904966d`

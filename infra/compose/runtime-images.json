@@ -1,0 +1,23 @@
+{
+  "source_baseline": "2026-09-10T17:50:29.289864+00:00",
+  "images": {
+    "api": "sha256:078a0937a5a89cc374cd43c3848d105587d4ea7c0f82807e7f7352fdff417eee",
+    "edge": "sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648",
+    "worker": "sha256:9703dbc8666808ad943cd9daed1816ae4cfef1eff4d70d9af419cd287860eca1",
+    "hermes": "sha256:3811ed13da874fba2ac99b6d492db9a203d34cb6dccf90d886948c00d0ccec09",
+    "mcp-gateway": "sha256:442f8e83151da2d7f15e0e6707fd2310d0ffcc43faf469ce6c2eff1506403e55",
+    "wordpress": "sha256:8801a1239d7ba9fb340a5fc5ba0bf7f8d3652adbd64893e3fba7992ba618108e",
+    "wordpress-bootstrap": "sha256:2b5e9d4d3e51909dca1aaa4732e9f5e5bf0377c2114dbd8ff39f060bff202586",
+    "hermes-bootstrap": "sha256:3811ed13da874fba2ac99b6d492db9a203d34cb6dccf90d886948c00d0ccec09",
+    "mcp-server": "sha256:63a4873c59b5feeacbe350cf01da0cdcd2ef608377c2b6a02af3fd4281127987",
+    "web": "sha256:b6e3597d745af5b6b3634e8af46e9b364c661fabe4b68acba8d4497592265261",
+    "mcp-brasil": "sha256:74c860bdfe12608790397863b6fca99e8553d370e9f078c99e9565ac5a93f09d",
+    "minio-init": "sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727",
+    "redis": "sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005",
+    "postgres": "sha256:724a4041afdb1750446e3f6b5cfa8f3b0ac5a2cf538ddfa6bfee4f94c2fa85c6",
+    "mariadb": "sha256:dd9b303aed4f4890ed09f766d8ca9ddfd176c0c6f6267feff53b3192ec65a979",
+    "localai": "sha256:d78cd113b2bc5892d7533c1356e9c9725bb90e86a075356a63730f3d681ce4d7",
+    "clamav": "sha256:d06c1d6a451d616e1dd79b42f44c8c8c291bba9cf4e75ebc4d0e43c1c6dd87bb",
+    "minio": "sha256:a3167816f450f8aca214fc82a45a86663918ad694ed03b01683771643cdbff72"
+  }
+}

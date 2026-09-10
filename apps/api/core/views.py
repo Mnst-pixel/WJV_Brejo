@@ -1,15 +1,12 @@
 import hashlib
 import unicodedata
-import uuid
 from datetime import timedelta
-from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
-from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.middleware.csrf import get_token
@@ -50,7 +47,7 @@ from .models import (
     User,
     UserSession,
 )
-from .permissions import CanAudit, CanStudy, CanUpdateCorpus, HasKairosPermission
+from .permissions import CanAudit, CanStudy, CanUpdateCorpus, HasKairosPermission, is_service_account, user_requires_mfa
 from .serializers import (
     AttemptSerializer,
     AuditLogSerializer,
@@ -73,12 +70,12 @@ from .serializers import (
 from .services.ai import answer_consultation
 from .services.attempts import attempt_results, autosave_attempt, submit_attempt
 from .services.documents import transition_document_version
-from .tasks import run_ingestion, scan_and_process_file
+from .tasks import run_ingestion
 
 
 def _client_ip(request):
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    return (forwarded.split(",", 1)[0].strip() or request.META.get("REMOTE_ADDR")) if forwarded else request.META.get("REMOTE_ADDR")
+    from .client_address import client_address
+    return client_address(request)
 
 
 @api_view(["GET"])
@@ -192,10 +189,12 @@ class SessionLoginView(APIView):
         if user is None or not constant_time_compare(password_proof, user.get_session_auth_hash()):
             return Response({"detail": "Credenciais inválidas ou acesso temporariamente bloqueado."}, status=401)
 
-        if user.is_staff and not user.mfa_enabled:
+        if is_service_account(user):
+            return Response({"detail": "Credenciais inválidas ou acesso temporariamente bloqueado."}, status=401)
+        if user_requires_mfa(user) and not user.mfa_enabled:
             begin_enrollment(request, user)
             return Response({"detail": "Configuração MFA obrigatória.", "mfa_setup_required": True}, status=428)
-        if user.is_staff and not verify_totp(user, code):
+        if user_requires_mfa(user) and not verify_totp(user, code):
             _login_event(request, username, LoginEvent.Outcome.MFA_FAILED, user)
             return Response({"detail": "Código MFA obrigatório ou inválido.", "mfa_required": True}, status=428)
 
@@ -203,7 +202,7 @@ class SessionLoginView(APIView):
         user.locked_until = None
         user.save(update_fields=["failed_login_count", "locked_until", "updated_at"])
         cache.delete(throttle_key)
-        _establish_session(request, user, mfa_verified=user.is_staff)
+        _establish_session(request, user, mfa_verified=user_requires_mfa(user))
         _login_event(request, username, LoginEvent.Outcome.SUCCESS, user)
         record_audit("auth.login", actor=user, request=request, target=user)
         return Response(UserSerializer(user).data)
@@ -288,11 +287,15 @@ class MeView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+    @transaction.atomic
     def patch(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        user = User.objects.select_for_update().get(pk=request.user.pk)
+        if not user.is_active or user.session_version != request.session.get("user_session_version"):
+            raise PermissionDenied("A sessão foi revogada. Entre novamente.")
+        serializer = UserSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        record_audit("user.profile.updated", actor=request.user, request=request, target=request.user)
+        record_audit("user.profile.updated", actor=user, request=request, target=user)
         return Response(serializer.data)
 
 
@@ -300,12 +303,28 @@ class OwnedViewSet(viewsets.ModelViewSet):
     permission_classes = [CanStudy]
 
     def get_queryset(self):
-        return self.queryset.filter(owner=self.request.user)
+        return self.queryset.filter(owner=self.request.user).order_by("-created_at", "id")
 
+    @transaction.atomic
     def perform_create(self, serializer):
+        from .permissions import lock_study_user
+        lock_study_user(self.request.user)
         serializer.save(owner=self.request.user)
 
+    @transaction.atomic
+    def perform_update(self, serializer):
+        from django.shortcuts import get_object_or_404
+        from .permissions import lock_study_user
+        lock_study_user(self.request.user)
+        serializer.instance = get_object_or_404(self.get_queryset().select_for_update(), pk=serializer.instance.pk)
+        serializer.save()
+
+    @transaction.atomic
     def perform_destroy(self, instance):
+        from django.shortcuts import get_object_or_404
+        from .permissions import lock_study_user
+        lock_study_user(self.request.user)
+        instance = get_object_or_404(self.get_queryset().select_for_update(), pk=instance.pk)
         record_audit(f"{instance._meta.label_lower}.deleted", actor=self.request.user, request=self.request, target=instance)
         instance.delete()
 
@@ -343,13 +362,17 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ContentViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [CanStudy]
-    queryset = Content.objects.filter(status=Content.Status.PUBLISHED).select_related("current_version")
+    queryset = Content.objects.none()
     serializer_class = ContentSerializer
+
+    def get_queryset(self):
+        from .content_workflow import published_content
+        return published_content().select_related("current_version").prefetch_related("topics")
 
 
 class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [CanStudy]
-    queryset = Question.objects.filter(current_version__isnull=False).select_related("current_version").prefetch_related("current_version__alternatives")
+    queryset = Question.objects.filter(current_version__approved_by__isnull=False, current_version__approval_date__isnull=False, current_version__published_at__isnull=False).exclude(current_version__legal_status="legacy_unverified").select_related("current_version").prefetch_related("current_version__alternatives")
     serializer_class = QuestionSerializer
 
 
@@ -361,6 +384,9 @@ class SimulationViewSet(OwnedViewSet):
 class AttemptViewSet(viewsets.ModelViewSet):
     permission_classes = [CanStudy]
     serializer_class = AttemptSerializer
+    # Mutations go through locked commands; generic updates can save stale
+    # model fields and reopen a submitted attempt. Historical attempts persist.
+    http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
         return Attempt.objects.filter(owner=self.request.user).select_related("simulation").prefetch_related("answers")
@@ -376,9 +402,9 @@ class AttemptViewSet(viewsets.ModelViewSet):
         attempt = autosave_attempt(
             attempt_id=pk,
             owner=request.user,
-            expected_version=int(request.data.get("version", 0)),
-            answers=list(request.data.get("answers", [])),
-            elapsed_seconds=int(request.data.get("elapsed_seconds", 0)),
+            expected_version=request.data.get("version"),
+            answers=request.data.get("answers"),
+            elapsed_seconds=request.data.get("elapsed_seconds"),
         )
         return Response(AttemptSerializer(attempt).data)
 
@@ -398,60 +424,32 @@ class FileAssetViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.
     serializer_class = FileAssetSerializer
     parser_classes = [MultiPartParser, FormParser]
 
+    def get_throttles(self):
+        from .upload_throttling import PrivateFileThrottle
+        return [PrivateFileThrottle()]
+
     def get_queryset(self):
-        return FileAsset.objects.filter(owner=self.request.user)
+        return FileAsset.objects.filter(owner=self.request.user).exclude(processing_status__in=["deleted", "delete_pending"]).order_by("-created_at", "id")
 
     @action(detail=False, methods=["post"])
     def upload(self, request):
-        import magic
-
-        upload = request.FILES.get("file")
-        if not upload:
-            raise ValidationError({"file": "Arquivo obrigatório."})
-        if upload.size <= 0 or upload.size > settings.KAIROS_MAX_UPLOAD_BYTES:
-            raise ValidationError({"file": "Tamanho de arquivo inválido."})
-        first_bytes = upload.read(8192)
-        upload.seek(0)
-        mime_type = magic.from_buffer(first_bytes, mime=True)
-        if mime_type not in settings.KAIROS_ALLOWED_MIME_TYPES:
-            raise ValidationError({"file": f"Tipo de conteúdo não permitido: {mime_type}."})
-        digest = hashlib.sha256()
-        for chunk in upload.chunks():
-            digest.update(chunk)
-        upload.seek(0)
-        asset_id = uuid.uuid4()
-        safe_name = Path(upload.name).name[:255]
-        extension = Path(safe_name).suffix.lower()
-        quarantine_key = f"quarantine/{request.user.id}/{asset_id}{extension}"
-        storage_key = f"private/{request.user.id}/{asset_id}{extension}"
-        default_storage.save(quarantine_key, upload)
-        asset = FileAsset.objects.create(
-            id=asset_id,
-            owner=request.user,
-            original_name=safe_name,
-            storage_key=storage_key,
-            quarantine_key=quarantine_key,
-            mime_type=mime_type,
-            size_bytes=upload.size,
-            sha256=digest.hexdigest(),
-        )
-        scan_and_process_file.delay(str(asset.id))
-        record_audit("file.uploaded", actor=request.user, request=request, target=asset, metadata={"mime": mime_type, "bytes": upload.size})
+        from .services.uploads import create_upload
+        asset = create_upload(owner=request.user, upload=request.FILES.get("file"), request=request)
         return Response(FileAssetSerializer(asset).data, status=202)
 
     @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
-        asset = self.get_object()
-        if asset.scan_status != FileAsset.ScanStatus.CLEAN or not default_storage.exists(asset.storage_key):
-            raise PermissionDenied("O arquivo ainda não está liberado.")
-        return Response({"url": default_storage.url(asset.storage_key), "expires_in": settings.AWS_QUERYSTRING_EXPIRE})
+        from .services.uploads import download_upload
+        return Response(download_upload(owner=request.user, asset_id=self.get_object().id))
+
+    @action(detail=True, methods=["get"])
+    def content(self, request, pk=None):
+        from .services.uploads import open_download
+        return open_download(owner=request.user, asset_id=self.get_object().id)
 
     def perform_destroy(self, instance):
-        for key in (instance.storage_key, instance.quarantine_key, instance.metadata.get("text_key")):
-            if key and default_storage.exists(key):
-                default_storage.delete(key)
-        record_audit("file.deleted", actor=self.request.user, request=self.request, target=instance)
-        instance.delete()
+        from .services.uploads import delete_upload
+        delete_upload(owner=self.request.user, asset_id=instance.id, request=self.request)
 
 
 class ConversationViewSet(OwnedViewSet):
@@ -461,10 +459,12 @@ class ConversationViewSet(OwnedViewSet):
 
 class ConsultView(APIView):
     permission_classes = [IsAuthenticated, HasKairosPermission]
-    permission_codename = "ai.use"
+    permission_codename = "ai.consult"
 
     def post(self, request):
-        context = dict(request.data.get("context", {}))
+        context = request.data.get("context", {})
+        if not isinstance(context, dict):
+            raise ValidationError({"context": "Contexto deve ser um objeto."})
         attempt_id = context.get("attempt_id")
         if attempt_id:
             attempt = Attempt.objects.select_related("simulation").get(pk=attempt_id, owner=request.user)
@@ -506,7 +506,8 @@ class IngestionRunViewSet(viewsets.ModelViewSet):
 
 
 class SourceDocumentVersionViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [CanUpdateCorpus]
+    permission_classes = [HasKairosPermission]
+    permission_codename = "corpus.read"
     queryset = SourceDocumentVersion.objects.select_related("document", "approved_by").all()
     serializer_class = SourceDocumentVersionSerializer
 

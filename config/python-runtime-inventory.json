@@ -1,0 +1,477 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-10",
+  "scope": "Python distributions only; OS libraries reviewed separately",
+  "initial": {
+    "status": "observed_base_image_inventory",
+    "source_evidence": "p0p2-api-packages.json",
+    "packages": [
+      {
+        "name": "amqp",
+        "version": "5.3.1"
+      },
+      {
+        "name": "anyio",
+        "version": "4.14.2"
+      },
+      {
+        "name": "argon2-cffi",
+        "version": "25.1.0"
+      },
+      {
+        "name": "argon2-cffi-bindings",
+        "version": "26.1.0"
+      },
+      {
+        "name": "asgiref",
+        "version": "3.12.1"
+      },
+      {
+        "name": "billiard",
+        "version": "4.2.4"
+      },
+      {
+        "name": "bleach",
+        "version": "6.2.0"
+      },
+      {
+        "name": "boto3",
+        "version": "1.40.21"
+      },
+      {
+        "name": "botocore",
+        "version": "1.40.76"
+      },
+      {
+        "name": "celery",
+        "version": "5.6.3"
+      },
+      {
+        "name": "certifi",
+        "version": "2026.7.22"
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1"
+      },
+      {
+        "name": "clamd",
+        "version": "1.0.2"
+      },
+      {
+        "name": "click",
+        "version": "8.5.0"
+      },
+      {
+        "name": "click-didyoumean",
+        "version": "0.3.1"
+      },
+      {
+        "name": "click-plugins",
+        "version": "1.1.1.2"
+      },
+      {
+        "name": "click-repl",
+        "version": "0.3.0"
+      },
+      {
+        "name": "cryptography",
+        "version": "45.0.7"
+      },
+      {
+        "name": "Django",
+        "version": "6.0.8"
+      },
+      {
+        "name": "django-cors-headers",
+        "version": "4.9.0"
+      },
+      {
+        "name": "django-storages",
+        "version": "1.14.6"
+      },
+      {
+        "name": "djangorestframework",
+        "version": "3.18.0"
+      },
+      {
+        "name": "gunicorn",
+        "version": "23.0.0"
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0"
+      },
+      {
+        "name": "httpcore",
+        "version": "1.0.9"
+      },
+      {
+        "name": "httpx",
+        "version": "0.28.1"
+      },
+      {
+        "name": "idna",
+        "version": "3.19"
+      },
+      {
+        "name": "jmespath",
+        "version": "1.1.0"
+      },
+      {
+        "name": "kombu",
+        "version": "5.6.2"
+      },
+      {
+        "name": "lxml",
+        "version": "6.1.2"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "pgvector",
+        "version": "0.5.0"
+      },
+      {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      {
+        "name": "pip",
+        "version": "25.3"
+      },
+      {
+        "name": "prompt_toolkit",
+        "version": "3.0.53"
+      },
+      {
+        "name": "psycopg",
+        "version": "3.3.4"
+      },
+      {
+        "name": "psycopg-binary",
+        "version": "3.3.4"
+      },
+      {
+        "name": "pycparser",
+        "version": "3.0"
+      },
+      {
+        "name": "pymupdf",
+        "version": "1.28.2"
+      },
+      {
+        "name": "PyOTP",
+        "version": "2.10.0"
+      },
+      {
+        "name": "python-dateutil",
+        "version": "2.9.0.post0"
+      },
+      {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      {
+        "name": "python-magic",
+        "version": "0.4.27"
+      },
+      {
+        "name": "redis",
+        "version": "6.4.0"
+      },
+      {
+        "name": "s3transfer",
+        "version": "0.13.1"
+      },
+      {
+        "name": "six",
+        "version": "1.17.0"
+      },
+      {
+        "name": "sqlparse",
+        "version": "0.6.0"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      },
+      {
+        "name": "tzdata",
+        "version": "2026.3"
+      },
+      {
+        "name": "tzlocal",
+        "version": "5.4.4"
+      },
+      {
+        "name": "urllib3",
+        "version": "2.7.0"
+      },
+      {
+        "name": "vine",
+        "version": "5.1.0"
+      },
+      {
+        "name": "wcwidth",
+        "version": "0.8.2"
+      },
+      {
+        "name": "webencodings",
+        "version": "0.6.1"
+      },
+      {
+        "name": "whitenoise",
+        "version": "6.11.0"
+      }
+    ]
+  },
+  "proposed": {
+    "status": "candidate_not_deployed_not_yet_image_verified",
+    "packages": [
+      {
+        "name": "amqp",
+        "version": "5.3.1"
+      },
+      {
+        "name": "anyio",
+        "version": "4.14.2"
+      },
+      {
+        "name": "argon2-cffi",
+        "version": "25.1.0"
+      },
+      {
+        "name": "argon2-cffi-bindings",
+        "version": "26.1.0"
+      },
+      {
+        "name": "asgiref",
+        "version": "3.12.1"
+      },
+      {
+        "name": "billiard",
+        "version": "4.2.4"
+      },
+      {
+        "name": "boto3",
+        "version": "1.40.21"
+      },
+      {
+        "name": "botocore",
+        "version": "1.40.76"
+      },
+      {
+        "name": "celery",
+        "version": "5.6.3"
+      },
+      {
+        "name": "certifi",
+        "version": "2026.7.22"
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1"
+      },
+      {
+        "name": "clamd",
+        "version": "1.0.2"
+      },
+      {
+        "name": "click",
+        "version": "8.5.0"
+      },
+      {
+        "name": "click-didyoumean",
+        "version": "0.3.1"
+      },
+      {
+        "name": "click-plugins",
+        "version": "1.1.1.2"
+      },
+      {
+        "name": "click-repl",
+        "version": "0.3.0"
+      },
+      {
+        "name": "cryptography",
+        "version": "50.0.1"
+      },
+      {
+        "name": "Django",
+        "version": "6.0.8"
+      },
+      {
+        "name": "django-cors-headers",
+        "version": "4.9.0"
+      },
+      {
+        "name": "django-storages",
+        "version": "1.14.6"
+      },
+      {
+        "name": "djangorestframework",
+        "version": "3.18.0"
+      },
+      {
+        "name": "gunicorn",
+        "version": "23.0.0"
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0"
+      },
+      {
+        "name": "httpcore",
+        "version": "1.0.9"
+      },
+      {
+        "name": "httpx",
+        "version": "0.28.1"
+      },
+      {
+        "name": "idna",
+        "version": "3.19"
+      },
+      {
+        "name": "jmespath",
+        "version": "1.1.0"
+      },
+      {
+        "name": "kombu",
+        "version": "5.6.2"
+      },
+      {
+        "name": "lxml",
+        "version": "6.1.2"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "pgvector",
+        "version": "0.5.0"
+      },
+      {
+        "name": "pillow",
+        "version": "12.3.0"
+      },
+      {
+        "name": "pip",
+        "version": "26.2.1"
+      },
+      {
+        "name": "prompt_toolkit",
+        "version": "3.0.53"
+      },
+      {
+        "name": "psycopg",
+        "version": "3.3.4"
+      },
+      {
+        "name": "psycopg-binary",
+        "version": "3.3.4"
+      },
+      {
+        "name": "pycparser",
+        "version": "3.0"
+      },
+      {
+        "name": "pymupdf",
+        "version": "1.28.2"
+      },
+      {
+        "name": "PyOTP",
+        "version": "2.10.0"
+      },
+      {
+        "name": "python-dateutil",
+        "version": "2.9.0.post0"
+      },
+      {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      {
+        "name": "python-magic",
+        "version": "0.4.27"
+      },
+      {
+        "name": "redis",
+        "version": "6.4.0"
+      },
+      {
+        "name": "s3transfer",
+        "version": "0.13.1"
+      },
+      {
+        "name": "six",
+        "version": "1.17.0"
+      },
+      {
+        "name": "sqlparse",
+        "version": "0.6.0"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      },
+      {
+        "name": "tzdata",
+        "version": "2026.3"
+      },
+      {
+        "name": "tzlocal",
+        "version": "5.4.4"
+      },
+      {
+        "name": "urllib3",
+        "version": "2.7.0"
+      },
+      {
+        "name": "vine",
+        "version": "5.1.0"
+      },
+      {
+        "name": "wcwidth",
+        "version": "0.8.2"
+      },
+      {
+        "name": "webencodings",
+        "version": "0.6.1"
+      },
+      {
+        "name": "whitenoise",
+        "version": "6.11.0"
+      }
+    ],
+    "osv_flagged_packages": 0,
+    "query_evidence": "p0p2-proposed-api-all-python-osv.json"
+  },
+  "artifacts": [
+    {
+      "filename": "cryptography-50.0.1-cp311-abi3-manylinux_2_28_x86_64.whl",
+      "version": "50.0.1",
+      "sha256": "51593d180cf6d179bde5c5d065bed81386b1f381656ae7d042b7ffc87a9895ad",
+      "size": 4746720,
+      "source": "https://files.pythonhosted.org/packages/e1/1b/82f0f0d8858d4432be1af790477edf62aef90324041aa07c57e57bef1af7/cryptography-50.0.1-cp311-abi3-manylinux_2_28_x86_64.whl"
+    },
+    {
+      "filename": "pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "version": "12.3.0",
+      "sha256": "0847a763afefb695bc912d7c131e7e0632d4edc1d8698f58ddabec8e46b8b6d3",
+      "size": 6937129,
+      "source": "https://files.pythonhosted.org/packages/f7/62/de5bdd77d935331f4f802edc11e4d82950f642caad6cb2f949837b8560e2/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+    },
+    {
+      "filename": "pip-26.2.1-py3-none-any.whl",
+      "version": "26.2.1",
+      "sha256": "71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e",
+      "size": 1816632,
+      "source": "https://files.pythonhosted.org/packages/f3/6e/1736e5b4ae2b778ef2f81c47d797de9f891d4d8acb047a24ca37a60294dd/pip-26.2.1-py3-none-any.whl"
+    }
+  ]
+}

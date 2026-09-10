@@ -6,12 +6,16 @@ Requires=docker.service
 [Service]
 Type=oneshot
 User=root
-ExecStart=/opt/kairos/current/scripts/backup.sh
-ExecStartPost=/opt/kairos/current/scripts/verify-restore.sh --latest
+ExecStart=/usr/bin/python3 /opt/kairos/current/scripts/backup-routine.py
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7
-TimeoutStartSec=2h
+TimeoutStartSec=5h
+TimeoutStopSec=90s
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target

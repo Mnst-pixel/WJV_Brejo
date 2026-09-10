@@ -1,7 +1,6 @@
 """Authentication over real HTTP, with cookie jar and CSRF enforcement."""
 from http.cookiejar import CookieJar
 import json
-import hashlib
 import os
 from pathlib import Path
 from urllib.error import HTTPError
@@ -13,6 +12,7 @@ import pytest
 from django.core.cache import cache
 
 from core.models import User
+from tests.artifact_inventory import assert_runtime_sources
 
 
 @pytest.mark.skipif(not os.getenv("KAIROS_TEST_ARTIFACT_MODE"), reason="Requires the built candidate image")
@@ -23,8 +23,8 @@ def test_candidate_imports_match_the_git_sources():
     for module in (mfa, serializers, views, settings):
         actual = Path(module.__file__).resolve()
         relative = actual.relative_to("/app")
-        expected = Path("/candidate") / relative
-        assert hashlib.sha256(actual.read_bytes()).digest() == hashlib.sha256(expected.read_bytes()).digest()
+        assert relative.parts[0] in {"core", "kairos"}
+    assert_runtime_sources("/app", "/candidate", "/source")
     static_root = Path("/app/staticfiles")
     manifest = json.loads((static_root / "staticfiles.json").read_text())
     assert (static_root / manifest["paths"]["admin/css/base.css"]).is_file()
