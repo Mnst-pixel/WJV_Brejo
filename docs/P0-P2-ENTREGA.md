@@ -88,6 +88,10 @@ Quarto candidato `1c05dc9`: **API Linux 447 passed, sem skips**. Nativo: 175 pas
 
 Branch publicada e [PR #2](https://github.com/Mnst-pixel/WJV_Brejo/pull/2) criado como rascunho. `main` permanece em `cb4708d8`. Scan do HEAD `c5bc7d7`: 17 valores de credenciais verificados contra 301 arquivos, nenhuma correspondência. Dois campos de exemplo DataJud foram esvaziados; valor externo, histórico e serviços produtivos não foram alterados.
 
+Quinto candidato `d6d7f93573618887152790cbc14823a19c2600d3`: **BUILD/INTEGRATION/NO-TOUCH PASS**. API Linux: **447 passed**, sem skips. Nativo: **180 passed, 3 skips por ausência de Git na imagem**, cobertos pela execução separada de **13 testes Git no host**, todos PASS. PHP WordPress, Caddy validate, inventário completo do artefato, Gunicorn, static/admin e CSRF smoke passaram. Inclui papéis PostgreSQL reais, ACL Redis, migrations/restore sintéticos, parser/syscalls e uploads reais. API `sha256:f36d1608657e520e0af5be231401d847dea1007ea1e2199e079e0f27806efa5a`; parser `sha256:1cd8b52f6ab2bf4dc436db8196568d07a3b985b6f686ad54f543ace86fc7230f`. Evidência `modernizacao/evidencias/p0p2-candidate-20260910T213904Z.json`; detalhes protegidos em `/opt/kairos/runtime/tests/kairos-test-20260910T213958Z-455589ee7169`.
+
+Teste adicional de crescimento de queries: listas de notas/metas com 1 e 25 itens mantiveram 11 queries em ambos os tamanhos no SQLite local. O teste registra as medidas e será executado também no PostgreSQL; não é uma afirmação de ausência de N+1 em todos os endpoints. Próximos gates concretos: [P1-CUTOVER-PENDING.md](P1-CUTOVER-PENDING.md).
+
 ## Dependências externas
 
 SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração real. Preparação e testes isolados não equivalem a operação externa demonstrada. Sua ausência não bloqueia as demais frentes.
