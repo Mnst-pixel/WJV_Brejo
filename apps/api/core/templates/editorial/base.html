@@ -1,0 +1,8 @@
+{% load static %}<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ title }} · Kairós editorial</title><link rel="icon" type="image/png" href="{% static 'editorial/simbolo.png' %}"><link rel="stylesheet" href="{% static 'editorial/workspace.css' %}"></head>
+<body><a class="skip" href="#principal">Ir para o conteúdo</a>
+<header class="masthead"><a class="brand" href="{% url 'editorial:dashboard' %}"><img src="{% static 'editorial/simbolo.png' %}" width="52" height="58" alt=""><span class="brand-name">Kairós<small>Administração</small></span></a><a href="/app/">Área do aluno</a></header>
+<div class="shell"><nav aria-label="Administração editorial"><a href="{% url 'editorial:dashboard' %}">Painel</a><a href="{% url 'editorial:contents' %}">Conteúdo</a><a href="{% url 'editorial:taxonomy' %}">Disciplinas e temas</a>{% if can_create %}<a href="{% url 'editorial:legacy' %}">Acervo antigo</a>{% endif %}</nav>
+<main id="principal" tabindex="-1"><header class="page-heading"><p class="eyebrow">Conhecimento com responsabilidade</p><h1>{{ title }}</h1></header>
+{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
+{% block content %}{% endblock %}</main></div></body></html>

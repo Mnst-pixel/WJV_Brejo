@@ -1,5 +1,9 @@
 # Architecture
 
+## Educational product P3–P6
+
+The first product increment adds a Django-rendered editorial workspace at `/admin/editorial/`. It reuses the content workflow services and canonical database, with action-specific RBAC, human separation of duties and mandatory MFA even for non-staff editors. Next.js retains login and student interfaces; WordPress does not store private learning data. The specialist Django Admin remains available for existing operational forms, while taxonomy creation uses the locked editorial command. Established topic relationships cannot be reassigned by the specialist admin. Implementation and availability are tracked separately in [P3-P6-ENTREGA.md](P3-P6-ENTREGA.md).
+
 ## Trust and network boundaries
 
 The canonical configuration in this branch is a Docker Compose project named `kairos`. Deployment of this foundation release is still gated; the live baseline and exact deployed image remain recorded in [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md). The earlier five-network Hermes/MCP topology is historical, not the target runtime contract.

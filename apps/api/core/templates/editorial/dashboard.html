@@ -1,0 +1,5 @@
+{% extends 'editorial/base.html' %}{% block content %}
+<p>Escreva, confira as fontes e encaminhe cada versão para revisão humana.</p>
+<div class="cards"><article><span>Disciplinas</span><strong>{{ subject_count }}</strong></article><article><span>Conteúdos</span><strong>{{ content_count }}</strong></article>{% for label,count in counts %}<article><span>Versões · {{ label }}</span><strong>{{ count }}</strong></article>{% endfor %}</div>
+<section class="panel"><h2>Seu próximo passo</h2><div class="actions">{% if can_create %}<a class="button" href="{% url 'editorial:content-create' %}">Criar conteúdo</a>{% endif %}<a class="button secondary" href="{% url 'editorial:contents' %}?state=review">Conferir fila de revisão</a></div><p>Rascunho → Em revisão → Aprovado → Publicado → Arquivado.</p><p>O autor e quem envia para revisão não podem aprovar a própria versão.</p></section>
+{% endblock %}
