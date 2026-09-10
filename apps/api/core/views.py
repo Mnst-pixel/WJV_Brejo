@@ -50,7 +50,7 @@ from .models import (
     User,
     UserSession,
 )
-from .permissions import CanAudit, CanStudy, CanUpdateCorpus, HasKairosPermission
+from .permissions import CanAudit, CanStudy, CanUpdateCorpus, HasKairosPermission, is_service_account, user_requires_mfa
 from .serializers import (
     AttemptSerializer,
     AuditLogSerializer,
@@ -192,10 +192,12 @@ class SessionLoginView(APIView):
         if user is None or not constant_time_compare(password_proof, user.get_session_auth_hash()):
             return Response({"detail": "Credenciais inválidas ou acesso temporariamente bloqueado."}, status=401)
 
-        if user.is_staff and not user.mfa_enabled:
+        if is_service_account(user):
+            return Response({"detail": "Credenciais inválidas ou acesso temporariamente bloqueado."}, status=401)
+        if user_requires_mfa(user) and not user.mfa_enabled:
             begin_enrollment(request, user)
             return Response({"detail": "Configuração MFA obrigatória.", "mfa_setup_required": True}, status=428)
-        if user.is_staff and not verify_totp(user, code):
+        if user_requires_mfa(user) and not verify_totp(user, code):
             _login_event(request, username, LoginEvent.Outcome.MFA_FAILED, user)
             return Response({"detail": "Código MFA obrigatório ou inválido.", "mfa_required": True}, status=428)
 
@@ -203,7 +205,7 @@ class SessionLoginView(APIView):
         user.locked_until = None
         user.save(update_fields=["failed_login_count", "locked_until", "updated_at"])
         cache.delete(throttle_key)
-        _establish_session(request, user, mfa_verified=user.is_staff)
+        _establish_session(request, user, mfa_verified=user_requires_mfa(user))
         _login_event(request, username, LoginEvent.Outcome.SUCCESS, user)
         record_audit("auth.login", actor=user, request=request, target=user)
         return Response(UserSerializer(user).data)
@@ -461,10 +463,12 @@ class ConversationViewSet(OwnedViewSet):
 
 class ConsultView(APIView):
     permission_classes = [IsAuthenticated, HasKairosPermission]
-    permission_codename = "ai.use"
+    permission_codename = "ai.consult"
 
     def post(self, request):
-        context = dict(request.data.get("context", {}))
+        context = request.data.get("context", {})
+        if not isinstance(context, dict):
+            raise ValidationError({"context": "Contexto deve ser um objeto."})
         attempt_id = context.get("attempt_id")
         if attempt_id:
             attempt = Attempt.objects.select_related("simulation").get(pk=attempt_id, owner=request.user)

@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .rbac_views import RoleCatalogView, UserRolesView
 
 router = DefaultRouter()
 router.register("subjects", views.SubjectViewSet, basename="subject")
@@ -22,6 +23,8 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("admin/roles/", RoleCatalogView.as_view()),
+    path("admin/users/<uuid:user_id>/roles/", UserRolesView.as_view()),
     path("health/live", views.health_live),
     path("health/ready", views.health_ready),
     path("auth/csrf", views.csrf_token),
