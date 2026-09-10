@@ -320,9 +320,14 @@ def lock_scenario(blocked):
     fake_fcntl = SimpleNamespace(LOCK_EX=2, LOCK_NB=4, flock=flock)
     with tempfile.TemporaryDirectory(prefix="kairos-deploy-lock-") as td:
         target = Path(td) / "deploy.lock"
+        def shared_lock_path(value):
+            assert value == "/opt/kairos/runtime/.operation.lock"
+            return target
+
         with (
-            patch.object(module, "Path", lambda value: target),
+            patch.object(module, "Path", shared_lock_path),
             patch.object(module.os, "geteuid", lambda: 0, create=True),
+            patch.object(module.os, "O_NOFOLLOW", getattr(os, "O_NOFOLLOW", 0), create=True),
             patch.object(module, "release", lambda: calls.append("release")),
             patch.dict(sys.modules, {"fcntl": fake_fcntl}),
         ):
