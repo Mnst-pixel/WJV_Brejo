@@ -6,6 +6,17 @@ from .models import Permission
 from .rbac_policy import ADMIN_PERMISSIONS, MACHINE_PERMISSIONS, PERMISSIONS, ROLES
 
 
+def lock_study_user(user):
+    """Caller owns a transaction: user first, then owned object, as RBAC revocation."""
+    from rest_framework.exceptions import PermissionDenied
+    from .models import User
+    current = User.objects.select_for_update().filter(pk=user.pk).first()
+    if (current is None or not current.is_active or current.session_version != user.session_version
+            or not user_has_permission(current, "study.use")):
+        raise PermissionDenied("O acesso foi revogado durante a operação de estudo.")
+    return current
+
+
 def active_role_slugs(user):
     if not user or not user.is_authenticated or not user.is_active:
         return set()
@@ -15,12 +26,15 @@ def active_role_slugs(user):
 
 
 def is_service_account(user):
-    return "conta-de-servico" in active_role_slugs(user)
+    # Identity classification survives expiry/inactivation. Only its effective
+    # grant expires; accidental human flags can never convert it to an admin.
+    return bool(user and user.is_authenticated and user.pk and
+                user.role_assignments.filter(role__slug="conta-de-servico").exists())
 
 
 def user_requires_mfa(user):
     roles = active_role_slugs(user)
-    if "conta-de-servico" in roles:
+    if is_service_account(user):
         return False
     return bool(user and user.is_authenticated and user.is_active and (
         user.is_staff or user.is_superuser or any(ROLES.get(role, set()) & ADMIN_PERMISSIONS for role in roles)
@@ -31,9 +45,9 @@ def user_has_permission(user, codename: str) -> bool:
     if codename not in PERMISSIONS or not user or not user.is_authenticated or not user.is_active:
         return False
     roles = active_role_slugs(user)
-    if "conta-de-servico" in roles:
+    if is_service_account(user):
         # A machine principal is never a human administrator, even with accidental extra roles.
-        roles = {"conta-de-servico"}
+        roles &= {"conta-de-servico"}
     elif user.is_superuser:
         return codename not in MACHINE_PERMISSIONS
     eligible = [role for role in roles if codename in ROLES.get(role, set())]

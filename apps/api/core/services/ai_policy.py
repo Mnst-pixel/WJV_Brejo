@@ -98,8 +98,16 @@ def redact(text):
         "HERMES_BEARER_TOKEN",
         "MCP_API_KEY",
         "MFA_ENCRYPTION_KEY",
+        "KAIROS_MCP_DELEGATION_KEY",
+        "KAIROS_PROXY_TOKEN",
+        "PARSER_API_TOKEN",
+        "AWS_SECRET_ACCESS_KEY",
     ):
         secret = getattr(settings, name, "")
+        if isinstance(secret, str) and len(secret) >= 8:
+            text = text.replace(secret, "[REDACTED]")
+    for principal in getattr(settings, "KAIROS_MCP_PRINCIPALS", {}).values():
+        secret = principal.get("token", "") if isinstance(principal, dict) else ""
         if isinstance(secret, str) and len(secret) >= 8:
             text = text.replace(secret, "[REDACTED]")
     text = re.sub(r"(?i)\bBearer\s+[A-Za-z0-9._~+/-]+=*", "Bearer [REDACTED]", text)
