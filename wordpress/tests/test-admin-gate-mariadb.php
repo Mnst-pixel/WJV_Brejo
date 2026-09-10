@@ -14,6 +14,7 @@ function add_filter(...$args) { return true; }
 function apply_filters($name, $value, ...$args) { return $value; }
 function has_filter(...$args) { return false; }
 function did_action(...$args) { return 1; }
+function is_multisite() { return false; }
 function __($value, ...$args) { return $value; }
 function wp_load_translations_early() {}
 function wp_debug_backtrace_summary(...$args) { return 'isolated fixture'; }
