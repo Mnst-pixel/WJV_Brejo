@@ -18,7 +18,7 @@ Preparar artefatos e configuração antes de abrir uma janela de escrita: checko
 
 O coordenador deve compartilhar `.operation.lock` com backup e reconciliação. Antes de migrations/rotacionar serviços, produzir backup novo com restore isolado e capturar baseline fresco. Validar uma janela de manutenção que impeça novas escritas, verificar/drainar filas antigas sem perder tarefas e preservar jobs/uploads pendentes. Provar a passagem broker antigo → ACL/prefixos novos.
 
-Reconciliar os papéis PostgreSQL antes e depois de migrations explícitas. O migrator é dono do schema; o runtime não tem DDL/superuser. Não usar produção para ensaiar migrations: os testes sintéticos passaram, mas também é necessário ensaio sobre cópia restaurada do estado real e teste de compatibilidade da release anterior.
+Reconciliar os papéis PostgreSQL antes e depois de migrations explícitas. O migrator é dono do schema; o runtime não tem DDL/superuser. Não usar produção para ensaiar migrations. Em 2026-09-10, `2a14c31` passou nas 5 migrations forward sobre backup real restaurado, com 86 registros originais/64 tabelas preservados e repetição idempotente. Esse ensaio usou o proprietário temporário da restauração; ainda faltam a combinação com os papéis segregados e a compatibilidade/rollback da release anterior.
 
 Aplicar somente serviços Kairós listados, retirar containers históricos IA/MCP e bootstraps preservando volumes e evidência. Não usar `down`, `prune` ou `--remove-orphans` genéricos. Nunca reativar a API vulnerável pelo Compose antigo. Capturar IDs/imagens reais e verificar health, DB/cache/broker, worker, parser, storage, edge e nonce/MFA WordPress antes de liberar escritas.
 

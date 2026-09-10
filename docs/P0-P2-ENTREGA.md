@@ -102,7 +102,7 @@ Ensaios WordPress posteriores: `1b5b63e` passou na disputa concorrente e parou n
 
 Lote `aeec250` acrescentou ensaio opcional de migrations sobre cópia de backup real, com quatro testes de guarda/preservação PASS. Primeiro ensaio criou backup novo `/srv/kairos/backups/kairos-predeploy-20260910T221144Z-cd559fba6789.tar.gz.enc`, conferiu checksum/manifest e restaurou PostgreSQL, mas parou antes das migrations na guarda de endereço: o cast `inet::text` inclui `/32`. A guarda passou a usar `host(inet_server_addr())`, conforme [semântica oficial PostgreSQL 17](https://www.postgresql.org/docs/17/functions-net.html), mantendo a exigência exata de loopback. Isso é correção do verificador, não da aplicação. Cleanup/no-touch PASS; recuperação completa desse backup ainda não demonstrada nessa tentativa. Evidência `modernizacao/evidencias/p0p2-migration-rehearsal.json`; diagnóstico privado ficou no VPS sem exposição de linhas pessoais.
 
-## Último candidato aprovado em testes isolados
+## Candidato anterior aprovado em testes isolados
 
 Commit **`04abb6eecfd39ba329da02c6997274eabfaaa0c5`**, build e integração PASS:
 
@@ -120,6 +120,27 @@ Esse commit é um candidato testado, não o commit implantado. Mudanças posteri
 
 Segundo ensaio de recuperação (`04abb6e`): migrations executaram na cópia, mas a comparação de preservação interrompeu em `core_permission_roles`, a associação deliberadamente substituída pela migration 0003. O verificador havia usado o nome reverso do relacionamento como se fosse o nome físico da tabela. Corrigida a exceção única e acrescentada a conferência contra o modelo `Permission.roles.through`; não foram excluídos registros pessoais das verificações. Backup `/srv/kairos/backups/kairos-predeploy-20260910T221807Z-53dce9d8bd80.tar.gz.enc`, restore `/srv/kairos/backups/kairos-restore-20260910T221820Z-68f26bee74a1.evidence`, cleanup/no-touch PASS. Evidência `modernizacao/evidencias/p0p2-migration-rehearsal-04abb6e.json`.
 
+## Último candidato e lote de verificação
+
+Commit testado **`2a14c31dfcda01d4235388390f3d92ed8129636a`**. API `sha256:ad1ed1af92d9aba4e248ea5a2604ebbad5f4ce3ec1da37fd77321e33fb9f873d`; parser `sha256:91c76ed5c32d4c281cb3c6ceda2a20d04976687393b396af70f4b02330447093`. Repetição integral: **449 API PASS**, **184 nativos PASS**, 3 skips cobertos pelos **13 contratos Git PASS**; PHP/MariaDB concorrente/Caddy/artefato/Gunicorn/static/CSRF PASS. Cleanup e no-touch PASS, todas as categorias zero. Evidência `modernizacao/evidencias/p0p2-candidate-20260910T222027Z.json`; detalhes `/opt/kairos/runtime/tests/kairos-test-20260910T222112Z-7f8370b1088f`.
+
+| Alteração e motivo | Arquivos principais | Migrations e rollback |
+|---|---|---|
+| Medir crescimento de queries sem otimização especulativa | `apps/api/tests/test_query_growth.py` | Nenhuma migration nova; teste reversível via Git |
+| Provar nonce WordPress em SQL e processos reais | `wordpress/tests/test-admin-gate-mariadb.php`, `scripts/test-api-isolated.sh`, `docs/P0-WORDPRESS-MFA.md` | Só schema sintético removido no cleanup; nenhum dado WordPress produtivo alterado |
+| Ensaiar migrations sobre backup real com preservação/idempotência | `scripts/restore-migration-probe.py`, `scripts/verify-restore-isolated.sh`, `scripts/tests/test_restore_migration_probe.py`, `docs/BACKUP-RESTORE.md` | Executa 0002–0006 somente na cópia temporária; não cria migration nova. Reverter o verificador desativa esse ensaio, sem desfazer controles da aplicação |
+| Separar evidência histórica de readiness atual | Entrega, cutover, `FINAL_VERIFICATION_A.md`, `FINAL_VERIFICATION_B.md`, `PENDING-DECISIONS.md` | Documentação; não atribuir PASS histórico à release candidata |
+
+Não houve deploy, rotação produtiva, alteração de banco produtivo ou redes de outros sistemas neste lote. Risco remanescente: os controles candidatos ainda não foram ativados; a produção conserva a API/revisão/override descritos no baseline. Próxima etapa: concluir os gates de recuperação/privilegios, transição/rollback e HTTP/E2E do [plano de cutover](P1-CUTOVER-PENDING.md), com verificação independente nova. Reversão desses commits usa `git revert`, sem rewrite de histórico e sem apagar volumes.
+
+## Recuperação e estado final deste lote
+
+Ensaio **`2a14c31` PASS às 22:25 UTC**: backup novo `/srv/kairos/backups/kairos-predeploy-20260910T222458Z-abe1a93603cc.tar.gz.enc`; restore `/srv/kairos/backups/kairos-restore-20260910T222512Z-4510c4d74a8b.evidence`. Checksum, manifesto, arquivos, PostgreSQL, MariaDB e MinIO passaram. Na cópia PostgreSQL, **5 migrations executadas, 64 tabelas e 86 registros originais preservados, segunda execução idempotente**. A associação RBAC deliberadamente substituída é a única exclusão de preservação, conferida contra o modelo; não houve exclusão de usuários/dados pessoais. Cleanup/no-touch PASS. Evidência `modernizacao/evidencias/p0p2-migration-rehearsal-2a14c31.json`.
+
+Essa prova usa o backup real com os scripts candidatos, sob lock comum, mas não comprova grants segregados, compatibilidade reversa, HTTP da aplicação, catálogo/retenção/timers novos ou rollback integral. Os bancos, volumes e containers da restauração foram removidos; o backup criptografado e a evidência protegida permanecem no VPS.
+
+Revalidação somente leitura às **22:27:49 UTC** (`modernizacao/evidencias/p0p2-final-state.json`): checkout VPS limpo `f6ac1c3c510a4f442b9101d599e6598fe8428ca0`; API efetiva `8f341aa4c87e2a6692b557cfafd0204bee7b910c`, imagem `sha256:078a0937a5a89cc374cd43c3848d105587d4ea7c0f82807e7f7352fdff417eee`, Compose base + override P0 histórico. Pointer canônico ainda ausente. API/web/PG/Redis/MinIO/WordPress/ClamAV/edge saudáveis, zero reinícios; worker ativo sem healthcheck. Live/ready HTTP 200. Banco produtivo ainda com 19 migrations e 3 usuários; `kairos_app` continua superuser/createdb/createrole — risco pendente de ativação da segregação. Timers históricos de backup/health ativos e habilitados. Disco livre 50.662.195.200 bytes; memória disponível 5.135.412 KiB. Backup final 68.903.872 bytes, root:root 0600, checksum novamente válido.
+
 ## Dependências externas
 
 SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração real. Preparação e testes isolados não equivalem a operação externa demonstrada. Sua ausência não bloqueia as demais frentes.
@@ -134,4 +155,4 @@ SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração
 
 `READY_FOR_PRODUCT_BUILD=NO`
 
-Impedimentos atuais: validar privilégios/ACL/backup/restore da release canônica sobre cópia restaurada do estado real; implementar e provar a transição/rollback integral com plano de rede anterior à alteração; completar HTTP WordPress, E2E fundamental e revisão independente; implantar e verificar o commit/imagens exatos. A suíte Linux isolada e a publicação da branch já foram realizadas. Os controles de backend, quotas, persistência e limites existem na branch, mas ainda não mitigam os serviços antigos em produção. O limite de uso interrompeu a revisão independente; não foi tratado como aprovação. SMTP/INLABS/DataJud/off-host ausentes não são os motivos desse NO.
+Impedimentos atuais: validar e ativar o conjunto de privilégios/ACL/rotina automatizada da release canônica; implementar e provar a transição/rollback integral com plano de rede anterior à alteração e compatibilidade reversa; completar HTTP WordPress/cron, E2E fundamental e revisão independente; implantar e verificar o commit/imagens exatos. A suíte Linux, o replay MariaDB e as migrations forward sobre backup real já passaram. Os controles de backend, quotas, persistência e limites existem na branch, mas ainda não mitigam os serviços antigos em produção. O limite de uso interrompeu a revisão independente; não foi tratado como aprovação. SMTP/INLABS/DataJud/off-host ausentes não são os motivos desse NO.

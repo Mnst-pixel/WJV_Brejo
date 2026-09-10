@@ -1,6 +1,6 @@
 # Backup e recuperação — rotina P0/P1
 
-Estado de implantação: esta é a rotina candidata. O ensaio real de 18:39 UTC em 2026-09-10 validou o backup e restore da rotina anterior; ainda não comprova o coordenador novo com credenciais segregadas. Consultar [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md) antes de instalar units ou afirmar que a produção usa este fluxo.
+Estado de implantação: esta é a rotina candidata. Em 2026-09-10, o ensaio de 18:39 UTC validou a rotina anterior; o de 22:25 UTC validou os scripts candidatos com backup novo e 5 migrations sobre a cópia restaurada, preservando 86 registros originais em 64 tabelas e com repetição idempotente. Ainda não comprova o coordenador/catalogação/retenção/timers com credenciais segregadas. Consultar [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md) antes de instalar units ou afirmar que a produção usa este fluxo.
 
 ## Contrato operacional
 
