@@ -38,3 +38,8 @@ Não há execução VPS nem commit próprio deste sublote. Revisão B e validaç
 
 Reverter este módulo para a implementação anterior reabre divergência entre admin e RBAC; preferir correção adiante ou manutenção temporária dos endpoints administrativos. Não apagar auditoria/grants para simular rollback. O rollback operacional deve selecionar revisão/imagem integral conhecida e registrar eventual risco que ela reintroduz.
 
+# Revalidação no salvamento administrativo
+
+Operações de escrita no Django Admin relêem o ator sob lock e revalidam conta ativa, MFA habilitado, prova MFA da sessão e `session_version` antes de consultar a matriz. Edição de usuário bloqueia ator e destinatário em ordem de PK igual à usada na atribuição de papéis. Assim uma requisição iniciada antes da revogação não conserva `is_superuser` ou autoridade obsoletos para concluir a edição. O salvamento continua limitado aos campos de perfil autorizados, sem atualizar flags de segurança vindas do formulário antigo.
+
+Uma atribuição persistida `conta-de-servico` classifica a identidade como máquina mesmo após expirar ou desativar a conta. A expiração remove sua autoridade; não a converte em humano, mesmo com flags administrativas ou papéis humanos acidentais. Login humano continua recusado e, sem grant ativo de máquina, todos os escopos são negados. Testes: `test_admin_revocation.py` cobre ator revogado, MFA removido, sessão revogada, escrita válida e máquina expirada.

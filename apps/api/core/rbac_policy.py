@@ -27,6 +27,7 @@ ADMIN_PERMISSIONS = set(PERMISSIONS) - STUDY - MACHINE_PERMISSIONS
 PRIVILEGED_ROLES = {"superadministrador", "administrador", "conta-de-servico"}
 # The generic admin cannot perform review/publication or change policy grants.
 MODEL_RESOURCES = {
+    "plan": "settings", "uploadpolicy": "settings", "enrollment": "settings",
     "user": "users", "role": "roles", "permission": "roles", "userrole": "roles",
     "subject": "content", "topic": "content", "content": "content", "contentversion": "content",
     "sourceregistry": "corpus", "assetregistry": "corpus", "sourcedocument": "corpus",

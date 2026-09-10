@@ -5,8 +5,22 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 
 from . import models
-from .permissions import active_role_slugs, request_has_permission
+from .permissions import active_role_slugs, is_service_account, request_has_permission
 from .rbac_policy import MODEL_RESOURCES, PRIVILEGED_ROLES
+
+
+def locked_admin_principals(request, *other_user_ids):
+    """Caller owns an atomic transaction; all account locks share RBAC ordering."""
+    actor_id = request.user.pk
+    locked = {user.pk: user for user in models.User.objects.select_for_update()
+              .filter(pk__in=[actor_id, *other_user_ids]).order_by("pk")}
+    actor = locked.get(actor_id)
+    if (actor is None or not actor.is_active or is_service_account(actor)
+            or not actor.mfa_enabled or request.session.get("mfa_verified") is not True
+            or request.session.get("user_session_version") != actor.session_version):
+        raise PermissionDenied("A autoridade administrativa foi revogada; autentique novamente.")
+    request.user = actor
+    return locked
 
 
 class PolicyAdmin(admin.ModelAdmin):
@@ -37,16 +51,29 @@ class PolicyAdmin(admin.ModelAdmin):
         return tuple(field.name for field in self.model._meta.fields if field.name in guarded)
 
     def save_model(self, request, obj, form, change):
+        from django.db import transaction
         from .audit import record_audit
-        if not (self.has_change_permission(request, obj) if change else self.has_add_permission(request)):
-            raise PermissionDenied
-        if not change and hasattr(obj, "created_by_id"):
-            obj.created_by = request.user
-        if change and isinstance(obj, models.Content) and obj.status in {"approved", "published", "archived"}:
-            raise PermissionDenied("Conteúdo aprovado exige nova versão no workflow.")
-        super().save_model(request, obj, form, change)
-        record_audit("admin.resource.changed", actor=request.user, request=request, target=obj,
-                     metadata={"fields": sorted(form.changed_data)})
+        with transaction.atomic():
+            locked_admin_principals(request)
+            if not (self.has_change_permission(request, obj) if change else self.has_add_permission(request)):
+                raise PermissionDenied
+            if not change and hasattr(obj, "created_by_id"):
+                obj.created_by = request.user
+            if change and isinstance(obj, models.Content):
+                current = models.Content.objects.select_for_update().get(pk=obj.pk)
+                if current.status in {"approved", "published", "archived"}:
+                    raise PermissionDenied("Conteúdo aprovado exige nova versão no workflow.")
+                writable = {field.name for field in self.model._meta.concrete_fields if field.editable and not field.primary_key}
+                changed = (set(form.changed_data) & writable) - set(self.get_readonly_fields(request, current))
+                for field in changed:
+                    setattr(current, field, getattr(obj, field))
+                if changed:
+                    current.save(update_fields=[*changed, "updated_at"])
+                obj.refresh_from_db()
+            else:
+                super().save_model(request, obj, form, change)
+            record_audit("admin.resource.changed", actor=request.user, request=request, target=obj,
+                         metadata={"fields": sorted(form.changed_data)})
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -101,9 +128,22 @@ class KairosUserAdmin(PolicyAdmin, UserAdmin):
         return actor_super or not (obj.is_superuser or protected_assignment)
 
     def save_model(self, request, obj, form, change):
-        # Profile edits can invalidate authorization; invalidate every existing session.
-        obj.session_version += 1
-        super().save_model(request, obj, form, change)
+        from django.db import transaction
+        from .audit import record_audit
+        with transaction.atomic():
+            locked = locked_admin_principals(request, obj.pk)
+            current = locked.get(obj.pk)
+            if current is None:
+                raise PermissionDenied
+            if not self.has_change_permission(request, current):
+                raise PermissionDenied
+            fields = set(form.changed_data) & {"display_name", "email", "is_active"}
+            for field in fields:
+                setattr(current, field, getattr(obj, field))
+            current.session_version += 1
+            current.save(update_fields=[*fields, "session_version", "updated_at"])
+            record_audit("admin.user.profile.changed", actor=request.user, request=request, target=current,
+                         metadata={"fields": sorted(fields)})
 
     def user_change_password(self, request, id, form_url=""):
         # The inherited password route must not bypass the dedicated reset flow.
@@ -125,4 +165,6 @@ for model in (models.Subject, models.Topic, models.Content, models.SourceRegistr
               models.Exam, models.ExamPhase, models.Question, models.PracticalCase,
               models.SourceDocument, models.CoverageRecord):
     admin.site.register(model, PolicyAdmin)
+
+from . import upload_admin  # noqa: E402,F401
 
