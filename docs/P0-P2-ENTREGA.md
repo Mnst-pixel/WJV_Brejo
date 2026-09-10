@@ -84,6 +84,10 @@ Segundo candidato `e6b45dc`: build PASS, API `sha256:8407f1b0a48ce449623766c7bea
 
 Terceiro candidato `7074583`: **445 passed, 2 failed**, sem skips, na API Linux; corrigidos os erros de JSONB e fixture anteriores. As duas expectativas remanescentes ignoravam a chamada de embeddings exclusiva do backend PostgreSQL; os testes agora verificam ambas as rotas permitidas e a autenticação. API `sha256:d87ee762405546745540f4baad4bbc96ca10ea9f5baab5b185abb1236c5a4f99`, parser `sha256:060b97cce3b92e212937f7f98caf79881fea91cdecbb97afcd664e9e09d89034`. Cleanup/no-touch PASS. A suíte nativa passou a ser executada também quando a suíte API reprova, conservando o resultado geral FAIL; isso evita ocultar falhas independentes. Evidência `modernizacao/evidencias/p0p2-candidate-20260910T212117Z.json`.
 
+Quarto candidato `1c05dc9`: **API Linux 447 passed, sem skips**. Nativo: 175 passed, 4 failed, 4 skipped. PHP: `WORDPRESS_GATE_CONTRACT=PASS`. Falhas restantes de fixture: contagem de usuários ignorava service account criada pela migration; executáveis sintéticos de entrypoint estavam em tmpfs sem exec; contrato Caddy retirava a capability exigida pelo binário. Ajustes confinados às fixtures; não relaxam `/tmp` nem capabilities de aplicações em produção. Snapshot real de rede passou a acompanhar a suíte nativa; os três testes que exigem Git permanecem executados separadamente no host, em repositórios temporários próprios. Cleanup/no-touch PASS; evidência `modernizacao/evidencias/p0p2-candidate-20260910T212921Z.json`.
+
+Branch publicada e [PR #2](https://github.com/Mnst-pixel/WJV_Brejo/pull/2) criado como rascunho. `main` permanece em `cb4708d8`. Scan do HEAD `c5bc7d7`: 17 valores de credenciais verificados contra 301 arquivos, nenhuma correspondência. Dois campos de exemplo DataJud foram esvaziados; valor externo, histórico e serviços produtivos não foram alterados.
+
 ## Dependências externas
 
 SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração real. Preparação e testes isolados não equivalem a operação externa demonstrada. Sua ausência não bloqueia as demais frentes.

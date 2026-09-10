@@ -207,7 +207,7 @@ def test_backup_is_read_only_even_when_session_default_is_overridden(database_ro
     state = database_roles
     with state.connect("kairos_backup") as connection:
         assert connection.execute("SHOW default_transaction_read_only").fetchone()[0] == "on"
-        assert connection.execute("SELECT count(*) FROM core_user").fetchone()[0] == 1
+        assert connection.execute("SELECT count(*) FROM core_user WHERE id=%s", (state.user_id,)).fetchone()[0] == 1
         with pytest.raises(state.psycopg.errors.ReadOnlySqlTransaction):
             connection.execute("DELETE FROM core_goal WHERE false")
         connection.execute("SET default_transaction_read_only=off")

@@ -2,6 +2,8 @@
 
 `apps/api/tests/test_upload_pipeline_live.py` é opt-in via `KAIROS_TEST_LIVE_UPLOAD=1`. Não altera aplicação, migrations ou serviços produtivos. O executor é responsável por criar/remover uma rede Docker interna exclusiva, com imagens imutáveis já disponíveis e aliases de teste. A suíte não faz deploy, não abre portas do host e não aceita endpoints livres.
 
+O runner também recebe `KAIROS_TEST_NETWORK_BASELINE` apontando para o snapshot imediatamente anterior, no namespace de baselines. Copia somente cinco projeções de rede/firewall/listener (sem ambientes/secrets) para testar o comparador com inventário real. Os testes de entrypoint usam executáveis sintéticos em `/tmp` do container nativo; somente essa fixture tem tmpfs `exec`. O `/tmp` dos serviços produtivos permanece com sua política restrita. O contrato Caddy recebe somente `NET_BIND_SERVICE`, como o Compose candidato: o executável oficial tem file capability e não inicia com essa capability fora do bounding set, mesmo em `validate`.
+
 Contrato das fixtures:
 
 - PostgreSQL: `kairos-test-postgres`, usuário `kairos_test`, banco sintético `kairos_test`/`kairos_test_transactions`, settings de integração PostgreSQL;

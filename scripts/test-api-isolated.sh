@@ -23,6 +23,14 @@ done
 [[ $(realpath -m "$work") == "$work" ]]
 [[ ! -e $work ]]
 mkdir -p -m 0700 "$work"
+network_baseline=$(realpath -e "${KAIROS_TEST_NETWORK_BASELINE:?fresh baseline required}")
+[[ $network_baseline == /opt/kairos/runtime/baselines/* && ! -L $KAIROS_TEST_NETWORK_BASELINE ]]
+mkdir -m 0755 "$work/network-baseline"
+for filename in network-ownership.json iptables.txt ip6tables.txt nft-ruleset.txt listeners.txt; do
+  [[ -f $network_baseline/$filename && ! -L $network_baseline/$filename ]]
+  cp -- "$network_baseline/$filename" "$work/network-baseline/p0p2-network-$filename"
+  chmod 0644 "$work/network-baseline/p0p2-network-$filename"
+done
 label=com.kairos.test.run
 containers=()
 net=''
@@ -210,12 +218,14 @@ for ((n=0;n<30;n++)); do
 done
 [[ $ready == 1 ]]
 create native --user 0:0 --cap-drop ALL --read-only \
-  --tmpfs /tmp:rw,nosuid,size=256m --tmpfs /opt/kairos:rw,nosuid,size=64m \
+  --tmpfs /tmp:rw,exec,nosuid,size=256m --tmpfs /opt/kairos:rw,nosuid,size=64m \
   --tmpfs /srv/kairos:rw,nosuid,size=64m \
   --tmpfs /root:rw,nosuid,size=16m,mode=0700 \
   --env KAIROS_TEST_REDIS_ACL=1 --env KAIROS_TEST_REDIS_ACL_HOST=kairos-test-redis-acl \
   --env KAIROS_TEST_REDIS_ACL_PORT=6379 \
   --env KAIROS_TEST_DB_ROLES=1 \
+  --env KAIROS_NETWORK_BASELINE_DIR=/network-baseline \
+  --mount "type=bind,src=$work/network-baseline,dst=/network-baseline,readonly" \
   --mount "type=bind,src=$repository_dir,dst=/source,readonly" \
   --mount "type=bind,src=$wheels_dir,dst=/wheels,readonly" \
   --workdir /source --entrypoint /bin/sh "$api_image" -ec '
@@ -241,7 +251,7 @@ create wp-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m --tmpfs /
 timeout 60 docker start -a "$prefix-wp-contract" > "$work/wordpress-contract.log" 2>&1
 [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-wp-contract") == 0 ]]
 tail -n 3 "$work/wordpress-contract.log"
-create edge-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m --tmpfs /data:rw,size=4m --tmpfs /config:rw,size=4m \
+create edge-contract --cap-drop ALL --cap-add NET_BIND_SERVICE --read-only --tmpfs /tmp:rw,size=16m --tmpfs /data:rw,size=4m --tmpfs /config:rw,size=4m \
   --mount "type=bind,src=$repository_dir/infra/caddy/Caddyfile,dst=/etc/caddy/Caddyfile,readonly" \
   --entrypoint caddy "$edge_image" validate --config /etc/caddy/Caddyfile --adapter caddyfile
 timeout 60 docker start -a "$prefix-edge-contract" > "$work/caddy-contract.log" 2>&1
