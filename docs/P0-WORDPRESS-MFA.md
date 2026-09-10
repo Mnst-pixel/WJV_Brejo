@@ -32,9 +32,11 @@ O blog depende do endpoint Django para a autorização de cada requisição din�
 
 `pytest tests/test_wordpress_auth_gate.py`: 42 testes locais PASS (autorização atual, revogação, MFA, roles, escopo, XML-RPC, métodos/encoding, prova de edge e contrato de assinatura). `php wordpress/tests/test-admin-gate.php` testa contrato, alterações de campos, expiração, replay e limites com banco simulado; sua execução PHP é um gate separado, não evidência de MariaDB real.
 
-Antes de declarar operacional: validar Caddy com a imagem pinada; executar contrato PHP; inventariar plugins/rotas WordPress reais; testar HTTP público e interno, cookies válidos/inválidos, MFA completo, replay concorrente em MariaDB isolado e páginas/REST/cron afetados. Não houve VPS, deploy ou modificação de credenciais humanas nesta implementação.
+PHP, Caddy e MariaDB isolados foram executados conforme o registro abaixo. O inventário real identificou apenas Elementor ativo e Hello Elementor. Antes de declarar operacional, restam HTTP público/interno, cookies válidos/inválidos, MFA completo, análise das rotas do plugin e páginas/REST/cron afetados. Não houve deploy produtivo ou modificação de credenciais humanas; os testes VPS usam recursos temporários próprios.
 
 O runner `scripts/test-api-isolated.sh` também prepara MariaDB temporário a partir do ID da imagem Kairós existente, sem portas publicadas e sem volumes produtivos. `wordpress/tests/test-admin-gate-mariadb.php` usa a classe `wpdb` e os hooks nativos da imagem WordPress, SQL real e índice único InnoDB: 12 processos PHP aguardam uma barreira e disputam o mesmo nonce; exatamente um deve ganhar. Verifica replay posterior, nonce distinto, ausência de autoload, limpeza limitada a 256 registros, preservação de opções alheias, saturação e falha do banco. Somente configuração single-site/diagnósticos são shims; não é E2E HTTP nem prova dos plugins ativos. O filtro nativo de query é indispensável para restaurar os curingas escapados por `wpdb::prepare`. O teste exige hostname/schema fixos de fixture antes de qualquer SQL e o runner remove os containers/dados temporários. Resultado de execução registrado na entrega; nenhum resultado é presumido pela existência do teste.
+
+Evidência de 2026-09-10: candidato `04abb6e` passou na suíte PHP/MariaDB real e no Caddy validate; 12 processos disputaram o mesmo nonce, com exatamente 1 aceito. Todos os cenários acima passaram; cleanup/no-touch zero alterações preexistentes. Detalhes na entrega. HTTP integrado e preservação da operação cron ainda são gates de implantação.
 
 ## Rollback
 

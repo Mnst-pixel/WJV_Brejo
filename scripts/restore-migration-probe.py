@@ -6,7 +6,7 @@ import os
 import re
 
 MAX_ROWS = 200_000
-EXPECTED_ACL_TABLE = "core_role_kairos_permissions"
+EXPECTED_ACL_TABLE = "core_permission_roles"
 
 
 def validate_target(values):
@@ -63,6 +63,10 @@ def run():
     from django.core.management import call_command
     from django.db import connection
     from django.db.migrations.executor import MigrationExecutor
+    from core.models import Permission
+
+    if Permission.roles.through._meta.db_table != EXPECTED_ACL_TABLE:
+        raise RuntimeError("unexpected_authorization_join_table")
 
     with connection.cursor() as cursor:
         cursor.execute("SELECT current_database(), current_user, host(inet_server_addr())")

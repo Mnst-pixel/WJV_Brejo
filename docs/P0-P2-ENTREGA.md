@@ -102,6 +102,24 @@ Ensaios WordPress posteriores: `1b5b63e` passou na disputa concorrente e parou n
 
 Lote `aeec250` acrescentou ensaio opcional de migrations sobre cópia de backup real, com quatro testes de guarda/preservação PASS. Primeiro ensaio criou backup novo `/srv/kairos/backups/kairos-predeploy-20260910T221144Z-cd559fba6789.tar.gz.enc`, conferiu checksum/manifest e restaurou PostgreSQL, mas parou antes das migrations na guarda de endereço: o cast `inet::text` inclui `/32`. A guarda passou a usar `host(inet_server_addr())`, conforme [semântica oficial PostgreSQL 17](https://www.postgresql.org/docs/17/functions-net.html), mantendo a exigência exata de loopback. Isso é correção do verificador, não da aplicação. Cleanup/no-touch PASS; recuperação completa desse backup ainda não demonstrada nessa tentativa. Evidência `modernizacao/evidencias/p0p2-migration-rehearsal.json`; diagnóstico privado ficou no VPS sem exposição de linhas pessoais.
 
+## Último candidato aprovado em testes isolados
+
+Commit **`04abb6eecfd39ba329da02c6997274eabfaaa0c5`**, build e integração PASS:
+
+- API: `sha256:13c8c3a1cc6dfac215e8a42a8ec5a65ffdb6a3e0e045eccef6cb7e887c0e3081`.
+- Parser: `sha256:8c3b3df1856b13d93a3a7a25552c5a2eae9238b2882de476e34d5cd3df5fceb5`.
+- API Linux/PostgreSQL/Redis: **449 passed**, sem skips. Três warnings de fixtures/JUnit documentados no log, sem falhas.
+- Operação/parser Linux: **184 passed, 3 skips** por ausência de Git na imagem; contratos Git executados separadamente no host: **13 PASS**, incluindo os três casos (não somar tudo como testes únicos).
+- WordPress PHP e **MariaDB real PASS: 12 processos concorrentes, exatamente 1 nonce aceito**; replay posterior, limpeza em lote, preservação de opções alheias, saturação e erro de banco cobertos.
+- Caddy validate, inventário do código na imagem, Gunicorn, static/admin e CSRF smoke PASS.
+- Cleanup PASS e `PREEXISTING_RESOURCES_MODIFIED=0` em todas as categorias do comparador.
+- Evidência: `modernizacao/evidencias/p0p2-candidate-20260910T221348Z.json`; detalhes protegidos `/opt/kairos/runtime/tests/kairos-test-20260910T221429Z-b5bd0339cc14`.
+- Scan do mesmo commit: 17 valores de credenciais versus 306 arquivos, sem correspondências. Ruff da API e dos novos scripts PASS.
+
+Esse commit é um candidato testado, não o commit implantado. Mudanças posteriores exclusivamente documentais não alteram os IDs acima nem autorizam atribuir-lhes outro label OCI. O gate HTTP WordPress completo, a rotina cron, a migração com privilégios segregados e a transição/rollback integral permanecem separados. O teste MariaDB não exige nem realizou alteração de dados WordPress produtivos.
+
+Segundo ensaio de recuperação (`04abb6e`): migrations executaram na cópia, mas a comparação de preservação interrompeu em `core_permission_roles`, a associação deliberadamente substituída pela migration 0003. O verificador havia usado o nome reverso do relacionamento como se fosse o nome físico da tabela. Corrigida a exceção única e acrescentada a conferência contra o modelo `Permission.roles.through`; não foram excluídos registros pessoais das verificações. Backup `/srv/kairos/backups/kairos-predeploy-20260910T221807Z-53dce9d8bd80.tar.gz.enc`, restore `/srv/kairos/backups/kairos-restore-20260910T221820Z-68f26bee74a1.evidence`, cleanup/no-touch PASS. Evidência `modernizacao/evidencias/p0p2-migration-rehearsal-04abb6e.json`.
+
 ## Dependências externas
 
 SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração real. Preparação e testes isolados não equivalem a operação externa demonstrada. Sua ausência não bloqueia as demais frentes.

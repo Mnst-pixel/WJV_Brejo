@@ -28,7 +28,7 @@ O rollback precisa restaurar um conjunto coerente de Git/imagens/Compose/scoped 
 
 - E2E fundamental preservando o visual, em homologação isolada: autenticação/MFA, retomada, notas/metas/Pomodoro e upload privado.
 - Backend produtivo sem superuser; scopes mínimos efetivamente entregues a cada container; inventário MinIO e validação de configurações reais. WordPress foi inventariado: apenas Elementor ativo, Hello Elementor, grants limitados ao próprio banco; esse resultado não substitui revisão de rotas/plugins ou correções de vulnerabilidades.
-- HTTP WordPress direto e via edge, replay concorrente de nonce em MariaDB e rotas/cron afetados; o contrato PHP atual usa banco simulado.
+- HTTP WordPress direto e via edge e rotas/cron afetados. Replay concorrente já passou em MariaDB isolado com a classe `wpdb` e hooks nativos: 12 processos, exatamente 1 nonce aceito, além de limpeza/saturação/falha de banco. Esse resultado não substitui o HTTP completo.
 - Escopo exato de proxies confiáveis: validar gateways realmente usados pelo Nginx antes de estreitar `private_ranges`; testar origem/HTTPS/IP e limites sem atingir outros virtual hosts.
 - Nova rotina de backup/restore com scoped credentials, retenção, alertas, timers e health instalados. Off-host ausente permanece EXTERNAL_BLOCKER.
 - Benchmark autenticado, páginas reais, queries e carga controlada; o baseline loopback público não cobre todos esses fluxos.
