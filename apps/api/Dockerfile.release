@@ -1,10 +1,21 @@
-# Use a recorded, already inspected Kairós runtime; no dependency downloads.
+# Use a recorded runtime with explicit OS patches and hash-verified Python wheels.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 ARG SOURCE_REVISION
 LABEL org.opencontainers.image.revision=${SOURCE_REVISION} \
       org.opencontainers.image.source="https://github.com/Mnst-pixel/WJV_Brejo"
 WORKDIR /app
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends --only-upgrade \
+    openssl=3.5.7-1~deb13u2 libssl3t64=3.5.7-1~deb13u2 openssl-provider-legacy=3.5.7-1~deb13u2 \
+    && rm -rf /var/lib/apt/lists/*
+COPY apps/api/requirements.runtime.lock /tmp/runtime-upgrades.lock
+COPY runtime-wheels/ /tmp/runtime-wheels/
+RUN python -m pip install --no-index --no-deps --require-hashes --find-links=/tmp/runtime-wheels -r /tmp/runtime-upgrades.lock \
+    && python -m pip uninstall -y bleach && python -m pip check \
+    && rm -rf /tmp/runtime-wheels /tmp/runtime-upgrades.lock
+# Remove complete inherited source trees so deleted modules cannot survive COPY.
+RUN rm -rf /app/core /app/kairos /app/legacy-extracted
 COPY --chown=10001:10001 apps/api/core/ /app/core/
 COPY --chown=10001:10001 apps/api/kairos/ /app/kairos/
 COPY --chown=10001:10001 apps/api/manage.py apps/api/docker-entrypoint.sh /app/
