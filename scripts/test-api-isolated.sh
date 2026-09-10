@@ -173,9 +173,21 @@ create api --user 10001:10001 --read-only --tmpfs /tmp:rw,nosuid,size=256m,uid=1
       python -m pytest --ds=kairos.integration_test_settings -q --tb=short -p no:cacheprovider --junitxml=/results/integration.xml
     fi
   '
-timeout 600 docker start -a "$prefix-api" > "$work/test.log" 2>&1
+api_attach_exit=0
+timeout 600 docker start -a "$prefix-api" > "$work/test.log" 2>&1 || api_attach_exit=$?
+if [[ $(docker container inspect -f '{{.State.Running}}' "$prefix-api") == true ]]; then
+  docker stop --time 5 "$prefix-api" >/dev/null
+fi
 test_exit=$(docker container inspect -f '{{.State.ExitCode}}' "$prefix-api")
-[[ $test_exit == 0 ]]
+if (( api_attach_exit != 0 )); then test_exit=$api_attach_exit; fi
+artifact_exit=0
+python3 - "$work/results/integration.xml" <<'PY' || artifact_exit=$?
+import sys
+import xml.etree.ElementTree as ET
+matches = [case for case in ET.parse(sys.argv[1]).getroot().iter('testcase') if case.get('name') == 'test_candidate_imports_match_the_git_sources']
+assert len(matches) == 1 and all(matches[0].find(kind) is None for kind in ('failure', 'error', 'skipped'))
+PY
+if [[ $artifact_exit == 0 ]]; then printf 'artifact_code_hashes=PASS\n' >> "$work/result.txt"; else printf 'artifact_code_hashes=FAIL\n' >> "$work/result.txt"; fi
 tail -n 3 "$work/test.log"
 # Native Linux security and operational contracts use only disposable container
 # filesystems and synthetic credentials, without the host Docker socket.
@@ -211,21 +223,25 @@ create native --user 0:0 --cap-drop ALL --read-only \
     export PYTHONPATH=/tmp/testlibs:/app PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
     python -m pytest scripts/tests services/parser/test_parser.py -q --tb=short -p no:cacheprovider
   '
-timeout 600 docker start -a "$prefix-native" > "$work/native.log" 2>&1
+native_attach_exit=0
+timeout 600 docker start -a "$prefix-native" > "$work/native.log" 2>&1 || native_attach_exit=$?
+if [[ $(docker container inspect -f '{{.State.Running}}' "$prefix-native") == true ]]; then
+  docker stop --time 5 "$prefix-native" >/dev/null
+fi
 native_exit=$(docker container inspect -f '{{.State.ExitCode}}' "$prefix-native")
-[[ $native_exit == 0 ]]
+if (( native_attach_exit != 0 )); then native_exit=$native_attach_exit; fi
 tail -n 3 "$work/native.log"
 wp_image=$(docker container inspect -f '{{.Image}}' kairos-wordpress-1)
 edge_image=$(docker container inspect -f '{{.Image}}' kairos-edge-1)
 for id in "$wp_image" "$edge_image"; do [[ $id =~ ^sha256:[0-9a-f]{64}$ ]]; done
-create wp-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m \
+create wp-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m --tmpfs /var/www/html:rw,size=1m \
   --mount "type=bind,src=$repository_dir/wordpress,dst=/candidate,readonly" \
   --workdir /candidate --entrypoint /bin/sh "$wp_image" -ec \
   'php -l mu-plugins/kairos-admin-gate.php && php tests/test-admin-gate.php'
 timeout 60 docker start -a "$prefix-wp-contract" > "$work/wordpress-contract.log" 2>&1
 [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-wp-contract") == 0 ]]
 tail -n 3 "$work/wordpress-contract.log"
-create edge-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m \
+create edge-contract --cap-drop ALL --read-only --tmpfs /tmp:rw,size=16m --tmpfs /data:rw,size=4m --tmpfs /config:rw,size=4m \
   --mount "type=bind,src=$repository_dir/infra/caddy/Caddyfile,dst=/etc/caddy/Caddyfile,readonly" \
   --entrypoint caddy "$edge_image" validate --config /etc/caddy/Caddyfile --adapter caddyfile
 timeout 60 docker start -a "$prefix-edge-contract" > "$work/caddy-contract.log" 2>&1
@@ -244,5 +260,7 @@ if [[ -n ${KAIROS_TEST_API_IMAGE:-} ]]; then
     sleep 1
   done
   [[ $ready == 1 ]]
-  printf 'artifact_code_hashes=PASS\ngunicorn_smoke=PASS\nadmin_static_smoke=PASS\n' >> "$work/result.txt"
+  printf 'gunicorn_smoke=PASS\nadmin_static_smoke=PASS\n' >> "$work/result.txt"
 fi
+printf 'api_suite_exit=%s\nnative_suite_exit=%s\n' "$test_exit" "$native_exit" >> "$work/result.txt"
+[[ $test_exit == 0 && $native_exit == 0 && $artifact_exit == 0 ]]

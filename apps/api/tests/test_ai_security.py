@@ -6,6 +6,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 from django.core.cache import cache
+from django.db import connection
 from django.test import override_settings
 from rest_framework.exceptions import PermissionDenied, Throttled, ValidationError
 
@@ -105,13 +106,20 @@ def test_rag_injection_has_no_tools_or_shared_session(
     requests, options, _ = wire()
     consult(student)
     consult(other_student)
-    assert len(requests) == 2
-    first = json.loads(requests[0].content)
+    chat_requests = [request for request in requests if request.url.path == "/v1/chat/completions"]
+    embedding_requests = [request for request in requests if request.url.path == "/v1/embeddings"]
+    assert len(chat_requests) == 2
+    assert len(embedding_requests) == (2 if connection.vendor == "postgresql" else 0)
+    for request in embedding_requests:
+        payload = json.loads(request.content)
+        assert set(payload) == {"model", "input"}
+        assert payload["input"] == "query: teste"
+    first = json.loads(chat_requests[0].content)
     assert set(first) == {"model", "messages", "temperature", "max_tokens"}
     assert "execute shell" not in first["messages"][0]["content"]
     assert "execute shell" in first["messages"][1]["content"]
     assert all(
-        str(request.url) == "http://localai:8080/v1/chat/completions"
+        str(request.url) in {"http://localai:8080/v1/chat/completions", "http://localai:8080/v1/embeddings"}
         for request in requests
     )
     assert all(
@@ -332,9 +340,8 @@ def test_real_http_authorization_and_persisted_consultation(
         server.server_close()
         thread.join(timeout=3)
     assert result["answer"] == "Resposta HTTP real."
-    assert len(observed) == 1
-    assert observed[0][0] == "/v1/chat/completions"
-    assert observed[0][1] == "Bearer synthetic-localai-test-credential"
+    assert [row[0] for row in observed] == (["/v1/embeddings", "/v1/chat/completions"] if connection.vendor == "postgresql" else ["/v1/chat/completions"])
+    assert all(row[1] == "Bearer synthetic-localai-test-credential" for row in observed)
     assert AgentRun.objects.get().output_text == result["answer"]
 
 
