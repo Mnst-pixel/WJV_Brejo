@@ -17,12 +17,21 @@ function totp(secret) {
   return ((hash.readUInt32BE(offset) & 0x7fffffff) % 1000000).toString().padStart(6, '0');
 }
 
+function acceptsTarget(req, origin) {
+  return Boolean(origin && req.url?.startsWith('/') && !req.url.startsWith('//') && !req.url.includes('\\') &&
+    req.headers.host === new URL(origin).host && (!req.headers.origin || req.headers.origin === origin));
+}
+
 (async () => {
   let raw = ''; for await (const chunk of process.stdin) raw += chunk;
   const config = JSON.parse(raw);
   for (const value of [config.api, config.next]) assert(['localhost', '127.0.0.1'].includes(new URL(value).hostname));
+  let origin;
   const proxy = createServer((req, res) => {
-    const target = new URL(req.url, req.url.startsWith('/app') ? config.next : config.api);
+    if (!acceptsTarget(req, origin)) {res.writeHead(400); return res.end('Invalid isolated request target');}
+    const base = new URL(req.url.startsWith('/app') ? config.next : config.api);
+    const target = new URL(req.url, base);
+    if (target.origin !== base.origin) {res.writeHead(400); return res.end('Invalid isolated upstream');}
     const upstream = request(target, {method: req.method, headers: req.headers}, response => {
       res.writeHead(response.statusCode, response.headers); response.pipe(res);
     });
@@ -30,7 +39,7 @@ function totp(secret) {
   });
   const upgrades = new Set();
   proxy.on('upgrade', (req, socket, head) => {
-    if (!req.url.startsWith('/app/_next/')) return socket.destroy();
+    if (!acceptsTarget(req, origin) || !req.url.startsWith('/app/_next/')) return socket.destroy();
     const target = new URL(config.next);
     const upstream = connect(Number(target.port), target.hostname, () => {
       upstream.write(`${req.method} ${req.url} HTTP/1.1\r\n${Object.entries(req.headers).map(([k,v]) => `${k}: ${v}`).join('\r\n')}\r\n\r\n`);
@@ -44,7 +53,7 @@ function totp(secret) {
     }
   });
   await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve));
-  const origin = `http://127.0.0.1:${proxy.address().port}`;
+  origin = `http://127.0.0.1:${proxy.address().port}`;
   let browser;
   try {
     browser = await chromium.launch({headless: true, executablePath: process.env.KAIROS_CHROMIUM_EXECUTABLE, timeout: 15000});
@@ -83,6 +92,28 @@ function totp(secret) {
     return page;
   }
   try {
+    // Real requests prove that even a loopback trap cannot receive forwarded credentials.
+    let leaked = 0;
+    const trap = createServer((req, res) => {leaked += 1; res.end('Unexpected forwarding');});
+    await new Promise(resolve => trap.listen(0, '127.0.0.1', resolve));
+    try {
+      const trapHost = `127.0.0.1:${trap.address().port}`;
+      const cases = [
+        {path: `http://${trapHost}/leak`}, {path: `//${trapHost}/leak`}, {path: `/\\${trapHost}/leak`},
+        {path: '/', headers: {host: 'example.invalid'}}, {path: '/', headers: {origin: 'https://example.invalid'}},
+      ];
+      for (const entry of cases) {
+        const status = await new Promise((resolve, reject) => {
+          const probe = request({hostname: '127.0.0.1', port: proxy.address().port, path: entry.path,
+            headers: {host: new URL(origin).host, cookie: 'synthetic-probe=not-a-secret', ...entry.headers}}, response => {
+              response.resume(); response.on('end', () => resolve(response.statusCode));
+            });
+          probe.on('error', reject); probe.end();
+        });
+        assert.equal(status, 400);
+      }
+      assert.equal(leaked, 0);
+    } finally {trap.closeAllConnections(); await new Promise(resolve => trap.close(resolve));}
     const editor = await login('editor');
     await editor.getByRole('link', {name: 'Disciplinas e temas', exact: true}).click();
     await editor.getByRole('link', {name: 'Nova disciplina', exact: true}).click();
@@ -128,7 +159,7 @@ function totp(secret) {
     assert.equal(denied.status(), 403);
     assert.deepEqual(errors, []);
     const result = {workflow: 'PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
-      studentDenied: denied.status(), viewports: ['1440x1000', '390x844'], productionAccess: false};
+      studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));
   } catch (error) {
