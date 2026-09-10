@@ -3,6 +3,10 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .rbac_views import RoleCatalogView, UserRolesView
+from .mcp_views import MCPDelegationView, MCPToolCallView
+from .study_views import BrowserImportView, StudyActivityView, StudyPanelView, StudyRecordView, StudySummaryView
+from .integration_views import IntegrationStatusView
+from .content_views import AdminContentListView, ContentRevisionView, ContentTransitionView, LegacyContentPreviewView, LegacyContentConfirmView
 
 router = DefaultRouter()
 router.register("subjects", views.SubjectViewSet, basename="subject")
@@ -23,6 +27,23 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("admin/content/", AdminContentListView.as_view()),
+    path("admin/content/<uuid:content_id>/versions/", ContentRevisionView.as_view()),
+    path("admin/content-versions/<uuid:version_id>/transition/", ContentTransitionView.as_view()),
+    path("admin/legacy-content/preview/", LegacyContentPreviewView.as_view()),
+    path("admin/legacy-content/<uuid:batch_id>/confirm/", LegacyContentConfirmView.as_view()),
+    path("integrations/status/", IntegrationStatusView.as_view()),
+    path("study/progress/", StudyRecordView.as_view(kind="progress")),
+    path("study/progress/<uuid:record_id>/", StudyRecordView.as_view(kind="progress")),
+    path("study/marks/", StudyRecordView.as_view(kind="marks")),
+    path("study/marks/<uuid:record_id>/", StudyRecordView.as_view(kind="marks")),
+    path("study/activities/", StudyActivityView.as_view()),
+    path("study/panel/", StudyPanelView.as_view()),
+    path("study/summary/", StudySummaryView.as_view()),
+    path("study/browser-imports/", BrowserImportView.as_view()),
+    path("study/browser-imports/<uuid:receipt_id>/", BrowserImportView.as_view()),
+    path("mcp/delegate", MCPDelegationView.as_view()),
+    path("mcp/call", MCPToolCallView.as_view()),
     path("admin/roles/", RoleCatalogView.as_view()),
     path("admin/users/<uuid:user_id>/roles/", UserRolesView.as_view()),
     path("health/live", views.health_live),

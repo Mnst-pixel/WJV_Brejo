@@ -1,6 +1,10 @@
 import os
+import json
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
+from boto3.s3.transfer import TransferConfig
+from botocore.config import Config
+from core.email_config import smtp_configuration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,6 +36,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "core.middleware.PrivateResponseMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -111,6 +116,9 @@ AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = True
 AWS_QUERYSTRING_EXPIRE = 300
 AWS_S3_FILE_OVERWRITE = False
+AWS_S3_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+AWS_S3_CLIENT_CONFIG = Config(connect_timeout=3, read_timeout=10, retries={"mode": "standard", "max_attempts": 2}, s3={"addressing_style": "path"})
+AWS_S3_TRANSFER_CONFIG = TransferConfig(max_concurrency=2, max_io_queue=8, io_chunksize=262144)
 
 TLS_ENABLED = env_bool("KAIROS_TLS_ENABLED")
 SESSION_COOKIE_HTTPONLY = True
@@ -131,13 +139,19 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_HSTS_SECONDS = 31536000 if TLS_ENABLED else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = TLS_ENABLED
 
-redis_password = quote(os.getenv("REDIS_PASSWORD", ""), safe="")
 redis_host = os.getenv("REDIS_HOST", "redis")
 redis_port = os.getenv("REDIS_PORT", "6379")
-REDIS_URL = f"redis://:{redis_password}@{redis_host}:{redis_port}/0"
-CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+cache_user = quote(os.getenv("REDIS_CACHE_USER", ""), safe="")
+cache_password = quote(os.getenv("REDIS_CACHE_PASSWORD", ""), safe="")
+broker_user = quote(os.getenv("REDIS_BROKER_USER", ""), safe="")
+broker_password = quote(os.getenv("REDIS_BROKER_PASSWORD", ""), safe="")
+REDIS_URL = f"redis://{cache_user}:{cache_password}@{redis_host}:{redis_port}/0"
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL,
+                      "KEY_PREFIX": "kairos:cache:v2", "OPTIONS": {"serializer": "core.cache_serialization.StrictJSONSerializer"}}}
+CELERY_BROKER_URL = f"redis://{broker_user}:{broker_password}@{redis_host}:{redis_port}/0"
+CELERY_BROKER_TRANSPORT_OPTIONS = {"global_keyprefix": "kairos:broker:v1:"}
+CELERY_RESULT_BACKEND = None
+CELERY_TASK_IGNORE_RESULT = True
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_RESULT_SERIALIZER = "json"
@@ -156,6 +170,14 @@ REST_FRAMEWORK = {
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+FILE_UPLOAD_HANDLERS = [
+    "core.upload_handlers.BoundedUploadHandler",
+    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
+]
+PARSER_API_TOKEN = os.getenv("PARSER_API_TOKEN", "")
+PARSER_BASE_URL = os.getenv("PARSER_BASE_URL", "http://parser:8090")
+CELERY_BEAT_SCHEDULE = {"recover-private-uploads": {"task": "core.tasks.recover_pending_uploads", "schedule": 60.0}}
 KAIROS_MAX_UPLOAD_BYTES = int(os.getenv("KAIROS_MAX_UPLOAD_BYTES", 25 * 1024 * 1024))
 KAIROS_ALLOWED_MIME_TYPES = {
     "application/pdf",
@@ -177,21 +199,16 @@ LOCALAI_API_KEY = os.getenv("LOCALAI_API_KEY", "")
 LOCALAI_EMBEDDING_MODEL = os.getenv("LOCALAI_EMBEDDING_MODEL", "multilingual-e5-small")
 MCP_GATEWAY_URL = os.getenv("MCP_GATEWAY_URL", "http://mcp-gateway:3000")
 MCP_API_KEY = os.getenv("MCP_API_KEY", "")
+KAIROS_MCP_DELEGATION_KEY = os.getenv("KAIROS_MCP_DELEGATION_KEY", "")
+KAIROS_MCP_PRINCIPALS = json.loads(os.getenv("KAIROS_MCP_PRINCIPALS", "{}"))
 
 SMTP_URL = os.getenv("SMTP_URL", "")
-if SMTP_URL:
-    smtp = urlparse(SMTP_URL)
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = smtp.hostname
-    EMAIL_PORT = smtp.port or 587
-    EMAIL_HOST_USER = smtp.username or ""
-    EMAIL_HOST_PASSWORD = smtp.password or ""
-    EMAIL_USE_TLS = smtp.scheme in {"smtp+tls", "smtps"}
-    EMAIL_USE_SSL = smtp.scheme == "smtps"
-else:
-    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+globals().update(smtp_configuration(SMTP_URL))
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Kairós <no-reply@kairos.invalid>")
 KAIROS_BASE_URL = os.getenv("KAIROS_BASE_URL", "http://localhost:4080")
+KAIROS_LEGACY_DATA_DIR = os.getenv("KAIROS_LEGACY_DATA_DIR", str(BASE_DIR.parent.parent / "legacy/extracted"))
+KAIROS_TRUST_PROXY_HEADERS = os.getenv("KAIROS_TRUST_PROXY_HEADERS", "false").lower() == "true"
+KAIROS_PROXY_TOKEN = os.getenv("KAIROS_PROXY_TOKEN", "")
 
 LOGGING = {
     "version": 1,

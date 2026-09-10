@@ -35,7 +35,29 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "username", "mfa_enabled", "roles"]
 
     def get_roles(self, obj):
-        return list(obj.role_assignments.select_related("role").values_list("role__slug", flat=True))
+        from .permissions import active_role_slugs
+        return sorted(active_role_slugs(obj))
+
+    def validate_preferences(self, value):
+        allowed = {"reduced_motion", "reduced_density", "comfortable_reading", "focus_mode", "text_scale"}
+        if not isinstance(value, dict) or set(value) - allowed or any((type(item) is not int or not 90 <= item <= 125) if key == "text_scale" else type(item) is not bool for key, item in value.items()):
+            raise serializers.ValidationError("Preferências devem conter somente os controles de leitura suportados.")
+        return value
+
+    def update(self, instance, validated_data):
+        from django.db import transaction
+        from .exceptions import Conflict
+        with transaction.atomic():
+            current = User.objects.select_for_update().get(pk=instance.pk)
+            if current.session_version != instance.session_version or not current.is_active:
+                raise Conflict("O acesso foi alterado durante a edição.")
+            for field, value in validated_data.items():
+                if field == "preferences":
+                    value = {**current.preferences, **value}
+                setattr(current, field, value)
+            if validated_data:
+                current.save(update_fields=[*validated_data, "updated_at"])
+            return current
 
 
 class TopicSerializer(serializers.ModelSerializer):
@@ -90,7 +112,7 @@ class SimulationSerializer(serializers.ModelSerializer):
         from core.services.attempts import validate_question_ids
         phase = attrs.get("exam_phase", getattr(self.instance, "exam_phase", None))
         ids = attrs.get("question_ids", getattr(self.instance, "question_ids", []))
-        if phase:
+        if phase and (self.instance is None or "question_ids" in attrs or "exam_phase" in attrs):
             attrs["question_ids"] = validate_question_ids(ids, phase.pk)
         duration = attrs.get("duration_minutes", getattr(self.instance, "duration_minutes", 300))
         if not 1 <= duration <= 1440:
@@ -99,8 +121,11 @@ class SimulationSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         from django.db import transaction
+        from core.services.attempts import validate_question_ids
         with transaction.atomic():
             locked = Simulation.objects.select_for_update().get(pk=instance.pk)
+            validate_question_ids(validated_data.get("question_ids", locked.question_ids),
+                                  getattr(validated_data.get("exam_phase", locked.exam_phase), "pk"))
             structural = ("exam_phase", "mode", "question_ids", "duration_minutes")
             if locked.attempts.exists() and any(key in validated_data and validated_data[key] != getattr(locked, key) for key in structural):
                 raise serializers.ValidationError("A estrutura do simulado não pode mudar após iniciar uma tentativa.")
@@ -169,21 +194,70 @@ class OwnedSerializer(serializers.ModelSerializer):
 
 
 class GoalSerializer(OwnedSerializer):
+    progress = serializers.IntegerField(min_value=0, max_value=100, required=False)
+
+    def validate(self, attrs):
+        if "completed_at" in self.initial_data:
+            raise serializers.ValidationError("A conclusão é registrada automaticamente pelo progresso.")
+        return attrs
+
+    def create(self, validated_data):
+        from django.db import transaction
+        from django.utils import timezone
+        from core.services.study_state import _lock
+        with transaction.atomic():
+            _lock(self.context["request"].user)
+            validated_data["completed_at"] = timezone.now() if validated_data.get("progress", 0) == 100 else None
+            return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        from django.db import transaction
+        from django.shortcuts import get_object_or_404
+        from django.utils import timezone
+        from core.services.study_state import _lock
+        user = self.context["request"].user
+        with transaction.atomic():
+            _lock(user)
+            current = get_object_or_404(Goal.objects.select_for_update(), pk=instance.pk, owner=user)
+            progress = validated_data.get("progress", current.progress)
+            validated_data["completed_at"] = (current.completed_at or timezone.now()) if progress == 100 else None
+            return super().update(current, validated_data)
+
     class Meta:
         model = Goal
         fields = ["id", "title", "description", "target_date", "completed_at", "progress", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "completed_at", "created_at", "updated_at"]
 
 
 class StudyNoteSerializer(OwnedSerializer):
+    expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
+    body = serializers.CharField(max_length=100000, allow_blank=True)
     class Meta:
         model = StudyNote
-        fields = ["id", "subject", "topic", "title", "body", "version", "created_at", "updated_at"]
+        fields = ["id", "subject", "topic", "title", "body", "version", "expected_version", "created_at", "updated_at"]
         read_only_fields = ["id", "version", "created_at", "updated_at"]
 
+    def create(self, validated_data):
+        from django.db import transaction
+        from .permissions import lock_study_user
+        with transaction.atomic():
+            lock_study_user(self.context["request"].user)
+            validated_data.pop("expected_version", None)
+            return super().create(validated_data)
+
     def update(self, instance, validated_data):
-        validated_data["version"] = instance.version + 1
-        return super().update(instance, validated_data)
+        from django.db import transaction
+        from .exceptions import Conflict
+        from .permissions import lock_study_user
+        expected = validated_data.pop("expected_version", None)
+        with transaction.atomic():
+            user = self.context["request"].user
+            lock_study_user(user)
+            current = StudyNote.objects.select_for_update().get(pk=instance.pk, owner=user)
+            if expected != current.version:
+                raise Conflict({"detail": "Recarregue a nota antes de salvar.", "current_version": current.version})
+            validated_data["version"] = current.version + 1
+            return super().update(current, validated_data)
 
 
 class FlashcardSerializer(OwnedSerializer):
@@ -211,6 +285,12 @@ class StudySessionSerializer(OwnedSerializer):
 
 
 class FileAssetSerializer(serializers.ModelSerializer):
+    metadata = serializers.SerializerMethodField()
+
+    def get_metadata(self, obj):
+        value = obj.metadata.get("extracted_characters")
+        return {"extracted_characters": value} if isinstance(value, int) else {}
+
     class Meta:
         model = FileAsset
         fields = [
