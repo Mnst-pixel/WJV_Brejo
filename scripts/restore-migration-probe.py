@@ -65,7 +65,7 @@ def run():
     from django.db.migrations.executor import MigrationExecutor
 
     with connection.cursor() as cursor:
-        cursor.execute("SELECT current_database(), current_user, inet_server_addr()::text")
+        cursor.execute("SELECT current_database(), current_user, host(inet_server_addr())")
         if cursor.fetchone() != ("kairos_restore", "kairos_restore", "127.0.0.1"):
             raise RuntimeError("unexpected_restore_database_connection")
         cursor.execute("SET statement_timeout='60s'")
