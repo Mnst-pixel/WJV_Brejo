@@ -32,6 +32,52 @@ Branch de continuação: `astra/kairos-p0-p2-fundacoes`, criada desse merge. O V
 
 Design visual existente deve ser preservado. Demais projetos no VPS permanecem fora do escopo.
 
+## Lotes implementados, ainda não implantados
+
+O último candidato enviado ao ensaio Linux nesta execução é o commit `928cebc`, da branch acima. A produção continua na revisão e imagem registradas no baseline inicial. **Código implementado não equivale a correção já operacional.**
+
+| Alteração e motivo | Arquivos principais | Migration | Evidência local / estado |
+| --- | --- | --- | --- |
+| RBAC por recurso/ação, revogação atual, identidade de serviço e MFA; impedir elevação de papel e acesso cruzado | `apps/api/core/permissions.py`, `rbac_policy.py`, serviços e testes RBAC | `0003` | Testes de API incluídos na suíte completa; privilégios reais ainda dependem do ensaio PostgreSQL e deploy |
+| Tentativas com questões congeladas, estado transacional e idempotência; preservar nota/histórico | modelos e serviços de tentativa, `test_attempt_*` | `0002` | Testes de ownership e finalização passaram localmente |
+| Persistência de estudo por usuário e migração do browser sem sobrescrita; revisão humana do legado | `study_models.py`, `content_workflow.py`, serviços, páginas Next.js | `0005`, `0006` | API e frontend testados; concorrência real e E2E ainda pendentes |
+| Quotas, quarentena, scanner, parser isolado e download autenticado privado | `upload_models.py`, `services/uploads.py`, `services/parser`, testes de upload | `0004` | Testes locais passaram; pipeline ClamAV/MinIO/parser real reservado ao ensaio isolado |
+| Credenciais por serviço, papéis PostgreSQL, ACL Redis e release por commit/imagem | `config/service-secrets.json`, `scripts/release-*`, `database-roles.py`, `redis-acl.py`, Compose | Sem migration adicional | Contratos locais; aplicação no VPS pendente |
+| Backup/restore automático verificável, retenção, integridade, adapter off-host e health | `scripts/backup-*`, `verify-restore-isolated.sh`, `health-report.py`, units Kairós | Não | Recuperação histórica real PASS abaixo; nova rotina ainda exige prova com release canônica |
+| Dependências vulneráveis e módulos herdados na imagem | `Dockerfile.release`, `requirements.runtime.lock`, inventário/testes do artefato | Não | `b15f7f4`; 54 versões Python candidatas sem alertas OSV consultados; instalação Linux ainda não comprovada |
+| MFA administrativo WordPress, inclusive acesso interno | `core/wordpress_auth.py`, Caddy, MU-plugin e testes | Não; nonce efêmero em options WordPress | `f821976`; 42 testes Django; PHP/Caddy/HTTP/MariaDB real pendentes |
+| Exceções de rede sem alterar política global ou recursos alheios | comparador e `release_network_policy.py` | Não | `8c0e00c`; 47 testes passaram após correções de ordem, negação e identificação de projeto |
+
+Bugs encontrados durante a verificação independente: regra negada era interpretada como disjunta; ACCEPT/DROP do mesmo bridge podiam trocar de ordem sem reprovação; nomes com prefixo Kairós podiam ocultar container de projeto alheio; a conferência de artefato cobria somente quatro módulos; parent symlink no runner podia redirecionar arquivos de teste. As correções foram implementadas com casos negativos. A validação final de rede ainda precisa resolver o plano anterior ao deploy e os IDs Docker criados posteriormente, sem gerar autorização a partir do snapshot posterior.
+
+## Testes desta continuação
+
+- Suíte API após os últimos lotes: **428 passed, 18 skipped**, Ruff PASS. Os skips são explícitos: imagem, symlink no Windows, concorrência PostgreSQL/Redis e pipeline de upload real. Não foram contados como aprovação.
+- Recorte MFA WordPress, inventário completo e HTTP MFA: **59 passed, 2 skipped**.
+- Comparador de release/rede/projeção: **47 passed** após correção e nova execução.
+- Frontend: typecheck, ESLint e build Next.js passaram. `npm audit --omit=dev`: zero vulnerabilidades informadas. E2E visual/navegação ainda pendente.
+- Contratos de secrets/wrapper/paths: **8 passed, 7 skipped** por requisitos Linux/root/symlinks. A suíte operacional completa será executada dentro do ambiente isolado Linux.
+
+Os agentes auxiliares atingiram limite de uso da conta durante a revisão; verificações independentes interrompidas não foram declaradas concluídas. A execução local continuou. Nenhum reset de conta foi consumido.
+
+## Backup e recuperação comprovados nesta execução
+
+Backup: `/srv/kairos/backups/kairos-predeploy-20260910T183825Z-0d5d600abfd7.tar.gz.enc`.
+
+Restore isolado: PASS em `/srv/kairos/backups/kairos-restore-20260910T183839Z-d0e4060ded67.evidence`; evidência local `modernizacao/evidencias/p0p2-recovery-proof.json`. Comparação anterior/posterior: `PREEXISTING_RESOURCES_MODIFIED=0`. Esse ensaio usou a rotina anterior validada; não prova ainda a nova rotina de release/scoped credentials.
+
+Inventário WordPress às 19:39 UTC: core 7.1, PHP 8.3.33, Elementor 4.2.3, Hello Elementor 3.4.9, MU-plugin visual Kairós; nenhum MU-plugin de MFA observado. Evidência: `modernizacao/evidencias/p0p2-wordpress-inventory.json`. Inventário de arquivos não substitui a verificação de plugins ativos ou análise de vulnerabilidades.
+
+## Deploy, rollback e benchmark
+
+Ainda não houve deploy das fundações. Nenhuma migration deste lote foi aplicada ao banco produtivo. As imagens candidatas serão registradas somente depois do build efetivo; a etiqueta de commit não basta sem teste do inventário da imagem.
+
+Primeiro build do candidato `928cebc` falhou antes da criação da imagem: BuildKit interpretou `FROM sha256:<image-id>` como nome de repositório, apesar da imagem local existente. Corrigido o builder para criar uma referência local Kairós cujo ID é conferido exatamente antes do uso. Os testes integrados não chegaram a executar nessa tentativa (`INTEGRATION_EXIT=125`). Comparação no-touch PASS, todas as categorias zero; evidência `modernizacao/evidencias/p0p2-candidate-20260910T210706Z.json`.
+
+Rollback operacional produtivo continua sendo a release anterior com o backup restaurável acima. Para os commits locais, usar revert sem reescrita de histórico. Reversão de dependências ou do gate WordPress pode reabrir riscos conhecidos: manter os endpoints administrativos bloqueados até uma alternativa validada. Não remover volumes nem apagar conteúdo para reverter código.
+
+O benchmark versionado `scripts/benchmark-foundations.py` mede serialmente p50/p95 de rotas públicas via loopback do VPS; ainda falta registrar resultados. Ele não representa carga autenticada, contagem de queries ou teste N+1. Otimizações adicionais dependem de medições.
+
 ## Dependências externas
 
 SMTP, INLABS, DataJud e storage off-host: `EXTERNAL_BLOCKER` até configuração real. Preparação e testes isolados não equivalem a operação externa demonstrada. Sua ausência não bloqueia as demais frentes.
