@@ -1,0 +1,14 @@
+# Incremental security release: reuse the inspected production runtime, no pulls.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+ARG SOURCE_REVISION
+LABEL org.opencontainers.image.revision=${SOURCE_REVISION} \
+      com.kairos.release.scope="p0-auth"
+COPY --chown=10001:10001 core/mfa.py core/views.py core/serializers.py /app/core/
+COPY --chown=10001:10001 kairos/settings.py /app/kairos/settings.py
+USER 10001:10001
+# The old entrypoint collected assets in a container layer, not the base image.
+# This value is used only for static collection and is never a runtime secret.
+RUN DJANGO_SECRET_KEY=static-build-only-not-a-runtime-secret python manage.py collectstatic --noinput --verbosity 0
+ENTRYPOINT ["gunicorn"]
+CMD ["kairos.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]

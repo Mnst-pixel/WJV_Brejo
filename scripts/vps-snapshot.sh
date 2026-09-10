@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: $0 /opt/kairos/runtime/baselines/<snapshot-name>" >&2
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "usage: $0 /opt/kairos/runtime/baselines/<snapshot-name> [prior-snapshot]" >&2
   exit 64
 fi
 
@@ -11,6 +11,12 @@ case "$output_dir" in
   /opt/kairos/runtime/baselines/*) ;;
   *) echo "refusing snapshot output outside /opt/kairos/runtime/baselines" >&2; exit 65 ;;
 esac
+baseline_args=()
+if [[ $# == 2 ]]; then
+  prior="$(realpath -e -- "$2")"
+  [[ $prior == /opt/kairos/runtime/baselines/* && -f $prior/compose-config-hashes.txt ]]
+  baseline_args+=("$prior/compose-config-hashes.txt")
+fi
 
 umask 077
 mkdir -p -- "$output_dir"
@@ -60,13 +66,10 @@ if [[ ${#cron_roots[@]} -gt 0 ]]; then
 fi
 find /etc/letsencrypt -xdev -type f \( -name 'cert.pem' -o -name 'fullchain.pem' -o -name '*.conf' \) -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum > "$output_dir/public-certificate-hashes.txt"
 
-: > "$output_dir/compose-config-hashes.txt"
-while IFS='|' read -r _ _ _ _ _ _ _ _ config_files; do
-  IFS=',' read -ra paths <<< "$config_files"
-  for path in "${paths[@]}"; do
-    [[ -f "$path" ]] && sha256sum -- "$path"
-  done
-done < "$output_dir/container-identities.txt" | LC_ALL=C sort -u > "$output_dir/compose-config-hashes.txt"
+# Continue hashing retired overrides: changing which file is active must not
+# erase evidence that a pre-existing configuration still exists unchanged.
+python3 "$(dirname -- "${BASH_SOURCE[0]}")/hash-compose-configs.py" \
+  "$output_dir/container-identities.txt" "${baseline_args[@]}" > "$output_dir/compose-config-hashes.txt"
 
 (
   cd "$output_dir"

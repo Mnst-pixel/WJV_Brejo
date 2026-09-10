@@ -103,6 +103,13 @@ class AttemptSerializer(serializers.ModelSerializer):
     answers = AttemptAnswerSerializer(many=True, read_only=True)
     mode = serializers.CharField(source="simulation.mode", read_only=True)
 
+    def validate_simulation(self, simulation):
+        if simulation.owner_id != self.context["request"].user.pk:
+            raise serializers.ValidationError("Simulado indisponível para esta conta.")
+        if self.instance and simulation.pk != self.instance.simulation_id:
+            raise serializers.ValidationError("O simulado de uma tentativa não pode ser alterado.")
+        return simulation
+
     class Meta:
         model = Attempt
         fields = [
