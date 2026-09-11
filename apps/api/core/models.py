@@ -596,6 +596,15 @@ class StudyNote(OwnedModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
     version = models.PositiveIntegerField(default=1)
+    content_version = models.ForeignKey(ContentVersion, on_delete=models.PROTECT, null=True, blank=True, related_name="personal_notes")
+    creation_key = models.UUIDField(null=True, blank=True, editable=False)
+    creation_payload_hash = models.CharField(max_length=64, blank=True, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "creation_key"], condition=Q(creation_key__isnull=False), name="note_owner_creation_key"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="note_positive_version"),
+        ]
 
 
 class Flashcard(OwnedModel):

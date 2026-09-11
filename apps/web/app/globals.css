@@ -489,7 +489,7 @@ html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
 .work-panel-heading > span { color: var(--muted); font-size: .76rem; }
 .stack-form { display: grid; gap: 12px; }
 .stack-form label, .form-grid label, .login-form label { display: grid; gap: 8px; color: var(--parchment-deep); font-size: .78rem; font-weight: 600; }
-.stack-form input, .stack-form textarea, .form-grid select, .library-search input, .login-form input, .consult-form textarea {
+.stack-form input, .stack-form textarea, .stack-form select, .form-grid select, .library-search input, .login-form input, .consult-form textarea {
   width: 100%;
   min-height: 48px;
   padding: 0 14px;

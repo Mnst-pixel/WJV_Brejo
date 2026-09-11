@@ -25,3 +25,5 @@ Account migration 0014 adds a recovery-email uniqueness constraint after checkin
 Subscription workspace has no new migration. Preserve plans, enrollment and upload policies on rollback. Keep the legacy-admin write block and protected-target rules; returning to old generic forms would reintroduce an alternative authorization path. Quota changes never delete existing files. See [P3-ASSINATURAS.md](P3-ASSINATURAS.md).
 
 The visual editor is additive inside existing structured_data; keep it with the plain body on rollback. Older clients may display plain text but must not edit approved versions, weaken package hashes or re-enable invalid AST approval. Legacy malformed drafts require a new explicit revision, never automatic repair or re-signing. See [P3-EDITOR-VISUAL.md](P3-EDITOR-VISUAL.md).
+
+Personal-note migration 0015 preserves legacy text and adds optional references/creation receipts. Keep those fields and the DELETE guard on artifact rollback; losing the receipt permits old requests to recreate notes. Never discard newer notes by restoring a stale backup without reconciliation. See [P4-ANOTACOES.md](P4-ANOTACOES.md).

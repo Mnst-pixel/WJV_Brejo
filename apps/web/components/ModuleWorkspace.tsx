@@ -10,6 +10,7 @@ import {QuestionPractice} from "./QuestionPractice";
 import {SimulationWorkspace} from "./SimulationWorkspace";
 import {WrittenExamWorkspace} from "./WrittenExamWorkspace";
 import {ReadingWorkspace} from "./ReadingWorkspace";
+import {LibraryWorkspace} from "./LibraryWorkspace";
 
 export function ModuleWorkspace({module}: {module: string}) {
   const info = moduleInfo[module];
@@ -177,10 +178,6 @@ function Consultant() {
     setLoading(false);
   }
   return <div className="consult-layout"><section className="consult-thread"><div className="oracle-intro"><span><Icon name="scales"/></span><div><h2>Pesquisa assistida, não resposta sem fonte</h2><p>O Kairós procura evidência aprovada e informa quando ela não é suficiente.</p></div></div>{answer && <article aria-live="polite" className="assistant-answer"><strong>Kairós</strong><p>{answer}</p></article>}<form className="consult-form" onSubmit={ask}><label className="visually-hidden" htmlFor="legal-question">Pergunta jurídica</label><textarea id="legal-question" onChange={(event) => setQuestion(event.target.value)} placeholder="Digite sua dúvida jurídica…" rows={4} value={question}/><div><small>Verifique as fontes antes de usar a resposta.</small><button className="primary-button" disabled={loading} type="submit">{loading ? "Consultando…" : "Consultar"}<Icon name="arrow"/></button></div></form></section><aside className="source-rail"><h2>O que a resposta inclui</h2><ul className="check-list"><li><Icon name="check"/>Fonte e órgão</li><li><Icon name="check"/>Data de referência</li><li><Icon name="check"/>Situação temporal</li><li><Icon name="check"/>Nível de confiança</li></ul></aside></div>;
-}
-
-function LibraryWorkspace() {
-  return <section className="work-panel library-panel"><div className="library-search"><Icon name="search"/><label className="visually-hidden" htmlFor="library-query">Buscar na biblioteca</label><input id="library-query" placeholder="Buscar por tema, órgão ou referência…"/></div><div className="coverage-band"><Icon name="scales"/><span><strong>Cobertura mensurável</strong><small>Nenhuma jurisdição é declarada completa sem registro verificável.</small></span></div><EmptyState icon="library" title="Base pronta para fontes aprovadas" text="O painel exibirá documentos, períodos, falhas e porcentagem de cobertura por fonte."/></section>;
 }
 
 function SettingsWorkspace() {

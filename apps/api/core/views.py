@@ -330,7 +330,7 @@ class OwnedViewSet(viewsets.ModelViewSet):
         from django.shortcuts import get_object_or_404
         from .permissions import lock_study_user
         lock_study_user(self.request.user)
-        serializer.instance = get_object_or_404(self.get_queryset().select_for_update(), pk=serializer.instance.pk)
+        serializer.instance = get_object_or_404(self.get_queryset().select_for_update(of=("self",)), pk=serializer.instance.pk)
         serializer.save()
 
     @transaction.atomic
@@ -338,7 +338,7 @@ class OwnedViewSet(viewsets.ModelViewSet):
         from django.shortcuts import get_object_or_404
         from .permissions import lock_study_user
         lock_study_user(self.request.user)
-        instance = get_object_or_404(self.get_queryset().select_for_update(), pk=instance.pk)
+        instance = get_object_or_404(self.get_queryset().select_for_update(of=("self",)), pk=instance.pk)
         record_audit(f"{instance._meta.label_lower}.deleted", actor=self.request.user, request=self.request, target=instance)
         instance.delete()
 
@@ -349,8 +349,14 @@ class GoalViewSet(OwnedViewSet):
 
 
 class StudyNoteViewSet(OwnedViewSet):
-    queryset = StudyNote.objects.all()
+    # Keep creation receipts and prevent stale deletion from erasing newer work.
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+    queryset = StudyNote.objects.select_related("subject", "topic", "content_version")
     serializer_class = StudyNoteSerializer
+
+    def get_queryset(self):
+        from core.personal_notes import filter_notes
+        return filter_notes(super().get_queryset(), self.request.query_params)
 
 
 class FlashcardViewSet(OwnedViewSet):

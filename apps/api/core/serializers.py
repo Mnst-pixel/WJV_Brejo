@@ -276,34 +276,26 @@ class GoalSerializer(OwnedSerializer):
 
 class StudyNoteSerializer(OwnedSerializer):
     expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
-    body = serializers.CharField(max_length=100000, allow_blank=True)
+    creation_key = serializers.UUIDField(write_only=True, required=False)
+    expected_owner = serializers.UUIDField(write_only=True, required=False)
+    account_id = serializers.UUIDField(source="owner_id", read_only=True)
+    body = serializers.CharField(max_length=100000, allow_blank=True, trim_whitespace=False)
+    subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
+    content_title = serializers.CharField(source="content_version.title", read_only=True, default=None)
 
     class Meta:
         model = StudyNote
-        fields = ["id", "subject", "topic", "title", "body", "version", "expected_version", "created_at", "updated_at"]
+        fields = ["id", "account_id", "subject", "subject_name", "topic", "content_version", "content_title", "title", "body", "version", "creation_key", "expected_owner", "expected_version", "created_at", "updated_at"]
         read_only_fields = ["id", "version", "created_at", "updated_at"]
 
     def create(self, validated_data):
-        from django.db import transaction
-        from .permissions import lock_study_user
-        with transaction.atomic():
-            lock_study_user(self.context["request"].user)
-            validated_data.pop("expected_version", None)
-            return super().create(validated_data)
+        from core.personal_notes import create_note
+        validated_data.pop("owner", None)
+        return create_note(self.context["request"].user, validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
-        from .exceptions import Conflict
-        from .permissions import lock_study_user
-        expected = validated_data.pop("expected_version", None)
-        with transaction.atomic():
-            user = self.context["request"].user
-            lock_study_user(user)
-            current = StudyNote.objects.select_for_update().get(pk=instance.pk, owner=user)
-            if expected != current.version:
-                raise Conflict({"detail": "Recarregue a nota antes de salvar.", "current_version": current.version})
-            validated_data["version"] = current.version + 1
-            return super().update(current, validated_data)
+        from core.personal_notes import update_note
+        return update_note(self.context["request"].user, instance.pk, validated_data)
 
 
 class FlashcardSerializer(OwnedSerializer):

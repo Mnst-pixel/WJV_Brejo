@@ -204,10 +204,12 @@ function acceptsTarget(req, origin) {
     learner.on('pageerror', error => errors.push(error.message));
     let expectedLostSave = 0;
     let expectedLostStart = 0;
+    let expectedLostNote = 0;
     learner.on('console', message => {
       if (message.type() !== 'error') return;
       if (expectedLostSave && message.location().url.endsWith('/autosave/') && message.text().includes('ERR_FAILED')) {expectedLostSave -= 1; return;}
       if (expectedLostStart && message.location().url.endsWith('/simulation-start/') && message.text().includes('ERR_FAILED')) {expectedLostStart -= 1; return;}
+      if (expectedLostNote && message.location().url.includes('/api/notes/') && message.text().includes('ERR_FAILED')) {expectedLostNote -= 1; return;}
       errors.push(message.text());
     });
     await learner.setViewportSize({width: 390, height: 844});
@@ -224,6 +226,57 @@ function acceptsTarget(req, origin) {
     await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
     await learner.screenshot({path: join(config.evidence, 'reading-mobile.png'), fullPage: true});
     assert.equal(await learner.locator('.rich-text strong').textContent(), 'Texto ');
+    const readingUrl = learner.url();
+    await learner.getByRole('link', {name: 'Criar anotação desta leitura', exact: true}).click();
+    await learner.getByLabel('Texto da anotação', {exact: true}).fill('Minha nota privada.\n\nTexto preservado com espaços finais.  ');
+    assert.equal(await learner.getByLabel('Disciplina da anotação', {exact: true}).isDisabled(), true);
+    expectedLostNote = 1;
+    await learner.route('**/api/notes/', async route => {
+      if (route.request().method() !== 'POST') {await route.continue(); return;}
+      const saved = await route.fetch(); assert.equal(saved.status(), 201); await route.abort('failed');
+    }, {times: 1});
+    await learner.getByRole('button', {name: 'Salvar anotação', exact: true}).click();
+    await learner.getByRole('button', {name: 'Conferir versão salva', exact: true}).waitFor();
+    await learner.waitForFunction(() => [...document.querySelectorAll('button')].some(button => button.textContent === 'Conferir versão salva' && !button.disabled));
+    assert.equal(expectedLostNote, 0, 'Lost POST was observed before refresh');
+    learner.once('dialog', dialog => dialog.accept());
+    await learner.reload();
+    await learner.getByRole('button', {name: 'Conferir versão salva', exact: true}).click();
+    await learner.getByText('A anotação está confirmada na sua conta.', {exact: true}).waitFor();
+    assert.equal(expectedLostNote, 0);
+    assert.equal(await learner.getByLabel('Texto da anotação', {exact: true}).inputValue(), 'Minha nota privada.\n\nTexto preservado com espaços finais.  ');
+    const noteUrl = learner.url();
+    let noteList = await (await studentContext.request.get(origin + '/api/notes/')).json();
+    assert.equal(noteList.count, 1);
+    assert(noteList.results[0].content_version);
+    const noteId = noteList.results[0].id;
+    await learner.getByLabel('Texto da anotação', {exact: true}).fill('Minha edição confirmada após falha de rede.');
+    expectedLostNote = 1;
+    await learner.route(`**/api/notes/${noteId}/`, async route => {const saved = await route.fetch(); assert.equal(saved.status(), 200); await route.abort('failed');}, {times: 1});
+    await learner.getByRole('button', {name: 'Salvar anotação', exact: true}).click();
+    await learner.getByRole('button', {name: 'Conferir versão salva', exact: true}).click();
+    await learner.getByText('A anotação está confirmada na sua conta.', {exact: true}).waitFor();
+    assert.equal(expectedLostNote, 0);
+    await learner.getByLabel('Texto da anotação', {exact: true}).fill('Alteração local ainda não enviada.');
+    learner.once('dialog', dialog => dialog.accept());
+    await learner.reload();
+    await learner.getByRole('button', {name: 'Conferir versão salva', exact: true}).click();
+    await learner.getByText('Versão conferida. Suas alterações locais aguardam Salvar anotação.', {exact: true}).waitFor();
+    assert.equal(await learner.getByLabel('Texto da anotação', {exact: true}).inputValue(), 'Alteração local ainda não enviada.');
+    await learner.getByRole('button', {name: 'Salvar anotação', exact: true}).click();
+    await learner.getByText('Anotação salva na sua conta.', {exact: true}).waitFor();
+    assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    assert(await learner.locator('.notes-layout .open-row h3').evaluate(element => element.getBoundingClientRect().width > 240));
+    await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    await learner.screenshot({path: join(config.evidence, 'personal-notes-mobile.png'), fullPage: true});
+    await learner.getByRole('button', {name: 'Leituras publicadas', exact: true}).click();
+    await learner.goto(noteUrl);
+    await learner.getByRole('heading', {name: 'Editar anotação', exact: true}).waitFor();
+    assert.equal(await learner.getByLabel('Texto da anotação', {exact: true}).inputValue(), 'Alteração local ainda não enviada.');
+    noteList = await (await studentContext.request.get(origin + '/api/notes/')).json();
+    assert.equal(noteList.count, 1); assert.equal(noteList.results[0].version, 3);
+    await learner.goto(readingUrl);
+    await learner.getByRole('heading', {name: 'Direitos fundamentais: roteiro de estudo', exact: true}).waitFor();
     await learner.getByRole('link', {name: 'Praticar esta disciplina', exact: true}).click();
     await learner.waitForURL('**/app/questoes?subject=*');
     const linkedSubject = new URL(learner.url()).searchParams.get('subject');
