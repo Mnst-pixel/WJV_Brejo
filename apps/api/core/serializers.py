@@ -120,6 +120,8 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class SimulationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
+        if "selection_config" in self.initial_data:
+            raise serializers.ValidationError("A configuração de preparação é registrada pelo servidor.")
         from core.services.attempts import validate_question_ids
         phase = attrs.get("exam_phase", getattr(self.instance, "exam_phase", None))
         ids = attrs.get("question_ids", getattr(self.instance, "question_ids", []))
@@ -151,7 +153,7 @@ class SimulationSerializer(serializers.ModelSerializer):
 class AttemptAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttemptAnswer
-        fields = ["id", "question", "selected_alternative", "free_text", "answer_version", "answered_at"]
+        fields = ["id", "question", "selected_alternative", "marked_for_review", "free_text", "answer_version", "answered_at"]
         read_only_fields = ["id", "answer_version", "answered_at"]
 
 
@@ -159,6 +161,14 @@ class AttemptSerializer(serializers.ModelSerializer):
     answers = AttemptAnswerSerializer(many=True, read_only=True)
     mode = serializers.SerializerMethodField()
     questions = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    duration_minutes = serializers.SerializerMethodField()
+
+    def get_title(self, obj):
+        return obj.frozen_definition.get("title", obj.simulation.title)
+
+    def get_duration_minutes(self, obj):
+        return obj.frozen_definition.get("duration_minutes", obj.simulation.duration_minutes)
 
     def get_mode(self, obj):
         return obj.frozen_definition.get("mode", obj.simulation.mode)
@@ -193,7 +203,7 @@ class AttemptSerializer(serializers.ModelSerializer):
         model = Attempt
         fields = [
             "id", "simulation", "mode", "status", "started_at", "submitted_at", "last_autosave_at",
-            "elapsed_seconds", "version", "answers", "questions", "snapshot_origin",
+            "elapsed_seconds", "version", "answers", "questions", "snapshot_origin", "title", "duration_minutes",
         ]
         read_only_fields = ["id", "status", "started_at", "submitted_at", "last_autosave_at", "elapsed_seconds", "version", "answers", "questions", "snapshot_origin"]
 

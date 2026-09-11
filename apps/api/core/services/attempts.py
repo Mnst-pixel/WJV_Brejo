@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
@@ -19,6 +20,7 @@ class AnswerInput(serializers.Serializer):
     question = serializers.UUIDField()
     selected_alternative = serializers.UUIDField(required=False, allow_null=True)
     free_text = serializers.CharField(required=False, allow_blank=True, max_length=100_000, trim_whitespace=False)
+    marked_for_review = serializers.BooleanField(required=False)
 
 
 class AutosaveInput(serializers.Serializer):
@@ -86,7 +88,8 @@ def _definition(simulation, *, require_approval):
                       "topic": str(question.topic_id) if question.topic_id else None, "topic_name": question.topic.name if question.topic else "",
                       "source_url": version.source_url, "reference_date": str(version.reference_date) if version.reference_date else None,
                       "legal_basis": metadata.legal_basis if metadata else "", "difficulty": metadata.difficulty if metadata else ""})
-    definition = {"title": simulation.title, "mode": simulation.mode, "duration_minutes": simulation.duration_minutes, "exam_phase": str(simulation.exam_phase_id), "questions": items}
+    definition = {"title": simulation.title, "mode": simulation.mode, "duration_minutes": simulation.duration_minutes, "exam_phase": str(simulation.exam_phase_id), "questions": items,
+                  "selection_config": simulation.selection_config}
     definition["sha256"] = hashlib.sha256(json.dumps(definition, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     definition["captured_at"] = timezone.now().isoformat()
     return definition
@@ -94,7 +97,8 @@ def _definition(simulation, *, require_approval):
 
 def ensure_results_unlocked(owner, *, exclude_attempt=None):
     # Inspect immutable captured mode, not a mutable simulation relationship.
-    if Attempt.objects.filter(owner=owner, status="active", frozen_definition__mode="formal").exclude(pk=exclude_attempt).exists():
+    formal = Q(frozen_definition__mode="formal") | Q(frozen_definition={}, simulation__mode="formal")
+    if Attempt.objects.filter(formal, owner=owner, status="active").exclude(pk=exclude_attempt).exists():
         raise Conflict("Finalize o simulado formal em andamento antes de consultar gabaritos de outras tentativas.")
 
 
@@ -137,9 +141,11 @@ def autosave_attempt(*, attempt_id, owner, expected_version, answers, elapsed_se
     if attempt.version != values["version"]:
         raise Conflict({"detail": "Versão de autosave desatualizada.", "current_version": attempt.version})
     _ensure_definition(attempt)
-    if attempt.frozen_definition["mode"] == "formal" and timezone.now() > attempt.started_at + timedelta(minutes=attempt.frozen_definition["duration_minutes"]):
+    now = timezone.now()
+    formal = attempt.frozen_definition["mode"] == "formal"
+    if formal and now > attempt.started_at + timedelta(minutes=attempt.frozen_definition["duration_minutes"]):
         raise Conflict("Tempo do simulado encerrado. Envie as respostas já salvas.")
-    if values["elapsed_seconds"] < attempt.elapsed_seconds:
+    if not formal and values["elapsed_seconds"] < attempt.elapsed_seconds:
         raise ValidationError("O tempo decorrido não pode retroceder.")
     max_seconds = attempt.frozen_definition["duration_minutes"] * 60
     if values["elapsed_seconds"] > max_seconds:
@@ -156,12 +162,14 @@ def autosave_attempt(*, attempt_id, owner, expected_version, answers, elapsed_se
         existing = AttemptAnswer.objects.filter(attempt=attempt, question_id=question_id).first()
         AttemptAnswer.objects.update_or_create(attempt=attempt, question_id=question_id, defaults={
             "selected_alternative_id": selected, "free_text": answer.get("free_text", ""), "answer_version": existing.answer_version + 1 if existing else 1,
+            "marked_for_review": answer.get("marked_for_review", existing.marked_for_review if existing else False),
         })
     attempt.version += 1
-    attempt.elapsed_seconds = values["elapsed_seconds"]
-    attempt.last_autosave_at = timezone.now()
+    attempt.elapsed_seconds = max(0, int((now - attempt.started_at).total_seconds())) if formal else values["elapsed_seconds"]
+    attempt.last_autosave_at = now
     attempt.save(update_fields=["version", "elapsed_seconds", "last_autosave_at", "updated_at"])
-    snapshot_answers = [{"question": str(answer.question_id), "selected_alternative": str(answer.selected_alternative_id) if answer.selected_alternative_id else None, "free_text": answer.free_text} for answer in attempt.answers.order_by("question_id")]
+    snapshot_answers = [{"question": str(answer.question_id), "selected_alternative": str(answer.selected_alternative_id) if answer.selected_alternative_id else None, "free_text": answer.free_text,
+                         "marked_for_review": answer.marked_for_review} for answer in attempt.answers.order_by("question_id")]
     AttemptCheckpoint.objects.create(attempt=attempt, version=attempt.version, snapshot={"answers": snapshot_answers, "elapsed_seconds": attempt.elapsed_seconds})
     return attempt
 
@@ -180,10 +188,12 @@ def _score(attempt):
         annulled += int(item["annulled"])
         unscored += int(not scorable)
         results.append({"question": item["question"], "selected_alternative": str(answer.selected_alternative_id) if answer and answer.selected_alternative_id else None,
-                        "correct_alternative": item["correct_alternative"], "correct": is_correct, "annulled": item["annulled"], "rationale": item["rationale"]})
+                        "correct_alternative": item["correct_alternative"], "correct": is_correct, "annulled": item["annulled"], "rationale": item["rationale"],
+                        "subject": item.get("subject"), "subject_name": item.get("subject_name", ""), "topic": item.get("topic"), "topic_name": item.get("topic_name", "")})
     if answer_map:
         AttemptAnswer.objects.bulk_update(answer_map.values(), ["is_correct"])
     return {"attempt": str(attempt.pk), "correct": correct, "total": len(results), "annulled": annulled, "unscored": unscored,
+            "elapsed_seconds": attempt.elapsed_seconds,
             "questions": results, "snapshot_origin": attempt.snapshot_origin, "requires_review": attempt.snapshot_origin != "creation" or unscored > 0 or not results,
             "definition_sha256": attempt.frozen_definition["sha256"]}
 
@@ -198,13 +208,17 @@ def submit_attempt(*, attempt_id, owner):
     if attempt.status != Attempt.Status.ACTIVE:
         raise ValidationError("A tentativa não pode ser submetida.")
     _ensure_definition(attempt)
+    submitted_at = timezone.now()
     if attempt.frozen_definition.get("mode") != "formal":
         ensure_results_unlocked(owner)
+    else:
+        attempt.elapsed_seconds = min(attempt.frozen_definition["duration_minutes"] * 60,
+            max(int((submitted_at - attempt.started_at).total_seconds()), 0))
     attempt.result_snapshot = _score(attempt)
     attempt.status = Attempt.Status.SUBMITTED
-    attempt.submitted_at = timezone.now()
+    attempt.submitted_at = submitted_at
     attempt.version += 1
-    attempt.save(update_fields=["status", "submitted_at", "version", "result_snapshot", "updated_at"])
+    attempt.save(update_fields=["status", "submitted_at", "version", "elapsed_seconds", "result_snapshot", "updated_at"])
     return attempt
 
 

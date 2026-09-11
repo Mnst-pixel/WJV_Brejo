@@ -192,7 +192,14 @@ function acceptsTarget(req, origin) {
     assert.equal(denied.status(), 403);
     const learner = await studentContext.newPage();
     learner.on('pageerror', error => errors.push(error.message));
-    learner.on('console', message => {if (message.type() === 'error') errors.push(message.text());});
+    let expectedLostSave = 0;
+    let expectedLostStart = 0;
+    learner.on('console', message => {
+      if (message.type() !== 'error') return;
+      if (expectedLostSave && message.location().url.endsWith('/autosave/') && message.text().includes('ERR_FAILED')) {expectedLostSave -= 1; return;}
+      if (expectedLostStart && message.location().url.endsWith('/simulation-start/') && message.text().includes('ERR_FAILED')) {expectedLostStart -= 1; return;}
+      errors.push(message.text());
+    });
     await learner.setViewportSize({width: 390, height: 844});
     await learner.goto(origin + '/app/questoes');
     await learner.getByRole('heading', {name: 'No cenário sintético, qual alternativa corresponde ao fundamento apresentado?'}).waitFor();
@@ -215,8 +222,49 @@ function acceptsTarget(req, origin) {
     await learner.screenshot({path: join(config.evidence, 'practice-mobile.png'), fullPage: true});
     await learner.setViewportSize({width: 1440, height: 1000});
     await learner.screenshot({path: join(config.evidence, 'practice-desktop.png'), fullPage: true});
+    await learner.goto(origin + '/app/simulados');
+    expectedLostStart = 1;
+    await learner.route('**/api/simulation-start/', async route => {
+      const committed = await route.fetch();
+      assert.equal(committed.status(), 201);
+      await route.abort('failed');
+    }, {times: 1});
+    await learner.getByRole('button', {name: 'Iniciar simulado', exact: true}).click();
+    await learner.getByText('Não foi possível confirmar a conexão com o servidor.', {exact: false}).waitFor();
+    await learner.reload();
+    await learner.getByRole('button', {name: 'Confirmar preparação anterior', exact: true}).click();
+    assert.equal(expectedLostStart, 0);
+    await learner.getByRole('heading', {name: 'Meu simulado', exact: true, level: 2}).waitFor();
+    await learner.getByRole('radio', {name: 'B Segunda opção para o teste.'}).check();
+    await learner.getByText('Respostas salvas na sua conta.', {exact: true}).waitFor();
+    const simulationUrl = learner.url();
+    // Real backend commits, but the browser loses the response; reload must reconcile it.
+    expectedLostSave = 1;
+    await learner.route('**/api/attempts/*/autosave/', async route => {
+      const committed = await route.fetch();
+      assert.equal(committed.status(), 200);
+      await route.abort('failed');
+    }, {times: 1});
+    await learner.getByRole('button', {name: 'Revisar esta questão antes de enviar', exact: true}).click();
+    await learner.getByText('Salvamento não confirmado.', {exact: false}).waitFor();
+    learner.once('dialog', dialog => dialog.accept());
+    await learner.reload();
+    await learner.getByRole('heading', {name: 'Meu simulado', exact: true, level: 2}).waitFor();
+    assert(await learner.getByRole('radio', {name: 'B Segunda opção para o teste.'}).isChecked());
+    assert(await learner.getByRole('button', {name: 'Retirar marca de revisão', exact: true}).getAttribute('aria-pressed') === 'true');
+    assert.equal(expectedLostSave, 0);
+    assert.equal(learner.url(), simulationUrl);
+    await learner.getByRole('button', {name: 'Finalizar simulado', exact: true}).click();
+    await learner.getByRole('heading', {name: 'Confirmar envio final', exact: true}).waitFor();
+    await learner.getByRole('button', {name: 'Confirmar finalização', exact: true}).click();
+    await learner.getByRole('heading', {name: 'Resultado do simulado', exact: true}).waitFor();
+    await learner.getByText('1 de 1 acertos', {exact: true}).waitFor();
+    await learner.setViewportSize({width: 390, height: 844});
+    assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    await learner.screenshot({path: join(config.evidence, 'simulation-result-mobile.png'), fullPage: true});
     assert.deepEqual(errors, []);
-    const result = {workflow: 'PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
+    const result = {workflow: 'PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
       studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));

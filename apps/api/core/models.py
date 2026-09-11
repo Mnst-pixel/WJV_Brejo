@@ -479,6 +479,7 @@ class Simulation(TimeStampedModel):
     mode = models.CharField(max_length=20, choices=Mode.choices)
     title = models.CharField(max_length=255)
     question_ids = models.JSONField(default=list)
+    selection_config = models.JSONField(default=dict, blank=True)
     duration_minutes = models.PositiveSmallIntegerField(default=300)
 
     class Meta:
@@ -523,6 +524,7 @@ class Attempt(TimeStampedModel):
 
 class AttemptAnswer(TimeStampedModel):
     is_correct = models.BooleanField(null=True, blank=True, editable=False)
+    marked_for_review = models.BooleanField(default=False)
     attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.PROTECT, related_name="attempt_answers")
     selected_alternative = models.ForeignKey(Alternative, on_delete=models.PROTECT, null=True, blank=True)

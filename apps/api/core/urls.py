@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .practice_views import LearningAccuracyView, PracticeAnswerView, PracticeHistoryView, PracticeMarksView
+from .simulation_views import SimulationCatalogView, SimulationStartView
 from .rbac_views import RoleCatalogView, UserRolesView
 from .mcp_views import MCPDelegationView, MCPToolCallView
 from .study_views import BrowserImportView, StudyActivityView, StudyPanelView, StudyRecordView, StudySummaryView
@@ -29,6 +30,8 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("simulation-catalog/", SimulationCatalogView.as_view()),
+    path("simulation-start/", SimulationStartView.as_view()),
     path("practice/answers/", PracticeAnswerView.as_view()),
     path("practice/questions/<uuid:question_id>/marks/", PracticeMarksView.as_view()),
     path("practice/history/", PracticeHistoryView.as_view()),

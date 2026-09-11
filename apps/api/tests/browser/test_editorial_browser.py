@@ -60,6 +60,7 @@ def next_server(live_server):
 
 
 def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp_path):
+    assert not live_server.thread.connections_override, "Browser HTTP threads must not share a SQLite connection."
     settings.MFA_ENCRYPTION_KEY = Fernet.generate_key().decode()
     settings.ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
     settings.SESSION_COOKIE_SECURE = False
@@ -89,5 +90,5 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     assert result["browserErrors"] == []
     assert published_content().count() == 1
     assert published_questions().count() == 1
-    assert AttemptAnswer.objects.filter(is_correct=True).count() == 1
+    assert AttemptAnswer.objects.filter(is_correct=True).count() == 2
     cache.clear()

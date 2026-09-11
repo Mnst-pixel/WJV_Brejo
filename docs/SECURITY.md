@@ -20,6 +20,8 @@ Python dependency updates, source-inventory checks and exact package/wheel hashe
 
 ## Secret response
 
+Formal-exam assistance is denied by authenticated user state, not by an optional attempt identifier supplied by the client. Both AI consultation and MCP delegation/calls enforce this boundary, including tokens minted before the exam started. Invalid UUIDs and missing/foreign resources fail with controlled client errors. Simulation preparation replay is scoped to the owner and a frozen configuration fingerprint; final submissions remain immutable.
+
 The objective-question candidate verifies reviewed package hashes at publication, student serialization and frozen attempt capture. Runtime grants deny UPDATE/DELETE of alternatives and question metadata after reconciliation. One active formal attempt blocks new attempts and cross-attempt answer-key/statistical oracles; owner locks serialize admission. Browser confirmation retries reuse their UUID; validation denials unlock the interface, while uncertain network/server failures preserve the pending confirmation. These controls are candidate code until deployment and real privilege verification are recorded.
 
 If a secret is found in Git history, treat it as compromised, block deployment, rotate it through the owning provider, and document the incident without reproducing the value.

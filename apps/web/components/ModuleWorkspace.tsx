@@ -7,6 +7,7 @@ import {moduleInfo} from "@/lib/modules";
 import {useStudyPreferences} from "@/lib/use-study-preferences";
 import {Icon, type IconName} from "./Icon";
 import {QuestionPractice} from "./QuestionPractice";
+import {SimulationWorkspace} from "./SimulationWorkspace";
 
 export function ModuleWorkspace({module}: {module: string}) {
   const info = moduleInfo[module];
@@ -16,7 +17,7 @@ export function ModuleWorkspace({module}: {module: string}) {
       {module === "metas" && <GoalManager/>}
       {module === "arquivos" && <FileManager/>}
       {module === "consultor" && <Consultant/>}
-      {module === "simulados" && <SimulationBuilder/>}
+      {module === "simulados" && <SimulationWorkspace/>}
       {module === "questoes" && <QuestionPractice/>}
       {module === "estudar" && <StudyWorkspace/>}
       {module === "segunda-fase" && <SecondPhaseWorkspace/>}
@@ -174,12 +175,6 @@ function Consultant() {
     setLoading(false);
   }
   return <div className="consult-layout"><section className="consult-thread"><div className="oracle-intro"><span><Icon name="scales"/></span><div><h2>Pesquisa assistida, não resposta sem fonte</h2><p>O Kairós procura evidência aprovada e informa quando ela não é suficiente.</p></div></div>{answer && <article aria-live="polite" className="assistant-answer"><strong>Kairós</strong><p>{answer}</p></article>}<form className="consult-form" onSubmit={ask}><label className="visually-hidden" htmlFor="legal-question">Pergunta jurídica</label><textarea id="legal-question" onChange={(event) => setQuestion(event.target.value)} placeholder="Digite sua dúvida jurídica…" rows={4} value={question}/><div><small>Verifique as fontes antes de usar a resposta.</small><button className="primary-button" disabled={loading} type="submit">{loading ? "Consultando…" : "Consultar"}<Icon name="arrow"/></button></div></form></section><aside className="source-rail"><h2>O que a resposta inclui</h2><ul className="check-list"><li><Icon name="check"/>Fonte e órgão</li><li><Icon name="check"/>Data de referência</li><li><Icon name="check"/>Situação temporal</li><li><Icon name="check"/>Nível de confiança</li></ul></aside></div>;
-}
-
-function SimulationBuilder() {
-  const [mode, setMode] = useState("formal");
-  const explanations: Record<string, string> = {formal: "Assistente e gabarito bloqueados até a submissão.", training: "Pistas permitidas; explicações completas após responder.", free: "Explicações disponíveis durante todo o estudo."};
-  return <div className="workspace-grid"><section className="work-panel wide"><h2>Configurar simulado</h2><fieldset className="mode-options"><legend>Modo</legend>{[["formal","Simulado formal"],["training","Treino"],["free","Estudo livre"]].map(([value,label]) => <label className={mode === value ? "mode-option selected" : "mode-option"} key={value}><input checked={mode === value} name="mode" onChange={() => setMode(value)} type="radio" value={value}/><span><strong>{label}</strong><small>{explanations[value]}</small></span></label>)}</fieldset><div className="form-grid"><label>Questões<select defaultValue="40"><option>20</option><option>40</option><option>80</option></select></label><label>Duração<select defaultValue="180"><option value="120">2 horas</option><option value="180">3 horas</option><option value="300">5 horas</option></select></label></div><button className="primary-button" type="button">Preparar simulado<Icon name="arrow"/></button></section><aside className="work-panel"><h2>Autosave</h2><p>Respostas, tempo e versão são registrados a cada checkpoint. Recarregar a página não apaga a tentativa.</p><span className="safe-status"><Icon name="check"/>Proteção ativa</span></aside></div>;
 }
 
 function StudyWorkspace() {

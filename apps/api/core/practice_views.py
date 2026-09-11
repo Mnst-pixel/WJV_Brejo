@@ -44,7 +44,7 @@ def filter_questions(query, params, owner):
             query = query.filter(**{target: values[field]})
     if values.get("q"):
         query = query.filter(current_version__statement__icontains=values["q"])
-    answers = AttemptAnswer.objects.filter(attempt__owner=owner, attempt__status__in=["submitted", "graded"])
+    answers = AttemptAnswer.objects.filter(attempt__owner=owner, attempt__status__in=["submitted", "graded"], selected_alternative__isnull=False)
     mode = values["mode"]
     if mode == "wrong":
         ensure_results_unlocked(owner)
@@ -148,7 +148,7 @@ class LearningAccuracyView(APIView):
     def get(self, request):
         ensure_results_unlocked(request.user)
         # Scalar facts are written only by deterministic submission, never supplied by the client.
-        answers = AttemptAnswer.objects.filter(attempt__owner=request.user, attempt__status__in=["submitted", "graded"], is_correct__isnull=False)
+        answers = AttemptAnswer.objects.filter(attempt__owner=request.user, attempt__status__in=["submitted", "graded"], is_correct__isnull=False, selected_alternative__isnull=False)
         summary = answers.aggregate(answered=Count("pk"), correct=Count("pk", filter=Q(is_correct=True)))
         summary["accuracy"] = round(100 * summary["correct"] / summary["answered"], 1) if summary["answered"] else None
         by_subject = answers.values("question__subject_id", "question__subject__name").annotate(answered=Count("pk"), correct=Count("pk", filter=Q(is_correct=True))).order_by("question__subject__name")[:100]

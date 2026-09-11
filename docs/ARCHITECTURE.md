@@ -56,3 +56,5 @@ Ingestion states are immutable and audited:
 Only an authorized reviewer can transition from human review to approval. Publication and indexing reject absent approval records.
 
 Objective questions extend the existing version tables with `QuestionMetadata` and `QuestionWorkflow`. A human approval signs question text, alternatives, answer key and legal metadata as one package. Student serialization and attempt capture verify that package. Practice uses the existing transactional attempt engine; results and bookmarks remain owned by the authenticated user. See [P5-QUESTOES.md](P5-QUESTOES.md) for endpoints, migrations and rollback.
+
+Student simulation preparation selects published questions inside an owner-locked transaction and freezes both the selection and configuration fingerprint. A confirmation UUID survives uncertain browser responses; autosave uses optimistic versions and full answer/review snapshots. PostgreSQL remains canonical; temporary browser envelopes only recover unconfirmed requests. Final submission freezes deterministic scoring and formal elapsed time. See [P5-SIMULADOS.md](P5-SIMULADOS.md).

@@ -10,13 +10,14 @@ from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -395,7 +396,10 @@ class AttemptViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
-        return Attempt.objects.filter(owner=self.request.user).select_related("simulation").prefetch_related("answers")
+        query = Attempt.objects.filter(owner=self.request.user).select_related("simulation").prefetch_related("answers").order_by("-started_at", "pk")
+        if self.request.query_params.get("purpose") == "simulation":
+            query = query.exclude(idempotency_key__startswith="practice:")
+        return query
 
     def perform_create(self, serializer):
         simulation = serializer.validated_data["simulation"]
@@ -471,16 +475,11 @@ class ConsultView(APIView):
         context = request.data.get("context", {})
         if not isinstance(context, dict):
             raise ValidationError({"context": "Contexto deve ser um objeto."})
-        attempt_id = context.get("attempt_id")
-        if attempt_id:
-            attempt = Attempt.objects.select_related("simulation").get(pk=attempt_id, owner=request.user)
-            if attempt.status == Attempt.Status.ACTIVE and attempt.simulation.mode == Simulation.Mode.FORMAL:
-                raise PermissionDenied("O assistente permanece bloqueado no simulado formal até a submissão.")
-            if attempt.status == Attempt.Status.ACTIVE and attempt.simulation.mode == Simulation.Mode.TRAINING and request.data.get("action") not in {"hint", "add_to_review"}:
-                raise PermissionDenied("Durante o treino ativo, somente pistas e revisão são permitidas.")
+        # The shared policy validates context, ownership and formal mode before retrieval.
         conversation = None
         if request.data.get("conversation_id"):
-            conversation = Conversation.objects.get(pk=request.data["conversation_id"], owner=request.user)
+            conversation_id = serializers.UUIDField().run_validation(request.data["conversation_id"])
+            conversation = get_object_or_404(Conversation, pk=conversation_id, owner=request.user)
         result = answer_consultation(
             user=request.user,
             question=str(request.data.get("question", "")),
