@@ -30,3 +30,9 @@ Evidência protegida no VPS: `/opt/kairos/runtime/p0/20260911T042557Z-foundation
 Rollback deste lote: manter os artefatos inativos e continuar usando o conjunto produtivo anterior; não há mudança de banco, serviço ou credencial ativa a desfazer. Não apagar evidências nem executar Compose antigo para desfazer esta preparação. Se um artefato preparado falhar, preservar o diretório e preparar outro destino revisado, sem sobrescrever o anterior.
 
 Faltam manutenção/drenagem, transição do broker, backup fresco imediatamente antes do cutover, grants/migrations produtivos, ativação, smoke público e rollback integral ensaiado. O restore real do candidato já passou, conforme o guia vinculado, mas não substitui esses gates. `PRODUCT_CORE_READY=NO`.
+
+## Validação dos mounts preparada
+
+[verify-product-mounts-c12e53a.sh](../scripts/releases/verify-product-mounts-c12e53a.sh) verifica a identidade Redis na imagem existente, prepara a cópia de runtime 0400 para esse UID/GID e dá leitura aos dois arquivos públicos montados por Caddy/WordPress somente no checkout inativo. Depois testa um Redis descartável com a ACL preparada e credenciais por stdin, Caddy sem root e lint PHP como usuário 33. Toda execução usa socket local, rede `none`, limites e volumes temporários explícitos, com cleanup vinculado a ID/nome/imagem/projeto/run e no-touch v2 final. O plano SQL é apenas preparado; não altera o banco.
+
+Revisão antes de executar: script SHA256 `63f2951bd2c0c5f71de9e9ca5473d16f4d159024cd12d34e714cb969469faef3`; A 26 PASS/5 skips ambientais; B 49 PASS/5 skips POSIX e 20 probes de criação, cleanup e gate final PASS. Resultado real ainda pendente nesta revisão. O script é exclusivo desta release e preserva artefatos em caso de falha.
