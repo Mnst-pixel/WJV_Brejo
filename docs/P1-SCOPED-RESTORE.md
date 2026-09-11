@@ -41,4 +41,12 @@ B após a correção: **18 contratos PASS/9 skips de ambiente**, **36 workflow P
 
 Recibos locais: `modernizacao/evidencias/p0p2-candidate-20260911T042557Z.json`, `p3-scoped-migration-rehearsal-final-20260911.json` e `strict-scoped-evidence.json`. A comparação suplementar **v2, sem qualquer exceção**, aprovou tanto os snapshots da imagem quanto os do restore: nenhuma alteração de configuração, rede, firewall ou listener autorizada/observada.
 
-**Não houve deploy nem ativação de grants produtivos.** Este gate de ensaio está fechado; ainda faltam a imagem web correspondente, coordenador de manutenção/drenagem/cutover, compatibilidade/rollback integral, smoke público e rotina operacional ativada.
+**Não houve deploy nem ativação de grants produtivos.** Este gate de ensaio está fechado; ainda faltam coordenador de manutenção/drenagem/cutover, compatibilidade/rollback integral, smoke público e rotina operacional ativada.
+
+## Imagem web do mesmo commit
+
+Next.js **`sha256:651bf1767d3a6d90924e212bf7579dadd8196e53a2e7c20c42f6a02d7cef6824`**, label OCI **`c12e53a7416902315391d1b8c0a48603cbb1db6e`**. Build pelo Dockerfile versionado, com a árvore web comparada ao archive Git fixado acima e base Node local `sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491f4857e25e35a36ba7995`. Sem pull ou alteração da base; limite de build 1536 MiB/CPU0.
+
+Smoke em container descartável uid10001, rede none, filesystem somente leitura, sem capabilities e com 384 MiB: health/login/CSS **200**, área privada **307 para /app/entrar** com API indisponível, sem X-Powered-By. Cleanup e comparador **v2 sem exceções PASS**. Execução `/opt/kairos/runtime/p0/20260911T042557Z-foundations/web-build-20260911T044017Z-c50602773d9a`; recibo local `modernizacao/evidencias/product-web-build-c12e53a.json`. Manifesto sem mudanças `cdf36715bb7ebff3be80c2afe54f782b88192f352ed2f1452fe916e0621e3706`.
+
+A operação preparada foi revisada B antes de executar: cinco cenários de cleanup e seis de smoke, além de ambiente Python contaminado. Foram corrigidos comparador legado, cleanup de resposta perdida, falso positivo de redirecionamento, vínculo independente archive/commit e `PYTHONOPTIMIZE`. Helper operacional revisado SHA256 `a0bcee1b88199ccd91efe28df9849b539d97d6f7d005248628bd8af7a1c7b812`; revisão local não foi usada como substituto do build/smoke real. **API, parser e web candidatos agora correspondem ao mesmo commit; ainda não implantados.**
