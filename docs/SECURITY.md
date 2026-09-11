@@ -38,4 +38,6 @@ Rich text accepts a bounded AST with fixed block kinds and boolean emphasis mark
 
 Bootstrap root and administrator credentials must be rotated by the owner after handoff; Kairós will not rotate them without explicit authorization.
 
+The restricted PostgreSQL roles passed migration and API checks on an isolated copy of the real backup. Runtime cannot alter immutable versions, migration records or schema; workers cannot read authentication secrets; backup ACLs remain read-only even when the session default is disabled. Reconciliation and restore use the fixed local Docker socket with a minimal environment, including timed commands. These checks did not activate the roles in production. Evidence and remaining gates: [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md).
+
 The September 10 value scan matched `DATAJUD_API_KEY` between the live configuration and the existing `.env.example`. Its value was not emitted; the example now leaves the field empty. No external credential was rotated and history was preserved. Confirm the official key's public status and current validity with CNJ before enabling DataJud; the match alone is not proof of a private-user credential compromise. The integration remains externally unverified.

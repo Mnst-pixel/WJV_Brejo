@@ -250,6 +250,14 @@ Coleta real passou em 03:50:41 UTC: 72 containers/18 Kairós/27 redes; estado `4
 
 B final repetido: **34 testes PASS/10 skips POSIX locais** e **53 controles independentes PASS**, sem achado reproduzível remanescente. Hashes de modelo/IO conferem com a execução Linux A final. O receipt sem mudanças não fecha P1 e não transforma as funcionalidades candidatas em funcionalidades disponíveis em produção.
 
-Concluir usuários/planos/painel e editor visual, metas quantitativas, notas/flashcards/biblioteca e demais pendências da matriz. Os quatro E2E exigidos foram executados no candidato; a disponibilidade em produção ainda depende dos gates operacionais herdados, migrations/grants e release coerente. Cada lote recebe evidências A/B, documentação e homologação antes da implantação.
+Usuários, planos, editor visual, leitura e notas já compõem o candidato testado. Concluir as demais áreas do painel, metas quantitativas, flashcards e ampliações de simulados/analytics da matriz. Os quatro E2E exigidos foram executados no candidato; a disponibilidade em produção ainda depende da ativação operacional e da release coerente. Cada lote recebe evidências A/B, documentação e homologação antes da implantação.
+
+### Grants, migrations e recuperação do candidato de produto
+
+Alteração: reconciliação compatível com tabelas futuras; bloqueio editorial apenas no workflow mutável; Docker local fixo inclusive com timeout; ensaio de migrations/API com papéis segregados e recibo JSON único. Arquivos, bugs e rollback estão em [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md). **Nenhuma migration nova**. Commits `8f351f7` e `c12e53a`; imagens exatas e fonte vinculadas ao segundo commit nesse guia.
+
+A final: **599 API +217 operações +13 contratos Git PASS** em Linux; browser opt-in foi executado separadamente, **39,12 s PASS**, com código de aplicação inalterado na correção final do recibo. B: **18 contratos +36 workflow PASS**, skips ambientais explícitos, cinco probes adicionais PASS. Restore integral de backup novo **PASS**: 14 migrations como migrator, 64 tabelas/86 registros originais preservados, repetição idempotente, API editorial/notas como runtime sem superuser, ownership/replay/conflito PASS. PostgreSQL, MariaDB, MinIO, arquivos e cleanup aprovados. No-touch suplementar v2 PASS sem exceções de rede, firewall, listeners ou configuração.
+
+Evidência: backup `kairos-predeploy-20260911T043307Z-8ce27bbc4683.tar.gz.enc`; restore `kairos-restore-20260911T043321Z-df1fcf2d739c.evidence`; recibos locais `p0p2-candidate-20260911T042557Z.json`, `p3-scoped-migration-rehearsal-final-20260911.json` e `strict-scoped-evidence.json`. **Não implantado.** O ensaio de grants está concluído; permanecem ativação, manutenção/drenagem, rollback integral e smoke público. Imagem Next.js correspondente em preparação.
 
 `PRODUCT_CORE_READY=NO`
