@@ -159,6 +159,22 @@ B backend final: **57 PASS/3 skips**, com probes independentes de conversão do 
 
 Commit de usuários **`13835b89f6dafc8f2cd2fa971d7ea5dbfec7f079`**, enviado ao GitHub. Fonte SHA256 `2c56dfe71ad035b7c99aefb840b819ae8a18e72f259f5d7f84af606b84a58d75`; API **`sha256:033f3b55bd4a8707ff1fdea30aef0d4d141856035368176a715a55a21db9c62f`**; parser `sha256:112450a0d52fad8dcd433ddfc77e92326949a3ae3c32c77729ba27fec083beb1`. Linux isolado: **555 API PASS/1 skip browser opt-in**, 174,06 s; **184 operações/parser PASS/3 skips Git**, 21,56 s, mais 13 contratos Git PASS. Confirmação concorrente de recuperação em PostgreSQL e cooldown entre workers Redis passaram. WordPress/MariaDB:12 concorrentes/1 nonce aceito; PHP/Caddy/Gunicorn/inventário PASS. Execução `/opt/kairos/runtime/p0/20260911T021823Z-foundations`; evidência `/opt/kairos/runtime/tests/kairos-test-20260911T021910Z-91b122bbe3c1`; recibo `modernizacao/evidencias/p0p2-candidate-20260911T021823Z.json`. Build/integração/no-touch exit0 e zero mudanças em recursos preexistentes. **Imagem não implantada e não cobre o lote posterior de planos/matrículas.**
 
+### Lote P3 — planos, matrículas e limites de arquivos
+
+Alteração/motivo: formulários de planos, vínculo por pessoa, estado/validade e limites globais sobre os modelos existentes. Identificadores internos são automáticos; recibo assinado e transação impedem edição desatualizada e criação duplicada. A matrícula controla uploads, sem declarar cobrança ou pagamentos operacionais. Arquivos privados permanecem preservados e a UI mostra somente o espaço ocupado.
+
+Arquivos: `core/subscription_workspace.py`, templates de assinaturas/formulários, links de usuário/navegação, rotas, upload_admin, testes de assinaturas/concorrência/admin/navegador e [P3-ASSINATURAS.md](P3-ASSINATURAS.md). **Sem migration.** Rollback conserva dados e bloqueio do gravador legado.
+
+Bugs encontrados/corrigidos na revisão B: formulário genérico antigo permitia matrícula de conta privilegiada/serviço; links de ações indisponíveis apareciam para o próprio administrador; redirecionamento legado com PK inválida retornava 500. GET antigo agora encaminha ao painel canônico, POST/save_model antigo são recusados e identificador inválido retorna 404. Interface oculta ações que o backend não autoriza.
+
+A final após todas as correções: **543 API PASS/28 skips explícitos**, 102,04 s; **E2E completo PASS em 32,24 s**, incluindo plano → matrícula → suspensão → busca → limites globais e todas as jornadas educacionais anteriores. Ruff PASS; migrations sem drift. Screenshot `subscriptions-mobile.png` conferida a 390 px, sem overflow. Os testes antigos de gravação genérica foram substituídos por testes do novo contrato e regressões que impedem reabrir o caminho legado.
+
+B backend final: **53 PASS/5 skips**, 15,21 s; probes de todas as três rotas antigas, tokens por ator/tipo/alvo/expiração e gravação direta recusada. As três concorrências PostgreSQL usam atores distintos com recibos próprios para testar o mutex da configuração, além do lock do titular. B UI e imagem Linux final em fechamento. **Não implantado.** Próximo recorte: editor visual e demais jornadas administrativas/de estudo.
+
+B UI final repetida: **25 PASS**, 12 casos de identificador inválido/inexistente com 404 nas três rotas legadas, controles CSRF/campos forjados/titularidade/links/escape e quatro telas Chromium a 390 px passaram. Nenhum novo defeito reproduzível. Imagem Linux exata ainda será registrada.
+
+Git: PR de produto em rascunho [#3](https://github.com/Mnst-pixel/WJV_Brejo/pull/3), empilhado sobre a branch P0–P2. Não houve merge nem reescrita de histórico.
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -170,7 +186,8 @@ Commit de usuários **`13835b89f6dafc8f2cd2fa971d7ea5dbfec7f079`**, enviado ao G
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
 | Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente, E2E e imagem Linux | Não | Não | Release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
-| Planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
+| Planos, matrículas e limites | Formulários e decisões transacionais | API, B independente e E2E; Linux pendente | Não | Não | Release; cobrança não implementada | `test_subscription_workspace.py`, `P3-ASSINATURAS.md` |
+| Painel de operação completo | Parcial | Recortes P0–P3 | Não | Não | Saúde/ingestão/jobs/armazenamento em visão integrada | Entrega P0–P2 e matriz atual |
 | Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente, E2E e imagem Linux | Não | Autoria em candidato | Release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
 | Metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Metas quantitativas e jornadas de notas/flashcards | Entrega P0–P2 |
 | Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC, E2E real e imagem PostgreSQL | Não | Não | Sessões personalizadas completas e deploy | `f391a46`, `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |

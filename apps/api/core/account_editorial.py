@@ -63,6 +63,7 @@ def account_create(request):
 
 @editorial_access("users.read")
 def account_detail(request, user_id):
+    from core.subscription_workspace import can_manage_enrollment
     target = get_object_or_404(User.objects.prefetch_related("role_assignments__role"), pk=user_id)
     manage = can_manage(request, target)
     form = AccountActionForm(request.POST or None, initial={"expected_version": target.session_version}) if manage else None
@@ -85,7 +86,7 @@ def account_detail(request, user_id):
         roles.append({"name": "Superadministrador", "expires_at": None})
     sessions = UserSession.objects.filter(user=target, revoked_at__isnull=True, expires_at__gt=timezone.now()).count()
     return render(request, "editorial/account.html", context(request, title=str(target), target=target, form=form, role_rows=roles, events=events, session_count=sessions,
-        can_manage_account=manage, can_manage_roles=manage and request_has_permission(request, "roles.manage"), smtp_configured=bool(settings.SMTP_URL)))
+        can_manage_account=manage, can_manage_enrollment=can_manage_enrollment(request, target), can_manage_roles=manage and request_has_permission(request, "roles.manage"), smtp_configured=bool(settings.SMTP_URL)))
 
 
 @editorial_access("users.manage")

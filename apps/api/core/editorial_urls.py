@@ -4,9 +4,15 @@ from core import editorial_views as views
 from core import question_editorial as questions
 from core import second_phase_editorial as phase2
 from core import account_editorial as accounts
+from core import subscription_workspace as subscriptions
 
 app_name = "editorial"
 urlpatterns = [
+    path("assinaturas/", subscriptions.subscriptions, name="subscriptions"),
+    path("assinaturas/planos/novo/", subscriptions.plan_edit, name="plan-create"),
+    path("assinaturas/planos/<uuid:plan_id>/", subscriptions.plan_edit, name="plan-edit"),
+    path("assinaturas/usuarios/<uuid:user_id>/", subscriptions.enrollment_edit, name="enrollment"),
+    path("configuracoes/arquivos/", subscriptions.policy_edit, name="upload-policy"),
     path("usuarios/", accounts.account_list, name="accounts"),
     path("usuarios/novo/", accounts.account_create, name="account-create"),
     path("usuarios/<uuid:user_id>/", accounts.account_detail, name="account"),

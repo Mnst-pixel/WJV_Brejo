@@ -102,7 +102,12 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     assert result["phase2Workflow"].endswith("PASS")
     assert result["readingWorkflow"].endswith("PASS")
     assert result["accountsWorkflow"].endswith("PASS")
+    assert result["subscriptionsWorkflow"].endswith("PASS")
     invited = User.objects.get(username="pessoa-nova-browser")
     assert invited.is_active and not invited.has_usable_password()
     assert list(invited.role_assignments.values_list("role__slug", flat=True)) == ["editor"]
+    from core.upload_models import Enrollment, UploadPolicy
+    enrollment = Enrollment.objects.get(owner=invited)
+    assert enrollment.status == "suspended" and enrollment.plan.storage_quota_bytes == 50 * 1024**2
+    assert UploadPolicy.objects.get().max_upload_bytes == 10 * 1024**2
     cache.clear()

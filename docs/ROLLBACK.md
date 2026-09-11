@@ -21,3 +21,5 @@ Second-phase migration 0011 adds written submissions, responses, checkpoints and
 Reading migrations 0012/0013 preserve explicit publication associations and prior progress snapshots. Keep both on rollback. Approval hashes from earlier product candidates require a new human-reviewed successor; never rewrite historical receipts or downgrade integrity verification to reopen content. See [P4-ESTUDO.md](P4-ESTUDO.md).
 
 Account migration 0014 adds a recovery-email uniqueness constraint after checking collisions without printing addresses. Keep the index and new accounts on safe artifact rollback. Do not fall back to role changes without optimistic versions or unlocked password reset confirmation. Access delivery remains externally dependent on SMTP. See [P3-USUARIOS.md](P3-USUARIOS.md).
+
+Subscription workspace has no new migration. Preserve plans, enrollment and upload policies on rollback. Keep the legacy-admin write block and protected-target rules; returning to old generic forms would reintroduce an alternative authorization path. Quota changes never delete existing files. See [P3-ASSINATURAS.md](P3-ASSINATURAS.md).
