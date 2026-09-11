@@ -128,7 +128,8 @@ try:
         require(commands(['AUTH default '+values['REDIS_PASSWORD'],'PING'])==['OK','PONG'])
         report['checks']['real_scoped_redis_acl']='PASS'
         report['phase']='caddy'
-        caddy=create('edge',images['edge'],['--user','1000:1000','--tmpfs','/data:rw,nosuid,size=16m,uid=1000,gid=1000','--tmpfs','/config:rw,nosuid,size=16m,uid=1000,gid=1000','--env','KAIROS_PROXY_TOKEN=synthetic-mount-validation-only','--mount',f'type=bind,src={checkout}/infra/caddy/Caddyfile,dst=/etc/caddy/Caddyfile,readonly','--entrypoint','caddy'],['validate','--config','/etc/caddy/Caddyfile','--adapter','caddyfile'])
+        # Match the candidate Compose bounding set: the official binary has a file capability.
+        caddy=create('edge',images['edge'],['--user','1000:1000','--cap-add','NET_BIND_SERVICE','--tmpfs','/tmp:rw,nosuid,nodev,size=32m,uid=1000,gid=1000','--tmpfs','/data:rw,nosuid,size=16m,uid=1000,gid=1000','--tmpfs','/config:rw,nosuid,size=16m,uid=1000,gid=1000','--env','KAIROS_PROXY_TOKEN=synthetic-mount-validation-only','--mount',f'type=bind,src={checkout}/infra/caddy/Caddyfile,dst=/etc/caddy/Caddyfile,readonly','--entrypoint','caddy'],['validate','--config','/etc/caddy/Caddyfile','--adapter','caddyfile'])
         require(logged('caddy',docker+['start','-a',caddy])==0)
         require(checked(docker+['inspect','--format','{{.State.Running}}|{{.State.ExitCode}}',caddy])=='false|0')
         report['checks']['caddy_nonroot_config']='PASS'
