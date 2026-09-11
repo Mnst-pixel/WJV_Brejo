@@ -201,6 +201,23 @@ function acceptsTarget(req, origin) {
       errors.push(message.text());
     });
     await learner.setViewportSize({width: 390, height: 844});
+    await learner.goto(origin + '/app/estudar');
+    await learner.getByRole('button', {name: 'Direitos fundamentais: roteiro de estudo', exact: true}).click();
+    await learner.getByRole('heading', {name: 'Direitos fundamentais: roteiro de estudo', exact: true}).waitFor();
+    await learner.getByLabel('Leitura concluída (%)').fill('100');
+    await learner.getByRole('button', {name: 'Salvar progresso', exact: true}).click();
+    await learner.getByText('Progresso confirmado na sua conta.', {exact: true}).waitFor();
+    await learner.reload();
+    await learner.getByText('Última confirmação: 100%.', {exact: true}).waitFor();
+    assert.equal(await learner.getByLabel('Leitura concluída (%)').inputValue(), '100');
+    assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    await learner.screenshot({path: join(config.evidence, 'reading-mobile.png'), fullPage: true});
+    await learner.getByRole('link', {name: 'Praticar esta disciplina', exact: true}).click();
+    await learner.waitForURL('**/app/questoes?subject=*');
+    const linkedSubject = new URL(learner.url()).searchParams.get('subject');
+    await learner.getByRole('heading', {name: 'No cenário sintético, qual alternativa corresponde ao fundamento apresentado?'}).waitFor();
+    assert.equal(await learner.getByLabel('Disciplina', {exact: true}).inputValue(), linkedSubject);
     await learner.goto(origin + '/app/questoes');
     await learner.getByRole('heading', {name: 'No cenário sintético, qual alternativa corresponde ao fundamento apresentado?'}).waitFor();
     assert.equal(await learner.getByText('A segunda alternativa corresponde ao fundamento sintético revisado.', {exact: true}).count(), 0);
@@ -341,8 +358,18 @@ function acceptsTarget(req, origin) {
     await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
     assert(await learner.locator('.skip-link').evaluate(element => element.getBoundingClientRect().bottom < 0));
     await learner.screenshot({path: join(config.evidence, 'phase2-submitted-mobile.png'), fullPage: true});
+    await learner.goto(origin + '/app');
+    await learner.getByText('1 de 1 leituras concluídas na versão atual', {exact: true}).waitFor();
+    await learner.getByText('2 acertos em 2 respostas (100%).', {exact: false}).waitFor();
+    await learner.getByLabel('Período', {exact: true}).selectOption('30');
+    await learner.getByText('2 acertos em 2 respostas (100%).', {exact: false}).waitFor();
+    await learner.getByText('Ver valores por dia e disciplina', {exact: true}).click();
+    assert.equal(await learner.locator('.learning-table tbody tr').count(), 30);
+    assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    await learner.screenshot({path: join(config.evidence, 'learning-dashboard-mobile.png'), fullPage: true});
     assert.deepEqual(errors, []);
-    const result = {workflow: 'PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
+    const result = {workflow: 'PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
       studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));

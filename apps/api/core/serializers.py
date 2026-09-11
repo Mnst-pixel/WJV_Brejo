@@ -85,7 +85,20 @@ class ContentVersionSerializer(serializers.ModelSerializer):
 
 
 class ContentSerializer(serializers.ModelSerializer):
-    current_version = ContentVersionSerializer(read_only=True)
+    current_version = serializers.SerializerMethodField()
+
+    def get_current_version(self, obj):
+        from django.core.exceptions import ObjectDoesNotExist
+        from core.content_workflow import version_fingerprint
+        from rest_framework.exceptions import PermissionDenied
+        version = obj.current_version
+        try:
+            approved = bool(version and version.workflow.approval and version.workflow.approval.evidence.get("version_sha256") == version_fingerprint(version))
+        except ObjectDoesNotExist:
+            approved = False
+        if not approved:
+            raise PermissionDenied("O conteúdo não corresponde à versão revisada.")
+        return ContentVersionSerializer(version).data
 
     class Meta:
         model = Content
@@ -253,6 +266,7 @@ class GoalSerializer(OwnedSerializer):
 class StudyNoteSerializer(OwnedSerializer):
     expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
     body = serializers.CharField(max_length=100000, allow_blank=True)
+
     class Meta:
         model = StudyNote
         fields = ["id", "subject", "topic", "title", "body", "version", "expected_version", "created_at", "updated_at"]

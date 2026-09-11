@@ -34,6 +34,7 @@ export function QuestionPractice() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
+  const [mode, setMode] = useState("all");
   const [questions, setQuestions] = useState<Page<Question>>({results: [], count: 0, next: null});
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState("");
@@ -75,7 +76,13 @@ export function QuestionPractice() {
     let active = true;
     void Promise.resolve().then(async () => {
       if (!active) return;
-      await load();
+      const params = new URLSearchParams(window.location.search);
+      const initial = new URLSearchParams();
+      const initialSubject = params.get("subject") ?? "";
+      const initialMode = params.get("mode") ?? "all";
+      if (/^[0-9a-f-]{36}$/i.test(initialSubject)) {initial.set("subject", initialSubject); setSubject(initialSubject);}
+      if (["all", "unseen", "answered", "wrong", "favorites", "review", "random"].includes(initialMode)) {initial.set("mode", initialMode); setMode(initialMode);}
+      await load("/api/questions/?" + initial);
       try {
         let path: string | null = "/api/subjects/";
         const all: Subject[] = [];
@@ -140,10 +147,10 @@ export function QuestionPractice() {
       for (const [key, value] of values) if (String(value)) params.set(key, String(value));
       void load("/api/questions/?" + params);
     }}><fieldset disabled={busy || uncertain || loading} className="practice-filters"><legend className="visually-hidden">Filtros do treino</legend>
-      <label>Disciplina<select name="subject" value={subject} onChange={event => {setSubject(event.target.value); setTopic("");}}><option value="">Todas as disciplinas</option>{subjects.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+      <label>Disciplina<select aria-label="Disciplina" name="subject" value={subject} onChange={event => {setSubject(event.target.value); setTopic("");}}><option value="">Todas as disciplinas</option>{subjects.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
       <label>Tema<select name="topic" value={topic} onChange={event => setTopic(event.target.value)}><option value="">Todos os temas</option>{subjects.find(item => item.id === subject)?.topics.filter(item => !item.parent).map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
       <label>Dificuldade<select name="difficulty"><option value="">Todas</option><option value="easy">Fácil</option><option value="medium">Intermediária</option><option value="hard">Difícil</option></select></label>
-      <label>Seleção<select name="mode"><option value="all">Todas as questões</option><option value="unseen">Ainda não respondidas</option><option value="answered">Já respondidas</option><option value="wrong">Erros para revisar</option><option value="favorites">Favoritas</option><option value="review">Marcadas para revisão</option><option value="random">Aleatórias</option></select></label>
+      <label>Seleção<select name="mode" value={mode} onChange={event => setMode(event.target.value)}><option value="all">Todas as questões</option><option value="unseen">Ainda não respondidas</option><option value="answered">Já respondidas</option><option value="wrong">Erros para revisar</option><option value="favorites">Favoritas</option><option value="review">Marcadas para revisão</option><option value="random">Aleatórias</option></select></label>
       <label>Ano<input name="year" type="number" min="1900" max="2200" placeholder="Todos"/></label><label>Buscar enunciado<input name="q" maxLength={200} type="search"/></label>
       <button className="primary-button" type="submit">Aplicar filtros</button>
     </fieldset></form></section>

@@ -40,7 +40,7 @@ def fingerprint(value):
 
 
 def version_fingerprint(version):
-    return fingerprint({key: getattr(version, key) for key in ("title", "body", "structured_data", "original_text", "source_url", "source_hash", "legal_status", "valid_from", "valid_to", "reference_date", "published_at")})
+    return fingerprint({key: getattr(version, key) for key in ("id", "content_id", "version_number", "title", "body", "structured_data", "original_text", "source_url", "source_hash", "legal_status", "valid_from", "valid_to", "reference_date", "published_at", "retrieved_at", "created_at", "approved_by_id", "approval_date", "changes_summary", "current_legal_situation", "exam_date_situation", "supersedes_id")})
 
 
 def _source_url(value):

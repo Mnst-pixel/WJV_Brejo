@@ -121,6 +121,26 @@ Commit **`80349c6372cd5b086e6760bec0ad46223b1c3006`**, enviado ao GitHub. Fonte 
 
 **Imagem não implantada.** Screenshot final `modernizacao/evidencias/p3-editorial-browser/phase2-submitted-mobile.png`; recibo do navegador no mesmo diretório. Pendências: restore/migrations/privilégios reais e release; correção humana/IA operacional é fase posterior. A imagem não inclui o incremento posterior de jornada de leitura/analytics.
 
+### Lote P4 — leitura versionada e dashboard real
+
+Alteração/motivo: tela de estudo conectada ao catálogo revisado, busca, fonte/data, percentual por publicação e histórico de versões lidas. Dashboard troca números demonstrativos por respostas/acertos diários, disciplinas, atividades, provas enviadas e próximo passo determinístico sem IA. Links de revisão/prática aplicam os filtros na abertura das questões. Notas e biblioteca completas permanecem recortes posteriores.
+
+Arquivos: `core/learning_views.py`, content_workflow/serializers/views/urls, study_models/services/study_state/study_views, migrations 0012/0013, `ReadingWorkspace.tsx`, Dashboard/QuestionPractice/ModuleWorkspace/CSS, testes learning/navegador, reconciliação SQL e [P4-ESTUDO.md](P4-ESTUDO.md).
+
+Migrations: **0012_reading_version_progress** e **0013_reading_history**, aditivas. Não presumem versão para progresso antigo. Snapshot preserva o último percentual confirmado de cada publicação anterior. Runtime candidato sem UPDATE/DELETE na tabela histórica. Aprovações com formato anterior de hash exigem nova revisão humana; não há revalidação automática ou alteração silenciosa dos recibos.
+
+Bugs corrigidos: recomendação contornava o hash; campos jurídicos expostos estavam fora do digest; gravação de progresso não associava revisão; resumo podia concorrer com início formal; falha de GET após PUT bem-sucedido ocultava o problema de recarga. A tela agora conserva o contexto e exige reconciliação antes de nova gravação. Um seletor E2E identificou nome acessível ambíguo nos selects, corrigido sem mudar a aparência. Título de jornada duplicado no mobile removido.
+
+Verificação A: **511 API PASS/23 skips explícitos**, 91,05 s; focados repetidos **74 PASS/4 skips PostgreSQL**, migrations sem drift e Ruff PASS. Build Next.js/TypeScript/ESLint PASS. E2E completo ampliado **PASS em 28,71 s** após correção de recuperação, desktop e 390×844, sem overflow/erros inesperados. Último rerun após ajuste de título/recibo em fechamento. Screenshots `reading-mobile.png` e `learning-dashboard-mobile.png` conferidas visualmente no diretório externo `modernizacao/evidencias/p3-editorial-browser/`.
+
+B independente backend: **97 PASS/4 skips PostgreSQL**, incluindo probes dos hashes adulterados, ownership, formal congelado e revogação entre request/lock. MigrationExecutor isolado 0011→0013→0011→0013 preservou legado84%/posição12 com versão NULL. B frontend confirmou PUT200+GET falho, gravação incerta, requisições fora de ordem, paginação/origem, abort de período antigo e filtros de URL. Fechamento B em andamento.
+
+Benchmark pontual local aquecido HTTP/SQLite sintético: catálogo com 1 conteúdo, **12 queries/7,32 ms**; 10 conteúdos, **12 queries/11,98 ms**; dashboard com 10 conteúdos, **35 queries/17,80 ms**. Não é p50/p95 público nem teste de capacidade. Nenhum cache foi adicionado.
+
+Fechamento local: rerun final do E2E **PASS em 25,72 s**, com novo recibo `readingWorkflow`. B frontend final: **55 testes backend PASS/1 skip PostgreSQL**, **9 controles TypeScript PASS**, Chromium isolado com React/CSS real, payload malicioso escapado, URL javascript recusada e foco/labels/390×844 sem overflow. Nenhum achado reproduzível remanescente no recorte. SQL de privilégios: 9 PASS.
+
+Commit/imagem/deploy: fechamento candidato; registrar artefato exato após validação Linux. **Não implantado.** Rollback preserva schema, leituras e recibos; não remover tabelas após uso e não reintroduzir hash menos abrangente. Release exige baseline, backup/restore, migrations/grants reais e coordenador P1. Próxima etapa: administração completa e recursos de estudo restantes.
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -132,10 +152,11 @@ Commit **`80349c6372cd5b086e6760bec0ad46223b1c3006`**, enviado ao GitHub. Fonte 
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
 | Usuários/planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
-| Dashboard, metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Jornada e próximo passo pedagógico | Entrega P0–P2 |
+| Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente e E2E; Linux candidato pendente | Não | Autoria em candidato | Imagem/release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
+| Metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Metas quantitativas e jornadas de notas/flashcards | Entrega P0–P2 |
 | Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC, E2E real e imagem PostgreSQL | Não | Não | Sessões personalizadas completas e deploy | `f391a46`, `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
 | Simulado 1ª fase, autosave e nota | Caderno, filtros, timer, marcas, recuperação, envio e resultado | API e E2E com perda de resposta; imagem nova pendente | Não | Autoria de caderno em candidato | Combinação de cadernos, analytics ampliado e deploy | `test_simulation_builder.py`, `editorial-browser.json` |
-| Analytics pedagógicos | Parcial | Consultas básicas | Não verificado | Não | Metas quantitativas, tendências e recomendações determinísticas | Pendente P4/P5 |
+| Analytics pedagógicos | Diário, disciplina/tema na API, acurácia, sequência e recomendações | API/ownership/formal e E2E dashboard | Não | Não | Comparação de provas, tempo médio e metas quantitativas | `test_learning.py`, `P4-ESTUDO.md` |
 | Casos/peças/espelhos de 2ª fase | Modelos, formulários, critérios, ordenação, workflow e prévia integral | API/RBAC e E2E; imagem em preparação | Não | Não | Imagem, grants, release e correção operacional futura | `test_second_phase.py`, `P6-SEGUNDA-FASE.md` |
 | Prova 2ª fase, autosave e submissão | Catálogo, peça/discursivas, recuperação, envio e histórico | API/E2E com perda de confirmação; PG pendente | Não | Não | Imagem/release; corretor avançado na fase seguinte | `editorial-browser.json`, `test_second_phase_concurrency.py` |
 
@@ -147,6 +168,6 @@ Fallback de automação: Browser plugin not available; Playwright regular instal
 
 ## Próximos lotes e gate
 
-Concluir o painel editorial com evidências A/B, ampliar autoria de questões e provas usando as versões existentes, implementar a jornada de treino/simulado, e completar casos/espelhos/submissões da segunda fase. Cada lote recebe testes e documentação antes da homologação e da implantação. A modernização completa ainda exige resolver as pendências operacionais herdadas e executar os quatro E2E exigidos pelo usuário.
+Concluir usuários/planos/painel e editor visual, metas quantitativas, notas/flashcards/biblioteca e demais pendências da matriz. Os quatro E2E exigidos foram executados no candidato; a disponibilidade em produção ainda depende dos gates operacionais herdados, migrations/grants e release coerente. Cada lote recebe evidências A/B, documentação e homologação antes da implantação.
 
 `PRODUCT_CORE_READY=NO`

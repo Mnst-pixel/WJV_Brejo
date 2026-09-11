@@ -5,6 +5,7 @@ from . import views
 from .practice_views import LearningAccuracyView, PracticeAnswerView, PracticeHistoryView, PracticeMarksView
 from .simulation_views import SimulationCatalogView, SimulationStartView
 from .second_phase_views import CaseCatalogView, WrittenSaveView, WrittenSubmissionView, WrittenSubmitView
+from .learning_views import LearningDashboardView, ReadingView
 from .rbac_views import RoleCatalogView, UserRolesView
 from .mcp_views import MCPDelegationView, MCPToolCallView
 from .study_views import BrowserImportView, StudyActivityView, StudyPanelView, StudyRecordView, StudySummaryView
@@ -31,6 +32,8 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("study/dashboard/", LearningDashboardView.as_view()),
+    path("study/reading/<uuid:content_id>/", ReadingView.as_view()),
     path("phase2/cases/", CaseCatalogView.as_view()),
     path("phase2/submissions/", WrittenSubmissionView.as_view()),
     path("phase2/submissions/<uuid:submission_id>/", WrittenSubmissionView.as_view()),

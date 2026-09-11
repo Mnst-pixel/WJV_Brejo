@@ -368,7 +368,13 @@ class ContentViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         from .content_workflow import published_content
-        return published_content().select_related("current_version").prefetch_related("topics")
+        query = published_content().select_related("current_version__workflow__approval").prefetch_related("topics").order_by("subject__order", "current_version__title", "pk")
+        for field in ("subject", "topics"):
+            if self.request.query_params.get(field):
+                query = query.filter(**{field: serializers.UUIDField().run_validation(self.request.query_params[field])})
+        if self.request.query_params.get("q"):
+            query = query.filter(current_version__title__icontains=self.request.query_params["q"][:200])
+        return query.distinct()
 
 
 class QuestionViewSet(viewsets.ReadOnlyModelViewSet):

@@ -91,9 +91,13 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     assert published_content().count() == 1
     assert published_questions().count() == 1
     assert AttemptAnswer.objects.filter(is_correct=True).count() == 2
+    from core.study_models import StudyProgress
+    assert StudyProgress.objects.get(target_kind="content").percent == 100
+    assert StudyProgress.objects.get(target_kind="content").content_version_id == published_content().get().current_version_id
     from core.second_phase_models import WrittenSubmission
     written = WrittenSubmission.objects.get(status="submitted")
     assert written.responses.count() == 2 and len(written.final_hash) == 64
     assert written.responses.get(target_code="Q1").text == "Resposta discursiva que permanece na conta."
     assert result["phase2Workflow"].endswith("PASS")
+    assert result["readingWorkflow"].endswith("PASS")
     cache.clear()

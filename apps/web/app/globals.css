@@ -426,7 +426,7 @@ html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
   .primary-button { width: 100%; min-height: 58px; margin-top: 22px; background: var(--gold); color: var(--ink); }
   .primary-button svg:first-child { display: block; width: 34px; height: 34px; flex: 0 0 auto; }
   .journey { min-height: 204px; overflow: hidden; padding: 24px 0 24px 18px; border-color: transparent; background: transparent; box-shadow: none; }
-  .journey::before { content: "Sua jornada"; display: block; margin: 0 0 18px 3px; color: var(--gold); font-weight: 600; }
+  .journey > .section-label { display: block; margin: 0 0 18px 3px; }
   .journey-track { display: flex; width: max-content; gap: 10px; overflow: visible; }
   .journey-track::before { display: none; }
   .journey-step { width: 116px; min-height: 126px; justify-content: center; align-content: center; gap: 8px; border: 1px solid rgba(220,201,146,.25); border-radius: 10px; background: rgba(37,61,50,.87); color: var(--parchment); }
@@ -569,6 +569,14 @@ html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
 .reading-source { color: #687359; font-size: .68rem; text-transform: uppercase; }
 .reading-surface h2 { margin: 20px 0; font-size: 2rem; }
 .reading-surface > p { max-width: 760px; line-height: 1.85; }
+.reading-surface, .topic-rail { min-width: 0; overflow-wrap: anywhere; }
+.reading-surface a { color: #375d57; text-decoration: underline; }
+.reading-progress { margin-top: 28px; padding-top: 18px; border-top: 1px solid #9b9377; }
+.reading-progress input { background: #fff9e8; color: var(--ink); }
+.reading-progress .outline-button { color: var(--ink); border-color: #696b52; }
+.learning-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.learning-table th, .learning-table td { padding: 8px 4px; text-align: left; border-bottom: 1px solid #bdb494; }
+.journey-track a { text-decoration: none; }
 .reading-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 30px; }
 .reading-actions button { display: flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid rgba(117,94,66,.3); border-radius: 5px; background: transparent; color: var(--ink); cursor: pointer; font-size: .72rem; }
 .reading-actions svg { width: 17px; }

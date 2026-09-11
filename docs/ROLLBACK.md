@@ -17,3 +17,5 @@ If rollback would require changing host Nginx, firewall, Docker daemon, or an un
 Product simulation migrations 0009/0010 are additive. Prefer retaining schema, preparation fingerprints and review flags when returning to a compatible safe artifact; reversing these migrations destroys those fields. Do not reopen vulnerable consultation/MCP paths during rollback. The module contract and pending production gates are in [P5-SIMULADOS.md](P5-SIMULADOS.md).
 
 Second-phase migration 0011 adds written submissions, responses, checkpoints and editorial/correction structures. Preserve these tables on artifact rollback. Dropping them would discard student texts and approval evidence; whole-database recovery requires reconciliation of post-backup submissions. See [P6-SEGUNDA-FASE.md](P6-SEGUNDA-FASE.md).
+
+Reading migrations 0012/0013 preserve explicit publication associations and prior progress snapshots. Keep both on rollback. Approval hashes from earlier product candidates require a new human-reviewed successor; never rewrite historical receipts or downgrade integrity verification to reopen content. See [P4-ESTUDO.md](P4-ESTUDO.md).

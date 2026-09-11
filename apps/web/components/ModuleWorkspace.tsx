@@ -9,6 +9,7 @@ import {Icon, type IconName} from "./Icon";
 import {QuestionPractice} from "./QuestionPractice";
 import {SimulationWorkspace} from "./SimulationWorkspace";
 import {WrittenExamWorkspace} from "./WrittenExamWorkspace";
+import {ReadingWorkspace} from "./ReadingWorkspace";
 
 export function ModuleWorkspace({module}: {module: string}) {
   const info = moduleInfo[module];
@@ -20,7 +21,7 @@ export function ModuleWorkspace({module}: {module: string}) {
       {module === "consultor" && <Consultant/>}
       {module === "simulados" && <SimulationWorkspace/>}
       {module === "questoes" && <QuestionPractice/>}
-      {module === "estudar" && <StudyWorkspace/>}
+      {module === "estudar" && <ReadingWorkspace/>}
       {module === "segunda-fase" && <WrittenExamWorkspace/>}
       {module === "biblioteca" && <LibraryWorkspace/>}
       {module === "configuracoes" && <SettingsWorkspace/>}
@@ -176,10 +177,6 @@ function Consultant() {
     setLoading(false);
   }
   return <div className="consult-layout"><section className="consult-thread"><div className="oracle-intro"><span><Icon name="scales"/></span><div><h2>Pesquisa assistida, não resposta sem fonte</h2><p>O Kairós procura evidência aprovada e informa quando ela não é suficiente.</p></div></div>{answer && <article aria-live="polite" className="assistant-answer"><strong>Kairós</strong><p>{answer}</p></article>}<form className="consult-form" onSubmit={ask}><label className="visually-hidden" htmlFor="legal-question">Pergunta jurídica</label><textarea id="legal-question" onChange={(event) => setQuestion(event.target.value)} placeholder="Digite sua dúvida jurídica…" rows={4} value={question}/><div><small>Verifique as fontes antes de usar a resposta.</small><button className="primary-button" disabled={loading} type="submit">{loading ? "Consultando…" : "Consultar"}<Icon name="arrow"/></button></div></form></section><aside className="source-rail"><h2>O que a resposta inclui</h2><ul className="check-list"><li><Icon name="check"/>Fonte e órgão</li><li><Icon name="check"/>Data de referência</li><li><Icon name="check"/>Situação temporal</li><li><Icon name="check"/>Nível de confiança</li></ul></aside></div>;
-}
-
-function StudyWorkspace() {
-  return <div className="study-layout"><aside className="topic-rail"><h2>Matérias</h2>{["Ética Profissional","Constitucional","Administrativo","Civil"].map((item,index) => <button className={index === 0 ? "selected" : ""} key={item} type="button"><span>{String(index + 1).padStart(2,"0")}</span>{item}</button>)}</aside><article className="reading-surface"><span className="reading-source">Última revisão humana: pendente de conteúdo oficial</span><h2>Ética Profissional</h2><p>Este espaço reúne conteúdo versionado, tópicos, notas e referências. A versão publicada nunca substitui silenciosamente a anterior.</p><div className="reading-actions"><button type="button"><Icon name="note"/>Adicionar nota</button><button type="button"><Icon name="target"/>Criar meta</button><button type="button"><Icon name="chat"/>Consultar</button></div><EmptyState icon="book" title="Conteúdo em preparação" text="A importação do legado começa como não verificada e exige revisão humana antes de aparecer aqui."/></article></div>;
 }
 
 function LibraryWorkspace() {
