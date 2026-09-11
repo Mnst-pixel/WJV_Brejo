@@ -1,0 +1,13 @@
+# Plano prévio e recibo de transição
+
+`scripts/release_transition_plan.py` implementa o modelo puro de validação. Não executa deploy, Docker, comandos do host ou alterações de rede. Não é, isoladamente, autorização para implantação.
+
+O plano enumera todos os containers e redes Kairós existentes, com nome/projeto, identidade anterior e operação: manter, substituir, criar ou remover. Redes em uso conservam identidade e configuração. Uma rede nova deve ser interna, privada, não sobreposta e ter subnet/gateway explícitos. Containers têm serviço, imagem por digest, revision, bindings e memberships exatos. IP dinâmico é permitido apenas para criação/substituição e dentro da subnet planejada; retenção conserva IP exato. Aplicações novas precisam da revision da release. A exceção de porta permanece restrita ao edge 4080 → loopback.
+
+`validate(plan, before)` deve executar antes da primeira operação mutável. `bind(plan, before, after)` confere todos os dados observados antes de gerar hashes exatos para o comparador v2. `verify_receipt` repete a validação e exige igualdade integral do recibo, vinculando plano, estados, alocações e manifesto. Nenhum campo do recibo concede novo serviço, imagem, escopo, rede ou configuração. Recursos alheios permanecem idênticos, inclusive projeto alheio com nome semelhante a Kairós.
+
+O manifesto derivado ainda precisa passar em `compare-release-snapshots.py`: atribuição de regras Docker, ordem de ACCEPT/DROP, barreiras globais, listeners, arquivos e recursos alheios continuam obrigatórios. O teste de integração do modelo aceita a substituição prevista e rejeita uma alteração global de firewall mesmo com recibo válido.
+
+Limite desta entrega: `before`/`after` são entradas do chamador; o campo de origem local não prova por si só uma inspeção real do socket. O coordenador ainda precisa coletar projeção e metadados sem secrets diretamente do Docker local, vincular o snapshot integral, gravar plano/recibo uma única vez com permissões protegidas e conferir o freeze anterior à mutação. O modelo puro não pode ser chamado diretamente com snapshots fornecidos por aplicação, aluno ou IA. Só será operacional com essas etapas, backup/restore, manutenção, filas, migrations/grants, smoke e rollback ensaiados.
+
+Verificação A: 10 testes novos; conjunto de transição/rede/comparador/manifesto/wrapper **66 PASS/1 skip dependente de plataforma**, 2,31 s. Ruff PASS. B independente: 28 testes existentes e 15 controles adversariais PASS, sem bypass reproduzível no modelo puro. Não houve migration, imagem ou deploy deste recorte. Rollback remove apenas a biblioteca de preparação; não muda recursos do VPS nem substitui o comparador atual.

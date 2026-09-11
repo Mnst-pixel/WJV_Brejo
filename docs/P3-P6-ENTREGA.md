@@ -240,6 +240,8 @@ Fallback de automação: Browser plugin not available; Playwright regular instal
 
 ## Próximos lotes e gate
 
+Operação para a release de produto: biblioteca pura `release_transition_plan.py` predeclara recursos/identidades/imagens/rede e limita o recibo posterior. A: 66 testes do conjunto PASS/1 skip; B: 28 testes existentes e 15 controles adversariais PASS. Guia [P1-TRANSITION-PLAN.md](P1-TRANSITION-PLAN.md). Sem migration/imagem/deploy; coleta real, freeze e coordenador continuam pendentes, portanto este recorte não declara P1 concluído.
+
 Concluir usuários/planos/painel e editor visual, metas quantitativas, notas/flashcards/biblioteca e demais pendências da matriz. Os quatro E2E exigidos foram executados no candidato; a disponibilidade em produção ainda depende dos gates operacionais herdados, migrations/grants e release coerente. Cada lote recebe evidências A/B, documentação e homologação antes da implantação.
 
 `PRODUCT_CORE_READY=NO`
