@@ -25,7 +25,7 @@ Evidência protegida no VPS: `/opt/kairos/runtime/p0/20260911T042557Z-foundation
 
 ## Limites, rollback e próximo gate
 
-`compose config` valida a configuração, mas não testa mounts, conectividade, tráfego, grants ou permissões de leitura pelo UID do container. A ACL Redis destinada ao bind de runtime **ainda não foi criada**: a identidade deve ser conferida na imagem pinada e a leitura testada de forma isolada. O checkout novo tem proteção restrita e ainda precisa de uma política explícita de permissões para os dois bind mounts de código.
+`compose config` valida a configuração, mas não testa mounts, conectividade, tráfego ou grants. **O ensaio final dos mounts passou em 05:24:51 UTC**, como registrado abaixo: ACL Redis 0400 para UID999/GID1000, dois arquivos públicos montados com leitura 0644, Caddy UID1000 e PHP/WordPress UID33. Diretórios de credenciais permanecem 0700. Isso não substitui a validação HTTP completa após a transição.
 
 Rollback deste lote: manter os artefatos inativos e continuar usando o conjunto produtivo anterior; não há mudança de banco, serviço ou credencial ativa a desfazer. Não apagar evidências nem executar Compose antigo para desfazer esta preparação. Se um artefato preparado falhar, preservar o diretório e preparar outro destino revisado, sem sobrescrever o anterior.
 
@@ -50,3 +50,17 @@ A/B finais repetidas no script SHA256 `a81e5676b7583e73d6ec10b565b9d2be694cb8570
 Em 05:20:10 UTC, o ensaio passou no Redis real: autenticação das cinco identidades, isolamento cache/broker e negação de comandos administrativos. O conjunto ainda ficou **FAIL** no Caddy, que retornou `operation not permitted` ao iniciar o executável. Cleanup de ambos os containers e no-touch v2 PASS. Causa: o ensaio omitia `NET_BIND_SERVICE`, já exigido pela file capability da imagem e já presente no Compose/teste de integração c12; [P0-UPLOAD-LIVE-TEST.md](P0-UPLOAD-LIVE-TEST.md). Corrigido o ensaio para reproduzir esse bounding set, mantendo UID1000, read-only, no-new-privileges e rede none. Não houve mudança na configuração candidata ou produtiva. Regressão confere a capability do ensaio contra o Compose. A repetida: 29 PASS/5 skips e Ruff PASS; B novamente requerida. Recibo anterior `product-mount-verification-v3.json` permanece FAIL.
 
 B final repetida no script SHA256 `fd65f16e50d4258543953ba43dcb7cfd4c2b96f191e0369e37cbe688426e9b37`: **52 PASS/5 skips POSIX e 46 probes PASS**, incluindo as opções reais dos três containers. A capability extra está limitada ao Caddy; Redis/WordPress continuam sem capabilities. A execução POSIX real ainda será repetida.
+
+## Resultado final dos mounts
+
+**PASS em 2026-09-11 05:24:51 UTC**, executor versionado no commit `2df7c91`, fonte da aplicação e imagens permanecem **c12e53a**. Não houve migration nem deploy. Os testes anteriores FAIL são supersedidos para o gate atual, mas permanecem disponíveis como evidência dos defeitos do ensaio e suas correções.
+
+- Redis com o arquivo de runtime real: cinco autenticações PASS; cache/broker segregados; CONFIG/ACL/FLUSHALL negados aos usuários de aplicação. UID999/GID1000 lidos na imagem pinada, sem suposição de GID999.
+- Caddy: configuração candidata lida e validada como UID1000, com somente a capability já prevista no Compose; saída do processo zero.
+- WordPress: arquivo do gate legível e sintaticamente válido pelo PHP como UID33; saída zero. Esse teste não é um teste HTTP do WordPress.
+- Todos os containers: rede `none`, no-new-privileges, read-only, limites de CPU/RAM/PIDs e volumes temporários explícitos. Cleanup dos três IDs conferidos PASS; no-touch v2 PASS sem exceções.
+- Plano SQL das credenciais preparadas: SHA256 `febf307590c532943c4c3b011b9efa114fb355a35974d512f4b6f6bf8360d979`. **PREPARED_ONLY**, nenhuma reconciliação em produção.
+
+Evidência: `/opt/kairos/runtime/p0/20260911T042557Z-foundations/mount-verification-20260911T052434Z-ec2e57aa/result.json`, com plano SQL público e logs protegidos no mesmo diretório; recibo local `product-mount-verification-v4.json`. Baselines `mount-product-20260911T052434Z-ec2e57aa-{before,after}` em `/opt/kairos/runtime/baselines`.
+
+Inventário complementar somente leitura em 05:10:34 UTC: Redis antigo continha três sets de bindings conhecidos e nenhuma fila/lista; o diretório `/configuration` do LocalAI não continha arquivos. O volume anônimo anterior deve ser preservado; a release prevê um volume novo com nome Kairós. Isso não comprova drenagem futura ou ausência de jobs ativos: repetir na manutenção. Evidência `cutover-volume-queue-inventory.json`.

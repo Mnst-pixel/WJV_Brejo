@@ -264,4 +264,6 @@ Imagem Next.js correspondente: **`sha256:651bf1767d3a6d90924e212bf7579dadd8196e5
 
 Preparação inativa da release **PASS** em 2026-09-11 04:59:44 UTC: checkout Git c12e53a limpo, 14 imagens pinadas, 12 arquivos de ambiente segregados, descriptor protegido e Compose config PASS. No-touch v2 PASS sem exceções; credenciais e containers produtivos continuam anteriores. Nenhuma migration. Script exato, hashes, A/B, limites de mounts, rollback e evidência em [P1-PREPARED-RELEASE.md](P1-PREPARED-RELEASE.md).
 
+Mounts e ACL **PASS em 05:24:51 UTC**: Redis real com credenciais preparadas (isolamento cache/broker e negações administrativas), Caddy UID1000 e plugin WordPress UID33. Três containers isolados removidos; no-touch v2 PASS. Plano SQL preparado, não aplicado. A final 29 PASS/5 skips; B 52 PASS/5 skips e 46 probes PASS; ensaio Linux real integral PASS. Corrigidos quatro problemas do executor (JSON Docker, separadores Redis, cache Python e diferença de capability Caddy), com recibos FAIL preservados e novas verificações após cada correção. Executor `2df7c91`; aplicação/imagens c12e53a. Recibo `product-mount-verification-v4.json`; detalhes no guia acima. Ainda faltam manutenção/drenagem, rollback integral e ativação com smoke público.
+
 `PRODUCT_CORE_READY=NO`
