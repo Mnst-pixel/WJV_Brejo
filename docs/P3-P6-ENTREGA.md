@@ -173,6 +173,8 @@ B backend final: **53 PASS/5 skips**, 15,21 s; probes de todas as três rotas an
 
 B UI final repetida: **25 PASS**, 12 casos de identificador inválido/inexistente com 404 nas três rotas legadas, controles CSRF/campos forjados/titularidade/links/escape e quatro telas Chromium a 390 px passaram. Nenhum novo defeito reproduzível. Imagem Linux exata ainda será registrada.
 
+Commit **`17679fd51037a21f60c8372d849b066a075b4412`**, enviado ao GitHub. Fonte SHA256 `02285fcfeec5fedcee2df0ceffe32304ecf4715d5c7f1aa822d3dcd7bf774875`; API **`sha256:65af8846ba2e47fe13693f6e6ebbf69896be127da02f41c7505027a0aa951102`**; parser `sha256:b771a4908bdb7caaf6ebc510a340bc7d86094223ca7349759637fead8dac69e3`. Linux isolado: **570 API PASS/1 skip browser opt-in**, 176,37 s, incluindo as três concorrências de decisões com administradores distintos. Operações/parser **184 PASS/3 skips Git**, 22,05 s, mais 13 contratos Git PASS. WordPress/MariaDB:12 concorrentes/1 nonce aceito; PHP/Caddy/Gunicorn/inventário PASS. Execução `/opt/kairos/runtime/p0/20260911T023750Z-foundations`; evidência `/opt/kairos/runtime/tests/kairos-test-20260911T023836Z-24a4899ef22e`; recibo `modernizacao/evidencias/p0p2-candidate-20260911T023750Z.json`. Build/integração/no-touch exit0, zero alterações de recursos preexistentes. **Não implantado; não cobre o editor visual desenvolvido posteriormente.**
+
 Git: PR de produto em rascunho [#3](https://github.com/Mnst-pixel/WJV_Brejo/pull/3), empilhado sobre a branch P0–P2. Não houve merge nem reescrita de histórico.
 
 “Disponível” abaixo significa produção verificada, não somente código local.
@@ -186,7 +188,7 @@ Git: PR de produto em rascunho [#3](https://github.com/Mnst-pixel/WJV_Brejo/pull
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
 | Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente, E2E e imagem Linux | Não | Não | Release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
-| Planos, matrículas e limites | Formulários e decisões transacionais | API, B independente e E2E; Linux pendente | Não | Não | Release; cobrança não implementada | `test_subscription_workspace.py`, `P3-ASSINATURAS.md` |
+| Planos, matrículas e limites | Formulários e decisões transacionais | API, B independente, E2E e imagem Linux | Não | Não | Release; cobrança não implementada | `test_subscription_workspace.py`, `P3-ASSINATURAS.md` |
 | Painel de operação completo | Parcial | Recortes P0–P3 | Não | Não | Saúde/ingestão/jobs/armazenamento em visão integrada | Entrega P0–P2 e matriz atual |
 | Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente, E2E e imagem Linux | Não | Autoria em candidato | Release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
 | Metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Metas quantitativas e jornadas de notas/flashcards | Entrega P0–P2 |
