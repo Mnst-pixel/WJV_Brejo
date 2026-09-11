@@ -10,7 +10,8 @@ EXPECTED_ACL_TABLE = "core_permission_roles"
 
 
 def validate_target(values):
-    if (values.get("POSTGRES_DB") != "kairos_restore"
+    scoped = values.get("KAIROS_RESTORE_SCOPED_ROLES", "0")
+    if (scoped not in {"0", "1"} or values.get("POSTGRES_DB") != ("kairos" if scoped == "1" else "kairos_restore")
             or values.get("POSTGRES_USER") != "kairos_restore"
             or values.get("POSTGRES_HOST") != "127.0.0.1"
             or not re.fullmatch(r"\d{8}T\d{6}Z-[a-f0-9]{12}", values.get("KAIROS_RESTORE_RUN_ID", ""))):
@@ -70,13 +71,21 @@ def run():
 
     with connection.cursor() as cursor:
         cursor.execute("SELECT current_database(), current_user, host(inet_server_addr())")
-        if cursor.fetchone() != ("kairos_restore", "kairos_restore", "127.0.0.1"):
+        if cursor.fetchone() != (os.environ["POSTGRES_DB"], "kairos_restore", "127.0.0.1"):
             raise RuntimeError("unexpected_restore_database_connection")
         cursor.execute("SET statement_timeout='60s'")
         cursor.execute("SET lock_timeout='5s'")
     tables, original = fingerprint(connection)
     if not original.get("core_user"):
         raise RuntimeError("restored_users_required")
+    scoped_module = scoped_state = None
+    if os.environ.get("KAIROS_RESTORE_SCOPED_ROLES") == "1":
+        import importlib.util
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location("restore_scoped_roles", Path(__file__).with_name("restore-scoped-roles.py"))
+        scoped_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(scoped_module)
+        scoped_state = scoped_module.prepare(connection)
     executor = MigrationExecutor(connection)
     planned = len(executor.migration_plan(executor.loader.graph.leaf_nodes()))
     call_command("migrate", interactive=False, verbosity=0)
@@ -94,12 +103,20 @@ def run():
     _, second = fingerprint(connection, all_tables)
     if first != second:
         raise RuntimeError("migration_rerun_changed_application_rows")
+    scoped_result = None
+    if scoped_module:
+        scoped_result = scoped_module.finish(connection, scoped_state)
+        _, after_probe = fingerprint(connection, all_tables)
+        if first != after_probe:
+            raise RuntimeError("scoped_runtime_probe_changed_restored_rows")
     print(json.dumps({"status": "PASS", "planned_migrations": planned,
                       "original_tables_checked": len(original) - int(EXPECTED_ACL_TABLE in original),
                       "original_rows_checked": sum(len(rows) for table, rows in original.items() if table != EXPECTED_ACL_TABLE),
                       "idempotent_rerun": True,
                       "excluded_expected_change": EXPECTED_ACL_TABLE,
-                      "not_verified": ["scoped_grants", "backward_compatibility", "application_http", "whole_release_rollback"]}))
+                      "scoped_grants": "PASS" if scoped_result else "NOT_VERIFIED",
+                      "scoped_runtime_api": scoped_result,
+                      "not_verified": ([] if scoped_result else ["scoped_grants"]) + ["backward_compatibility", "application_http", "whole_release_rollback"]}))
 
 
 if __name__ == "__main__":

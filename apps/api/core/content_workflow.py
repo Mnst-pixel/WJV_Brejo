@@ -98,7 +98,7 @@ def transition_content(*, actor, version_id, state, justification, legal_status=
         raise ValidationError("A transição exige justificativa de 8 a 2000 caracteres.")
     base = get_object_or_404(ContentVersion, pk=version_id)
     content = Content.objects.select_for_update().get(pk=base.content_id)
-    workflow = get_object_or_404(ContentWorkflow.objects.select_for_update().select_related("version"), version=base)
+    workflow = get_object_or_404(ContentWorkflow.objects.select_for_update(of=("self",)).select_related("version"), version=base)
     version = workflow.version
     if state in {"approved", "published"}:
         body, data = rich_values(version.body, version.structured_data)

@@ -8,6 +8,15 @@ spec.loader.exec_module(probe)
 
 
 class RestoreMigrationProbeTests(unittest.TestCase):
+    def test_scoped_mode_requires_explicit_flag_and_fresh_restore_principal(self):
+        valid = {"POSTGRES_DB": "kairos", "POSTGRES_USER": "kairos_restore", "POSTGRES_HOST": "127.0.0.1", "KAIROS_RESTORE_RUN_ID": "20260910T220000Z-aabbccddeeff", "KAIROS_RESTORE_SCOPED_ROLES": "1"}
+        probe.validate_target(valid)
+        for change in [{"KAIROS_RESTORE_SCOPED_ROLES": "0"}, {"KAIROS_RESTORE_SCOPED_ROLES": "true"},
+                {"POSTGRES_USER": "kairos_app"}, {"POSTGRES_USER": "kairos_runtime"}, {"POSTGRES_DB": "kairos_restore"},
+                {"POSTGRES_HOST": "kairos-postgres-1"}, {"KAIROS_RESTORE_RUN_ID": ""}]:
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                probe.validate_target(valid | change)
+
     def test_live_or_incomplete_target_refused(self):
         valid = {"POSTGRES_DB": "kairos_restore", "POSTGRES_USER": "kairos_restore", "POSTGRES_HOST": "127.0.0.1", "KAIROS_RESTORE_RUN_ID": "20260910T220000Z-aabbccddeeff"}
         probe.validate_target(valid)
