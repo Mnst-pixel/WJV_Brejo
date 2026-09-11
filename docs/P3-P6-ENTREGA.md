@@ -79,6 +79,8 @@ Executor: servidor manual Next.js recebeu bloqueio automático sem justificativa
 
 Commit/imagem/deploy: candidato ainda em fechamento; registrar hashes após validação Linux. Nenhum deploy deste lote. Rollback: voltar ao artefato anterior seguro mantendo schema e registros; não fazer reverse migration destrutiva nem retornar à API vulnerável. Restore e reconciliação de grants fazem parte do gate da release, descritos em [P5-QUESTOES.md](P5-QUESTOES.md).
 
+Validação final da imagem deste lote: commit **`f391a46866ba6a3aead07f7cba0cdae7f59579c1`**, enviado ao GitHub; fonte SHA256 `df0696564ba90d74c716c29d4eb1712bb3fef80be3d46acb98bbf74686e4f57d`; API **`sha256:a696192f7996211d5d45fe2a5b06447b387d6c1f13a0e9a75f9361e47a26f6bb`**; parser `sha256:3051e33384d6dfc9fcb42971ecd9611050e024bc1ad64169c1f2ffc17286f7eb`. **487 API PASS/1 skip browser opt-in**, 136,24 s, incluindo admissão concorrente de formal no PostgreSQL. **184 operações/parser PASS/3 skips Git**, cobertos separadamente por 13 contratos Git. MariaDB/WordPress: 12 concorrentes, um único nonce aceito; Caddy/PHP/Gunicorn e inventário PASS. Evidência `/opt/kairos/runtime/tests/kairos-test-20260911T000148Z-19baa0c6833a`; recibo local `modernizacao/evidencias/p0p2-candidate-20260911T000059Z.json`. Build, integração e no-touch terminaram com exit 0, todas as contagens de alteração de recursos preexistentes iguais a zero. **Imagem não implantada.** Essas evidências não incluem o incremento posterior de interface de simulados ainda em desenvolvimento.
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -91,7 +93,7 @@ Commit/imagem/deploy: candidato ainda em fechamento; registrar hashes após vali
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
 | Usuários/planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
 | Dashboard, metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Jornada e próximo passo pedagógico | Entrega P0–P2 |
-| Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC e E2E real; imagem PG pendente | Não | Não | Sessões personalizadas completas e deploy | `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
+| Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC, E2E real e imagem PostgreSQL | Não | Não | Sessões personalizadas completas e deploy | `f391a46`, `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
 | Simulado 1ª fase, autosave e nota | Engine inicial | Consistência P0–P2 | Não verificado | Não | Configuração e E2E completo | `test_attempt_consistency.py` |
 | Analytics pedagógicos | Parcial | Consultas básicas | Não verificado | Não | Metas quantitativas, tendências e recomendações determinísticas | Pendente P4/P5 |
 | Casos/peças/espelhos de 2ª fase | Modelos iniciais | Insuficiente | Não | Não | Modelo complementar e editor visual de critérios | Pendente P6 |
