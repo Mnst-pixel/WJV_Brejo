@@ -1,6 +1,6 @@
 set -Eeuo pipefail
 /usr/bin/python3 -I - <<'PY'
-import datetime,fcntl,hashlib,importlib.util,json,os,pathlib,re,secrets,stat,subprocess,sys,time
+import datetime,fcntl,hashlib,importlib.util,io,json,os,pathlib,re,secrets,stat,subprocess,sys,tarfile,time
 P=pathlib.Path
 revision='c12e53a7416902315391d1b8c0a48603cbb1db6e'
 checkout=P('/opt/kairos/releases')/revision
@@ -12,6 +12,7 @@ os.environ.clear();os.environ.update(env);os.umask(0o077);sys.dont_write_bytecod
 docker=['/usr/bin/docker','--host','unix:///var/run/docker.sock']
 runid=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(4)
 work=base/('mount-verification-'+runid)
+verification=work/'verification'
 report={'commit':revision,'production_deploy':False,'checks':{},'cleanup':{}}
 created={}
 def require(condition):
@@ -29,7 +30,7 @@ def run(args,input=None,timeout=30):
 def checked(args,input=None):
     result=run(args,input);require(result.returncode==0);return result.stdout.strip()
 def module(name,filename):
-    path=checkout/'scripts'/filename
+    path=verification/'scripts'/filename
     protected(path)
     spec=importlib.util.spec_from_file_location(name,path)
     value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
@@ -48,15 +49,10 @@ require(hashlib.sha256((descriptor/'manifest.json').read_bytes()).hexdigest()=='
 require(checked(['/usr/bin/git','-C',str(checkout),'rev-parse','HEAD'])==revision)
 require(not checked(['/usr/bin/git','-C',str(checkout),'status','--porcelain','--untracked-files=all']))
 require(not (P('/opt/kairos/runtime')/'active-release').exists())
-# Verify every executable source byte before importing release helpers.
-for path in (checkout/'scripts').rglob('*'):
-    protected(path,path.is_dir())
-    require(path.suffix!='.pyc')
-    if path.is_file():
-        expected=subprocess.run(['/usr/bin/git','-C',str(checkout),'show',revision+':'+path.relative_to(checkout).as_posix()],env=env,capture_output=True,timeout=30)
-        require(expected.returncode==0 and expected.stdout==path.read_bytes())
-release=module('mount_release','release-manifest.py')
-value=json.loads((descriptor/'manifest.json').read_text());release.verify(value,checkout)
+# Bind all helper code to the committed archive, independently of prior bytecode caches.
+archive_result=subprocess.run(['/usr/bin/git','-C',str(checkout),'archive','--format=tar',revision],env=env,capture_output=True,timeout=30)
+require(archive_result.returncode==0 and hashlib.sha256(archive_result.stdout).hexdigest()=='0f147ae327c9c26ccb9e84574f763af448a8148ef0c7ad0c94cb7c9b1d81311a')
+value=json.loads((descriptor/'manifest.json').read_text())
 images=value['images']
 require(value['secrets_dir']==str(secret_dir))
 expected_volumes={'redis':{'/data'},'edge':{'/data','/config'},'wordpress':{'/var/www/html'}}
@@ -75,10 +71,19 @@ try:
     info=os.fstat(lock);require(stat.S_ISREG(info.st_mode) and info.st_uid==0 and info.st_nlink==1 and stat.S_IMODE(info.st_mode)==0o600)
     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     require(not work.exists() and not work.is_symlink());work.mkdir(mode=0o700)
+    verification.mkdir(mode=0o700)
+    with tarfile.open(fileobj=io.BytesIO(archive_result.stdout)) as archive:
+        for item in archive:
+            part=pathlib.PurePosixPath(item.name)
+            require(not part.is_absolute() and '..' not in part.parts and (item.isfile() or item.isdir()))
+            if item.isfile() and part.parts[0]=='scripts':
+                path=verification.joinpath(*part.parts);path.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+                with path.open('xb') as stream:stream.write(archive.extractfile(item).read())
+    release=module('mount_release','release-manifest.py');release.verify(value,checkout)
     before='/opt/kairos/runtime/baselines/mount-product-'+runid+'-before'
     after='/opt/kairos/runtime/baselines/mount-product-'+runid+'-after'
     for path in [P(before),P(after)]:require(not path.exists() and not path.is_symlink())
-    require(logged('before',['/bin/bash',str(checkout/'scripts/vps-snapshot.sh'),before])==0)
+    require(logged('before',['/bin/bash',str(verification/'scripts/vps-snapshot.sh'),before])==0)
     manifest=work/'no-changes.json';manifest.write_text(json.dumps({'version':2,'release_commit':revision,'config_changes':[],'network_changes':[],'edge_binding_change':None}))
     try:
         acl=module('mount_redis_acl','redis-acl.py')
@@ -152,8 +157,8 @@ try:
                     checked(docker+['rm','-f',identity])
                 report['cleanup'][name]='PASS'
             except Exception:report['cleanup'][name]='FAIL'
-        report['after_exit']=logged('after',['/bin/bash',str(checkout/'scripts/vps-snapshot.sh'),after,before])
-        report['no_touch_exit']=logged('no-touch',['/usr/bin/python3','-I',str(checkout/'scripts/compare-release-snapshots.py'),before,after,'--manifest',str(manifest)]) if report['after_exit']==0 else 125
+        report['after_exit']=logged('after',['/bin/bash',str(verification/'scripts/vps-snapshot.sh'),after,before])
+        report['no_touch_exit']=logged('no-touch',['/usr/bin/python3','-I','-B',str(verification/'scripts/compare-release-snapshots.py'),before,after,'--manifest',str(manifest)]) if report['after_exit']==0 else 125
     required={'code_mount_permissions':'PASS','real_scoped_redis_acl':'PASS','caddy_nonroot_config':'PASS','wordpress_nonroot_plugin':'PASS','database_plan':'PREPARED_ONLY'}
     report['status']='PASS' if not report.get('failure') and report['checks']==required and all(item=='PASS' for item in report['cleanup'].values()) and report['after_exit']==report['no_touch_exit']==0 else 'FAIL'
     report['work']=str(work)
