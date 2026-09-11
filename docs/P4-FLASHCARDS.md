@@ -32,6 +32,16 @@ A final repetida após os ajustes: **588 API PASS/32 skips**, 141,86s; Ruff e mi
 
 B final visual repetida: **21 probes PASS**, Chromium390 com labels/foco/sem overflow PASS, screenshot real inspecionada e sem achados. Hashes conferidos: workspace `ef0611843b6364ab9def3a24695349b8216d226478d6ef16e4aad3f7892d069a`; biblioteca `8d33025f62af73027aca02b6fdaddf7a9ce3b68a80feb78e417852f5b0eb2d8f`; CSS `2046e378c608028ddd669f5459155f411913ff4725a6095ed0c4fada397b63e7`. A/B locais concluídas; imagem Linux/PostgreSQL e deploy ainda pendentes.
 
+## Imagem e PostgreSQL aprovados
+
+Commit **5a5e82ee337e150b0e21b16f902d5b261682ae85**, archive SHA256 `66db4eb447c5c5abf51aee63ff3e809eb6caa54ec5eb824ed838fee8348aab84`. Imagem API **`sha256:7daa1078564a1b7cf63873278b742b94fb7a45125d415b01e038b605ba3be0e9`**; parser **`sha256:78c8fa535673ec9fa6cbd9092acfd637378b5575e44b7d08f0f96db2c96f0573`**. Revisões OCI conferidas; nenhuma imagem de produção substituída.
+
+Linux isolado: **619 API PASS/1 skip browser opt-in**, 202,77s, incluindo ambas as corridas PostgreSQL de flashcards, migration histórica e privilégios reais. **268 operações PASS/18 skips**, 37,93s; 15 dependem do Node ausente nesse container Python (o contrato de manutenção já passou com Node/Caddy reais em ensaio separado), três contratos Git executados separadamente em conjunto de **13 PASS**. WordPress/PHP/MariaDB, Caddy, Gunicorn e inventário PASS; nonce concorrente12→1 aceito.
+
+Execução: `/opt/kairos/runtime/p0/20260911T062434Z-foundations`; evidência de integração: `/opt/kairos/runtime/tests/kairos-test-20260911T062521Z-79d56ed2561d`; recibo local `modernizacao/evidencias/p0p2-candidate-20260911T062434Z.json`. Build, integração e comparador no-touch exit0. Comparador suplementar v2 **PASS sem exceções** em06:31:39UTC, helpers extraídos de novo do archive de hash conferido: `strict-verification/result.json`; recibo local `strict-flashcards-evidence.json`.
+
+Nenhuma migration produtiva ou deploy neste lote. O Next.js foi compilado/testado localmente no mesmo commit; ainda não há nova imagem web/descriptor de produção para esse commit. A release inativa c12e53a não contém este módulo e não deve ser apresentada como tal.
+
 ## Deploy e rollback
 
 Aplicar somente após backup novo e restore aprovado, em janela controlada, usando imagem da mesma revisão que a migration. O deploy candidato c12e53a anterior não contém este módulo; não reutilizar seu descriptor como se contivesse flashcards completos. Preparar uma nova release com commit/imagens correspondentes.
