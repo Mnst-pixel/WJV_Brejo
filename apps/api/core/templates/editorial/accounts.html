@@ -1,0 +1,7 @@
+{% extends 'editorial/base.html' %}{% block content %}
+<form method="get" class="panel filters">{% include 'editorial/fields.html' %}<button type="submit">Buscar usuários</button></form>
+{% if can_manage_users %}<a class="button" href="{% url 'editorial:account-create' %}">Criar usuário</a>{% endif %}
+<p>{{ page.paginator.count }} contas encontradas.</p>
+{% for item in page %}<article class="panel"><h2><a href="{% url 'editorial:account' item.pk %}">{{ item }}</a></h2><p>{{ item.username }} · {{ item.email|default:'Sem e-mail' }}</p><p>{% if item.is_active %}Acesso ativo{% else %}Acesso suspenso ou bloqueado{% endif %} · MFA {% if item.mfa_enabled %}ativado{% else %}não ativado{% endif %}</p><p>{{ item.role_labels|join:', ' }}</p></article>{% empty %}<p>Nenhuma conta corresponde à busca.</p>{% endfor %}
+<nav class="pagination" aria-label="Páginas de usuários">{% if page.has_previous %}<a href="?{{ filters }}&amp;page={{ page.previous_page_number }}">Anterior</a>{% endif %}<span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?{{ filters }}&amp;page={{ page.next_page_number }}">Próxima</a>{% endif %}</nav>
+{% endblock %}

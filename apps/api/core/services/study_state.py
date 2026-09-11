@@ -16,7 +16,6 @@ from core.exceptions import Conflict
 from core.models import (
     Flashcard,
     Goal,
-    Question,
     StudyNote,
     StudySession,
     Topic,
@@ -94,6 +93,7 @@ class ProgressInput(StrictInput):
     percent = serializers.IntegerField(min_value=0, max_value=100)
     position = serializers.IntegerField(min_value=0, max_value=10_000_000, default=0)
     expected_version = serializers.IntegerField(min_value=0)
+    content_version = serializers.UUIDField(allow_null=True, default=None)
 
 
 class MarkInput(StrictInput):
@@ -136,17 +136,14 @@ def _target(kind, target_id):
         from core.content_workflow import published_content
         query = published_content()
     elif kind == "question":
-        query = Question.objects.filter(
-            current_version__published_at__isnull=False,
-            current_version__approved_by__isnull=False,
-            current_version__approval_date__isnull=False,
-        ).exclude(current_version__legal_status="legacy_unverified")
+        from core.question_workflow import published_questions
+        query = published_questions()
     elif kind == "document_version":
         from core.services.documents import published_document_versions
         query = published_document_versions()
     else:
         query = Topic.objects.all()
-    get_object_or_404(query, pk=target_id)
+    return get_object_or_404(query.select_for_update(of=("self",)), pk=target_id)
 
 
 def _fingerprint(value):
@@ -176,9 +173,17 @@ def save_record(*, user, kind, data):
         raise ValidationError("Registro inválido.")
     schema, model = schemas[kind]
     values = _validated(schema, data)
-    _target(values["target_kind"], values["target_id"])
     expected = values.pop("expected_version")
     _lock(user)
+    target = _target(values["target_kind"], values["target_id"])
+    if kind == "progress":
+        content_version = values.pop("content_version")
+        if content_version and (values["target_kind"] != "content" or content_version != target.current_version_id):
+            raise Conflict("A versão do conteúdo mudou. Abra a publicação atual antes de registrar progresso.")
+        if content_version:
+            from core.serializers import ContentSerializer
+            ContentSerializer(target).get_current_version(target)
+        values["content_version_id"] = content_version
     lookup = {
         "owner": user,
         "target_kind": values["target_kind"],
@@ -190,6 +195,12 @@ def save_record(*, user, kind, data):
     if expected != (existing.version if existing else 0):
         raise Conflict("Versão de estudo desatualizada.")
     if existing:
+        if kind == "progress" and existing.content_version_id and not values["content_version_id"]:
+            raise Conflict("Abra a publicação atual antes de registrar progresso.")
+        if kind == "progress" and existing.content_version_id and existing.content_version_id != values["content_version_id"]:
+            from core.study_models import ReadingHistory
+            ReadingHistory.objects.get_or_create(owner=user, content_version_id=existing.content_version_id,
+                defaults={"percent": existing.percent, "position": existing.position, "recorded_at": existing.updated_at})
         for key, value in values.items():
             setattr(existing, key, value)
         existing.version += 1

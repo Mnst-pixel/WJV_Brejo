@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from django.utils import timezone
 
@@ -36,6 +38,7 @@ def formal_attempt(student):
 @pytest.mark.django_db
 def test_autosave_is_persistent_and_optimistic(student, formal_attempt):
     attempt, question, alternative = formal_attempt
+    Attempt.objects.filter(pk=attempt.pk).update(started_at=timezone.now() - timedelta(seconds=45))
     saved = autosave_attempt(
         attempt_id=attempt.id,
         owner=student,
@@ -45,7 +48,7 @@ def test_autosave_is_persistent_and_optimistic(student, formal_attempt):
     )
     assert saved.version == 2
     assert saved.answers.get(question=question).selected_alternative == alternative
-    assert saved.checkpoints.get(version=2).snapshot["elapsed_seconds"] == 45
+    assert 45 <= saved.checkpoints.get(version=2).snapshot["elapsed_seconds"] < 50
 
 
 @pytest.mark.django_db

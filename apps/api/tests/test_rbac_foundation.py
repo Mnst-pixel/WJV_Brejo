@@ -25,7 +25,7 @@ def request_for(user, mfa=True):
 
 
 def change_roles(actor, target, roles, mfa=True):
-    request = APIRequestFactory().put("/api/admin/users/roles/", {"roles": roles, "justification": "Alteração autorizada de acesso"}, format="json")
+    request = APIRequestFactory().put("/api/admin/users/roles/", {"roles": roles, "expected_version": target.session_version, "justification": "Alteração autorizada de acesso"}, format="json")
     request.session = request_for(actor, mfa).session
     force_authenticate(request, user=actor)
     return UserRolesView.as_view()(request, user_id=target.pk)

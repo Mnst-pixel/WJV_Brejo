@@ -18,6 +18,7 @@ class StudyProgress(OwnedModel):
     percent = models.PositiveSmallIntegerField(default=0)
     position = models.PositiveIntegerField(default=0)
     version = models.PositiveIntegerField(default=1)
+    content_version = models.ForeignKey("core.ContentVersion", on_delete=models.PROTECT, null=True, blank=True, related_name="study_progress")
 
     class Meta:
         constraints = [
@@ -34,7 +35,27 @@ class StudyProgress(OwnedModel):
             models.CheckConstraint(
                 condition=Q(target_kind__in=TARGETS), name="study_progress_target_kind"
             ),
+            models.CheckConstraint(condition=Q(content_version__isnull=True) | Q(target_kind="content"), name="study_progress_content_version_kind"),
         ]
+
+
+class ReadingHistory(OwnedModel):
+    """The last confirmed progress before a newer publication is read."""
+    content_version = models.ForeignKey("core.ContentVersion", on_delete=models.PROTECT, related_name="reading_history")
+    percent = models.PositiveSmallIntegerField()
+    position = models.PositiveIntegerField()
+    recorded_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "content_version"], name="reading_history_owner_version"),
+            models.CheckConstraint(condition=Q(percent__lte=100), name="reading_history_percent"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("O histórico de leitura é imutável.")
+        return super().save(*args, **kwargs)
 
 
 class StudyMark(OwnedModel):

@@ -1,5 +1,9 @@
 # Architecture
 
+## Educational product P3–P6
+
+The first product increment adds a Django-rendered editorial workspace at `/admin/editorial/`. It reuses the content workflow services and canonical database, with action-specific RBAC, human separation of duties and mandatory MFA even for non-staff editors. Next.js retains login and student interfaces; WordPress does not store private learning data. The specialist Django Admin remains available for existing operational forms, while taxonomy creation uses the locked editorial command. Established topic relationships cannot be reassigned by the specialist admin. Implementation and availability are tracked separately in [P3-P6-ENTREGA.md](P3-P6-ENTREGA.md).
+
 ## Trust and network boundaries
 
 The canonical configuration in this branch is a Docker Compose project named `kairos`. Deployment of this foundation release is still gated; the live baseline and exact deployed image remain recorded in [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md). The earlier five-network Hermes/MCP topology is historical, not the target runtime contract.
@@ -50,3 +54,23 @@ Ingestion states are immutable and audited:
 `discovered -> downloaded -> quarantined -> parsed -> normalized -> classified -> verified -> human_review -> approved -> indexed -> published`.
 
 Only an authorized reviewer can transition from human review to approval. Publication and indexing reject absent approval records.
+
+Objective questions extend the existing version tables with `QuestionMetadata` and `QuestionWorkflow`. A human approval signs question text, alternatives, answer key and legal metadata as one package. Student serialization and attempt capture verify that package. Practice uses the existing transactional attempt engine; results and bookmarks remain owned by the authenticated user. See [P5-QUESTOES.md](P5-QUESTOES.md) for endpoints, migrations and rollback.
+
+Student simulation preparation selects published questions inside an owner-locked transaction and freezes both the selection and configuration fingerprint. A confirmation UUID survives uncertain browser responses; autosave uses optimistic versions and full answer/review snapshots. PostgreSQL remains canonical; temporary browser envelopes only recover unconfirmed requests. Final submission freezes deterministic scoring and formal elapsed time. See [P5-SIMULADOS.md](P5-SIMULADOS.md).
+
+Second-phase exams reuse practical-case versions and rubric rows, extending them with areas, discursive questions and criterion metadata. Editorial approval signs the full reserved package. Written submissions have separate owned responses/checkpoints and a final integrity receipt; student projections exclude the rubric and expected answers. Both exam phases share formal-assistance admission policy. Correction/review tables prepare the next phase without pretending an evaluator is operational. See [P6-SEGUNDA-FASE.md](P6-SEGUNDA-FASE.md).
+
+Reading progress records the reviewed ContentVersion explicitly. New publications require review while preserving the prior confirmed progress in ReadingHistory. Owned learning aggregates and deterministic next-step recommendations share the formal-exam admission lock. The Next dashboard uses these facts instead of demonstration data. See [P4-ESTUDO.md](P4-ESTUDO.md).
+
+Account administration uses ordinary Django workspace forms over guarded commands. New accounts receive student scope and an unusable password; explicit email delivery lets the owner define access. Profile, role and access changes serialize account locks and revoke prior sessions. Recovery email uniqueness is enforced by a partial case-insensitive database constraint. See [P3-USUARIOS.md](P3-USUARIOS.md).
+
+Subscription workspace forms reuse Plan, Enrollment and UploadPolicy. Signed state receipts, account locks and a settings mutex serialize administrative decisions; legacy Django admin writes are disabled and GET bookmarks redirect to the canonical forms. This layer governs private upload eligibility and quotas, not billing. See [P3-ASSINATURAS.md](P3-ASSINATURAS.md).
+
+Visual content uses a bounded rich-text AST inside ContentVersion.structured_data while body remains the canonical plain projection. Shared revision/approval/publication commands validate the structure and exact text correspondence; existing version hashes cover formatting. Django and React emit fixed escaped elements. No external editor dependency or migration was introduced. See [P3-EDITOR-VISUAL.md](P3-EDITOR-VISUAL.md).
+
+Personal notes have owner-scoped creation receipts, optimistic editing and optional reviewed publication references. The library uses canonical paginated API data; browser recovery holds only unconfirmed text and reconciles before resending. Deletion remains disabled until receipts can survive it. See [P4-ANOTACOES.md](P4-ANOTACOES.md).
+
+Personal flashcards use the existing owned models with optimistic versions and append-only review receipts. Server-side recall scheduling freezes the text actually reviewed; subsequent edits reset the due queue while preserving history. Legacy scheduling is migrated from the latest review by the card owner. The library provides explicit comparison for stale drafts and keeps temporary recovery separate from canonical data. See [P4-FLASHCARDS.md](P4-FLASHCARDS.md).
+
+Database reconciliation supports the old schema before migrations and grants runtime access only after explicit reconciliation. Editorial transitions lock the mutable workflow and parent content, preserving immutable version ACLs. A real restored database passed forward migrations as `kairos_migrator` and synthetic HTTP API workflows as `kairos_runtime`; production activation remains separate. See [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md).

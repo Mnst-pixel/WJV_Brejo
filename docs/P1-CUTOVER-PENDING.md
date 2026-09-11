@@ -4,6 +4,8 @@ Este documento registra o trabalho técnico que falta. Não é um procedimento e
 
 ## Plano de rede anterior à alteração
 
+Progresso incremental: [P1-TRANSITION-PLAN.md](P1-TRANSITION-PLAN.md) e [P1-TRANSITION-IO.md](P1-TRANSITION-IO.md) registram modelo, coleta real, freeze protegido, vínculo ao snapshot e registros de início/conclusão. O ciclo sem mudanças passou no VPS, com lock e comparador integral. Ainda faltam a integração do coordenador, nova comparação completa imediatamente antes da primeira mutação, backup/restore, manutenção, filas, migrations/grants, troca de release e rollback. As bibliotecas sozinhas não fecham os gates abaixo.
+
 O comparador v2 confere hashes exatos de projeções, inclusive IDs de containers/endpoints. IDs novos só existem depois da criação. Um coordenador não pode preencher o hash esperado usando o estado final e chamar isso de autorização prévia.
 
 A evolução deve congelar um plano semântico antes do primeiro passo mutável: commit, hash do baseline, nomes/projetos/serviços, imagens/revisions esperadas, redes exclusivas, driver/internal/subnets/gateways/options, memberships e bindings. Cada identidade precisa de uma política explícita de retenção, substituição ou criação; remoções também precisam de nome e ID anterior exatos. Recursos alheios permanecem integralmente fixos.
@@ -18,7 +20,7 @@ Preparar artefatos e configuração antes de abrir uma janela de escrita: checko
 
 O coordenador deve compartilhar `.operation.lock` com backup e reconciliação. Antes de migrations/rotacionar serviços, produzir backup novo com restore isolado e capturar baseline fresco. Validar uma janela de manutenção que impeça novas escritas, verificar/drainar filas antigas sem perder tarefas e preservar jobs/uploads pendentes. Provar a passagem broker antigo → ACL/prefixos novos.
 
-Reconciliar os papéis PostgreSQL antes e depois de migrations explícitas. O migrator é dono do schema; o runtime não tem DDL/superuser. Não usar produção para ensaiar migrations. Em 2026-09-10, `2a14c31` passou nas 5 migrations forward sobre backup real restaurado, com 86 registros originais/64 tabelas preservados e repetição idempotente. Esse ensaio usou o proprietário temporário da restauração; ainda faltam a combinação com os papéis segregados e a compatibilidade/rollback da release anterior.
+Reconciliar os papéis PostgreSQL antes e depois de migrations explícitas. O migrator é dono do schema; o runtime não tem DDL/superuser. Não usar produção para ensaiar migrations. Em 2026-09-11, `c12e53a` passou nas 14 migrations forward sobre backup real restaurado **como kairos_migrator**, com 86 registros originais/64 tabelas preservados e repetição idempotente. Após reconciliação, a API editorial/notas passou **como kairos_runtime sem superuser**. Backup/restore integral/no-touch v2 PASS; [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md). Ativação produtiva, compatibilidade/rollback da release anterior permanecem pendentes.
 
 Aplicar somente serviços Kairós listados, retirar containers históricos IA/MCP e bootstraps preservando volumes e evidência. Não usar `down`, `prune` ou `--remove-orphans` genéricos. Nunca reativar a API vulnerável pelo Compose antigo. Capturar IDs/imagens reais e verificar health, DB/cache/broker, worker, parser, storage, edge e nonce/MFA WordPress antes de liberar escritas.
 

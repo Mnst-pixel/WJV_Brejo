@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
@@ -19,6 +20,7 @@ class AnswerInput(serializers.Serializer):
     question = serializers.UUIDField()
     selected_alternative = serializers.UUIDField(required=False, allow_null=True)
     free_text = serializers.CharField(required=False, allow_blank=True, max_length=100_000, trim_whitespace=False)
+    marked_for_review = serializers.BooleanField(required=False)
 
 
 class AutosaveInput(serializers.Serializer):
@@ -48,8 +50,10 @@ def validate_question_ids(value, exam_phase_id):
 
 
 def _definition(simulation, *, require_approval):
+    from core.question_workflow import package_queryset, published_questions, verify_published_question
     ids = validate_question_ids(simulation.question_ids, simulation.exam_phase_id)
-    questions = {str(q.pk): q for q in Question.objects.filter(pk__in=ids).select_related("current_version").prefetch_related("current_version__alternatives")}
+    questions = {str(q.pk): q for q in package_queryset(Question.objects.filter(pk__in=ids))}
+    published_ids = {str(value) for value in published_questions().filter(pk__in=ids).values_list("pk", flat=True)} if require_approval else set(ids)
     keys = {str(key.question_id): key for key in AnswerKey.objects.filter(question_id__in=ids, kind="final").select_related("current_version").order_by("created_at")}
     annulled = {str(value) for value in Annulment.objects.filter(question_id__in=ids, effective_at__lte=timezone.now()).values_list("question_id", flat=True)}
     items = []
@@ -58,25 +62,46 @@ def _definition(simulation, *, require_approval):
         version = question.current_version
         if not version:
             raise ValidationError("Questão sem versão disponível.")
-        if require_approval and (not version.approved_by_id or not version.approval_date or not version.published_at or version.legal_status == "legacy_unverified"):
+        if require_approval and question_id not in published_ids:
             raise PermissionDenied("A questão ainda não possui publicação jurídica aprovada.")
         alternatives = [{"id": str(a.pk), "label": a.label, "text": a.text, "order": a.order} for a in version.alternatives.all()]
         key_parent = keys.get(question_id)
         key = key_parent.current_version if key_parent else None
         if key and str(key.correct_alternative_id) not in {a["id"] for a in alternatives}:
             raise ValidationError("Gabarito não corresponde à versão da questão.")
-        if key and require_approval and (not key.approved_by_id or not key.approval_date or not key.published_at or key.legal_status == "legacy_unverified"):
-            key = None
+        workflow = getattr(version, "workflow", None)
+        if workflow and require_approval:
+            verify_published_question(question)
+        if key and require_approval:
+            approved_key = bool(key.approved_by_id and key.approval_date and key.legal_status != "legacy_unverified")
+            published_key = bool(workflow and workflow.state == "published" and workflow.answer_key_version_id == key.pk) if workflow else bool(key.published_at and key.published_at <= timezone.now())
+            if not approved_key or not published_key:
+                key = None
+        metadata = getattr(version, "metadata", None)
         items.append({"question": question_id, "version": str(version.pk), "version_number": version.version_number,
                       "statement": version.statement, "source_hash": version.source_hash, "alternatives": alternatives,
                       "answer_key_version": str(key.pk) if key else None,
                       "correct_alternative": str(key.correct_alternative_id) if key else None,
                       "rationale": key.rationale if key else "Gabarito definitivo aprovado indisponível nesta captura.",
-                      "annulled": question_id in annulled})
-    definition = {"title": simulation.title, "mode": simulation.mode, "duration_minutes": simulation.duration_minutes, "exam_phase": str(simulation.exam_phase_id), "questions": items}
+                      "annulled": question_id in annulled or bool(metadata and metadata.annulled),
+                      "subject": str(question.subject_id), "subject_name": question.subject.name,
+                      "topic": str(question.topic_id) if question.topic_id else None, "topic_name": question.topic.name if question.topic else "",
+                      "source_url": version.source_url, "reference_date": str(version.reference_date) if version.reference_date else None,
+                      "legal_basis": metadata.legal_basis if metadata else "", "difficulty": metadata.difficulty if metadata else ""})
+    definition = {"title": simulation.title, "mode": simulation.mode, "duration_minutes": simulation.duration_minutes, "exam_phase": str(simulation.exam_phase_id), "questions": items,
+                  "selection_config": simulation.selection_config}
     definition["sha256"] = hashlib.sha256(json.dumps(definition, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     definition["captured_at"] = timezone.now().isoformat()
     return definition
+
+
+def ensure_results_unlocked(owner, *, exclude_attempt=None):
+    from core.second_phase_models import WrittenSubmission
+    # Inspect immutable captured mode, not a mutable simulation relationship.
+    formal = Q(frozen_definition__mode="formal") | Q(frozen_definition={}, simulation__mode="formal")
+    if (Attempt.objects.filter(formal, owner=owner, status="active").exclude(pk=exclude_attempt).exists() or
+            WrittenSubmission.objects.filter(owner=owner, status="active", mode="formal").exists()):
+        raise Conflict("Finalize o simulado formal em andamento antes de consultar gabaritos de outras tentativas.")
 
 
 @transaction.atomic
@@ -92,6 +117,7 @@ def create_attempt(*, simulation, owner, idempotency_key=None):
             if previous.simulation_id != simulation.pk:
                 raise Conflict("Chave de idempotência já utilizada para outro simulado.")
             return previous
+    ensure_results_unlocked(owner)
     return Attempt.objects.create(owner=owner, simulation=simulation, frozen_definition=_definition(simulation, require_approval=True), snapshot_origin="creation", idempotency_key=idempotency_key)
 
 
@@ -117,9 +143,11 @@ def autosave_attempt(*, attempt_id, owner, expected_version, answers, elapsed_se
     if attempt.version != values["version"]:
         raise Conflict({"detail": "Versão de autosave desatualizada.", "current_version": attempt.version})
     _ensure_definition(attempt)
-    if attempt.frozen_definition["mode"] == "formal" and timezone.now() > attempt.started_at + timedelta(minutes=attempt.frozen_definition["duration_minutes"]):
+    now = timezone.now()
+    formal = attempt.frozen_definition["mode"] == "formal"
+    if formal and now > attempt.started_at + timedelta(minutes=attempt.frozen_definition["duration_minutes"]):
         raise Conflict("Tempo do simulado encerrado. Envie as respostas já salvas.")
-    if values["elapsed_seconds"] < attempt.elapsed_seconds:
+    if not formal and values["elapsed_seconds"] < attempt.elapsed_seconds:
         raise ValidationError("O tempo decorrido não pode retroceder.")
     max_seconds = attempt.frozen_definition["duration_minutes"] * 60
     if values["elapsed_seconds"] > max_seconds:
@@ -136,12 +164,14 @@ def autosave_attempt(*, attempt_id, owner, expected_version, answers, elapsed_se
         existing = AttemptAnswer.objects.filter(attempt=attempt, question_id=question_id).first()
         AttemptAnswer.objects.update_or_create(attempt=attempt, question_id=question_id, defaults={
             "selected_alternative_id": selected, "free_text": answer.get("free_text", ""), "answer_version": existing.answer_version + 1 if existing else 1,
+            "marked_for_review": answer.get("marked_for_review", existing.marked_for_review if existing else False),
         })
     attempt.version += 1
-    attempt.elapsed_seconds = values["elapsed_seconds"]
-    attempt.last_autosave_at = timezone.now()
+    attempt.elapsed_seconds = max(0, int((now - attempt.started_at).total_seconds())) if formal else values["elapsed_seconds"]
+    attempt.last_autosave_at = now
     attempt.save(update_fields=["version", "elapsed_seconds", "last_autosave_at", "updated_at"])
-    snapshot_answers = [{"question": str(answer.question_id), "selected_alternative": str(answer.selected_alternative_id) if answer.selected_alternative_id else None, "free_text": answer.free_text} for answer in attempt.answers.order_by("question_id")]
+    snapshot_answers = [{"question": str(answer.question_id), "selected_alternative": str(answer.selected_alternative_id) if answer.selected_alternative_id else None, "free_text": answer.free_text,
+                         "marked_for_review": answer.marked_for_review} for answer in attempt.answers.order_by("question_id")]
     AttemptCheckpoint.objects.create(attempt=attempt, version=attempt.version, snapshot={"answers": snapshot_answers, "elapsed_seconds": attempt.elapsed_seconds})
     return attempt
 
@@ -155,11 +185,17 @@ def _score(attempt):
         scorable = bool(item["annulled"] or item["correct_alternative"])
         is_correct = bool(item["annulled"] or (answer and str(answer.selected_alternative_id) == item["correct_alternative"])) if scorable else None
         correct += int(is_correct is True)
+        if answer:
+            answer.is_correct = is_correct
         annulled += int(item["annulled"])
         unscored += int(not scorable)
         results.append({"question": item["question"], "selected_alternative": str(answer.selected_alternative_id) if answer and answer.selected_alternative_id else None,
-                        "correct_alternative": item["correct_alternative"], "correct": is_correct, "annulled": item["annulled"], "rationale": item["rationale"]})
+                        "correct_alternative": item["correct_alternative"], "correct": is_correct, "annulled": item["annulled"], "rationale": item["rationale"],
+                        "subject": item.get("subject"), "subject_name": item.get("subject_name", ""), "topic": item.get("topic"), "topic_name": item.get("topic_name", "")})
+    if answer_map:
+        AttemptAnswer.objects.bulk_update(answer_map.values(), ["is_correct"])
     return {"attempt": str(attempt.pk), "correct": correct, "total": len(results), "annulled": annulled, "unscored": unscored,
+            "elapsed_seconds": attempt.elapsed_seconds,
             "questions": results, "snapshot_origin": attempt.snapshot_origin, "requires_review": attempt.snapshot_origin != "creation" or unscored > 0 or not results,
             "definition_sha256": attempt.frozen_definition["sha256"]}
 
@@ -174,11 +210,17 @@ def submit_attempt(*, attempt_id, owner):
     if attempt.status != Attempt.Status.ACTIVE:
         raise ValidationError("A tentativa não pode ser submetida.")
     _ensure_definition(attempt)
+    submitted_at = timezone.now()
+    if attempt.frozen_definition.get("mode") != "formal":
+        ensure_results_unlocked(owner)
+    else:
+        attempt.elapsed_seconds = min(attempt.frozen_definition["duration_minutes"] * 60,
+            max(int((submitted_at - attempt.started_at).total_seconds()), 0))
     attempt.result_snapshot = _score(attempt)
     attempt.status = Attempt.Status.SUBMITTED
-    attempt.submitted_at = timezone.now()
+    attempt.submitted_at = submitted_at
     attempt.version += 1
-    attempt.save(update_fields=["status", "submitted_at", "version", "result_snapshot", "updated_at"])
+    attempt.save(update_fields=["status", "submitted_at", "version", "elapsed_seconds", "result_snapshot", "updated_at"])
     return attempt
 
 
@@ -187,6 +229,7 @@ def attempt_results(*, attempt_id, owner):
     lock_study_user(owner)
     attempt_id = serializers.UUIDField().run_validation(attempt_id)
     attempt = get_object_or_404(Attempt, pk=attempt_id, owner=owner)
+    ensure_results_unlocked(owner, exclude_attempt=attempt.pk)
     if attempt.status == Attempt.Status.ACTIVE:
         raise PermissionDenied("O gabarito permanece bloqueado até a submissão.")
     if not attempt.result_snapshot:

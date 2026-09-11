@@ -10,13 +10,14 @@ from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -252,29 +253,42 @@ class PasswordResetRequestView(APIView):
 
     def post(self, request):
         email = str(request.data.get("email", "")).strip().lower()
+        from core.recovery_policy import allow_recovery_delivery
+        response = {"detail": "Se a conta existir e o e-mail estiver configurado, as instruções serão enviadas."}
+        if not email or len(email) > 254 or not allow_recovery_delivery(request, email):
+            return Response(response, status=202)
         user = User.objects.filter(email__iexact=email, is_active=True).first()
         if user and settings.SMTP_URL:
+            from smtplib import SMTPException
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             link = f"{settings.KAIROS_BASE_URL}/app/redefinir-senha?uid={uid}&token={token}"
-            send_mail("Redefinição de senha do Kairós", f"Use este link uma única vez: {link}", settings.DEFAULT_FROM_EMAIL, [user.email])
-            record_audit("auth.password_reset.requested", actor=user, request=request, target=user)
-        return Response({"detail": "Se a conta existir e o e-mail estiver configurado, as instruções serão enviadas."}, status=202)
+            try:
+                sent = send_mail("Redefinição de senha do Kairós", f"Use este link uma única vez: {link}", settings.DEFAULT_FROM_EMAIL, [user.email])
+            except (OSError, SMTPException):
+                sent = 0
+            record_audit("auth.password_reset.requested" if sent else "auth.password_reset.delivery_failed", request=request, target=user)
+        return Response(response, status=202)
 
 
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request):
+        from django.core.exceptions import ValidationError as PasswordValidationError
         try:
-            user = User.objects.get(pk=force_str(urlsafe_base64_decode(request.data.get("uid", ""))))
-        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+            user = User.objects.select_for_update().get(pk=force_str(urlsafe_base64_decode(request.data.get("uid", ""))), is_active=True)
+        except (User.DoesNotExist, ValueError, TypeError, OverflowError, UnicodeError, PasswordValidationError):
             return Response({"detail": "Token inválido."}, status=400)
         token = str(request.data.get("token", ""))
         password = str(request.data.get("new_password", ""))
         if not default_token_generator.check_token(user, token):
             return Response({"detail": "Token inválido ou expirado."}, status=400)
-        validate_password(password, user=user)
+        try:
+            validate_password(password, user=user)
+        except PasswordValidationError as exc:
+            raise ValidationError({"new_password": exc.messages}) from None
         user.set_password(password)
         user.session_version += 1
         user.save(update_fields=["password", "session_version", "updated_at"])
@@ -316,7 +330,7 @@ class OwnedViewSet(viewsets.ModelViewSet):
         from django.shortcuts import get_object_or_404
         from .permissions import lock_study_user
         lock_study_user(self.request.user)
-        serializer.instance = get_object_or_404(self.get_queryset().select_for_update(), pk=serializer.instance.pk)
+        serializer.instance = get_object_or_404(self.get_queryset().select_for_update(of=("self",)), pk=serializer.instance.pk)
         serializer.save()
 
     @transaction.atomic
@@ -324,7 +338,7 @@ class OwnedViewSet(viewsets.ModelViewSet):
         from django.shortcuts import get_object_or_404
         from .permissions import lock_study_user
         lock_study_user(self.request.user)
-        instance = get_object_or_404(self.get_queryset().select_for_update(), pk=instance.pk)
+        instance = get_object_or_404(self.get_queryset().select_for_update(of=("self",)), pk=instance.pk)
         record_audit(f"{instance._meta.label_lower}.deleted", actor=self.request.user, request=self.request, target=instance)
         instance.delete()
 
@@ -335,13 +349,47 @@ class GoalViewSet(OwnedViewSet):
 
 
 class StudyNoteViewSet(OwnedViewSet):
-    queryset = StudyNote.objects.all()
+    # Keep creation receipts and prevent stale deletion from erasing newer work.
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+    queryset = StudyNote.objects.select_related("subject", "topic", "content_version")
     serializer_class = StudyNoteSerializer
+
+    def get_queryset(self):
+        from core.personal_notes import filter_notes
+        return filter_notes(super().get_queryset(), self.request.query_params)
 
 
 class FlashcardViewSet(OwnedViewSet):
-    queryset = Flashcard.objects.all()
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+    queryset = Flashcard.objects.select_related("subject", "topic")
     serializer_class = FlashcardSerializer
+
+    def get_queryset(self):
+        from core.personal_flashcards import filter_cards
+        query = super().get_queryset()
+        return filter_cards(query, self.request.query_params) if self.action == "list" else query
+
+    @action(detail=True, methods=["post"])
+    def review(self, request, pk=None):
+        from core.personal_flashcards import review_card
+        from core.serializers import FlashcardReviewCommand
+        card = self.get_object()
+        command = FlashcardReviewCommand(data=request.data)
+        command.is_valid(raise_exception=True)
+        receipt = review_card(request.user, card.pk, command.validated_data)
+        return Response(self.review_data(receipt))
+
+    @staticmethod
+    def review_data(receipt):
+        return {"id": str(receipt.pk), "account_id": str(receipt.owner_id), "flashcard": str(receipt.flashcard_id),
+                "rating": receipt.rating, "card_version": receipt.card_version,
+                "reviewed_at": receipt.reviewed_at, "next_review_at": receipt.next_review_at, "snapshot": receipt.snapshot}
+
+    @action(detail=True, methods=["get"])
+    def history(self, request, pk=None):
+        card = self.get_object()
+        page = self.paginate_queryset(card.reviews.filter(owner=request.user).order_by("-reviewed_at", "pk"))
+        return self.get_paginated_response([self.review_data(receipt) for receipt in page])
 
 
 class BookmarkViewSet(OwnedViewSet):
@@ -367,13 +415,25 @@ class ContentViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         from .content_workflow import published_content
-        return published_content().select_related("current_version").prefetch_related("topics")
+        query = published_content().select_related("current_version__workflow__approval").prefetch_related("topics").order_by("subject__order", "current_version__title", "pk")
+        for field in ("subject", "topics"):
+            if self.request.query_params.get(field):
+                query = query.filter(**{field: serializers.UUIDField().run_validation(self.request.query_params[field])})
+        if self.request.query_params.get("q"):
+            query = query.filter(current_version__title__icontains=self.request.query_params["q"][:200])
+        return query.distinct()
 
 
 class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [CanStudy]
-    queryset = Question.objects.filter(current_version__approved_by__isnull=False, current_version__approval_date__isnull=False, current_version__published_at__isnull=False).exclude(current_version__legal_status="legacy_unverified").select_related("current_version").prefetch_related("current_version__alternatives")
+    queryset = Question.objects.none()
     serializer_class = QuestionSerializer
+
+    def get_queryset(self):
+        from .question_workflow import package_queryset, published_questions
+        from .practice_views import filter_questions
+        query = package_queryset(published_questions()).order_by("exam_phase", "number", "pk")
+        return filter_questions(query, self.request.query_params, self.request.user)
 
 
 class SimulationViewSet(OwnedViewSet):
@@ -389,7 +449,10 @@ class AttemptViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
-        return Attempt.objects.filter(owner=self.request.user).select_related("simulation").prefetch_related("answers")
+        query = Attempt.objects.filter(owner=self.request.user).select_related("simulation").prefetch_related("answers").order_by("-started_at", "pk")
+        if self.request.query_params.get("purpose") == "simulation":
+            query = query.exclude(idempotency_key__startswith="practice:")
+        return query
 
     def perform_create(self, serializer):
         simulation = serializer.validated_data["simulation"]
@@ -465,16 +528,11 @@ class ConsultView(APIView):
         context = request.data.get("context", {})
         if not isinstance(context, dict):
             raise ValidationError({"context": "Contexto deve ser um objeto."})
-        attempt_id = context.get("attempt_id")
-        if attempt_id:
-            attempt = Attempt.objects.select_related("simulation").get(pk=attempt_id, owner=request.user)
-            if attempt.status == Attempt.Status.ACTIVE and attempt.simulation.mode == Simulation.Mode.FORMAL:
-                raise PermissionDenied("O assistente permanece bloqueado no simulado formal até a submissão.")
-            if attempt.status == Attempt.Status.ACTIVE and attempt.simulation.mode == Simulation.Mode.TRAINING and request.data.get("action") not in {"hint", "add_to_review"}:
-                raise PermissionDenied("Durante o treino ativo, somente pistas e revisão são permitidas.")
+        # The shared policy validates context, ownership and formal mode before retrieval.
         conversation = None
         if request.data.get("conversation_id"):
-            conversation = Conversation.objects.get(pk=request.data["conversation_id"], owner=request.user)
+            conversation_id = serializers.UUIDField().run_validation(request.data["conversation_id"])
+            conversation = get_object_or_404(Conversation, pk=conversation_id, owner=request.user)
         result = answer_consultation(
             user=request.user,
             question=str(request.data.get("question", "")),

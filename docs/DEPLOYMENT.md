@@ -2,6 +2,8 @@
 
 Deployment is intentionally gated.
 
+P3.1 adds templates and static assets under the existing `core` application, so the immutable API build copies them and `collectstatic` publishes the files. `/admin/editorial/` uses the existing Django edge route; no new public port or WordPress change is required. Deploy the matching Next.js login artifact with the API release. No P3.1 database migration is required. Its successful local browser workflow does not substitute for the pending whole-release cutover gates; see [P3-P6-ENTREGA.md](P3-P6-ENTREGA.md).
+
 Foundation branch status (2026-09-10): the canonical Compose, image descriptors, scoped credentials and explicit migration command are implemented but not yet activated in production. Use [P0-P2-ENTREGA.md](P0-P2-ENTREGA.md) for the actual live revision and pending gates. The checklist below describes required outcomes, not evidence of a completed deploy.
 
 New releases must use `scripts/release-manifest.py` and `scripts/kairos-compose.py` with a protected descriptor below `/opt/kairos/runtime/releases/`; `/opt/kairos/runtime/active-release` is a root-owned 0600 file containing its exact directory. Every image is an inspected SHA256. The wrapper validates Git, configuration and image source revision and selects explicit services. Do not run the historical Compose alone or resurrect historical bootstrap profiles. Missing descriptor variables fail closed.

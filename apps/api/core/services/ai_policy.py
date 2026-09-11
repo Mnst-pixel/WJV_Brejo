@@ -6,6 +6,7 @@ from uuid import UUID
 from urllib.parse import unquote, urlsplit
 
 from django.conf import settings
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -61,9 +62,18 @@ def validated_context(context):
     return result
 
 
+def ensure_no_formal_ai(user):
+    from core.second_phase_models import WrittenSubmission
+    formal = Q(frozen_definition__mode="formal") | Q(frozen_definition={}, simulation__mode="formal")
+    if (Attempt.objects.filter(formal, owner=user, status=Attempt.Status.ACTIVE).exists() or
+            WrittenSubmission.objects.filter(owner=user, status="active", mode="formal").exists()):
+        raise PermissionDenied("O assistente permanece bloqueado durante o simulado formal, mesmo sem contexto de tentativa.")
+
+
 def authorize_consultation(*, user, question, action, context, conversation):
     if not user_has_permission(user, "ai.consult"):
         raise PermissionDenied("Consulta de IA não autorizada.")
+    ensure_no_formal_ai(user)
     if (
         action not in ALLOWED_ACTIONS
         or not isinstance(question, str)
@@ -83,7 +93,7 @@ def authorize_consultation(*, user, question, action, context, conversation):
         if attempt is None:
             raise PermissionDenied("Tentativa não autorizada.")
         if attempt.status == Attempt.Status.ACTIVE and (
-            attempt.simulation.mode == Simulation.Mode.FORMAL
+            attempt.frozen_definition.get("mode", attempt.simulation.mode) == Simulation.Mode.FORMAL
             or action not in {"hint", "add_to_review"}
         ):
             raise PermissionDenied("Assistente não permitido durante esta tentativa.")

@@ -2,6 +2,10 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .practice_views import LearningAccuracyView, PracticeAnswerView, PracticeHistoryView, PracticeMarksView
+from .simulation_views import SimulationCatalogView, SimulationStartView
+from .second_phase_views import CaseCatalogView, WrittenSaveView, WrittenSubmissionView, WrittenSubmitView
+from .learning_views import LearningDashboardView, ReadingView
 from .rbac_views import RoleCatalogView, UserRolesView
 from .mcp_views import MCPDelegationView, MCPToolCallView
 from .study_views import BrowserImportView, StudyActivityView, StudyPanelView, StudyRecordView, StudySummaryView
@@ -28,6 +32,19 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("study/dashboard/", LearningDashboardView.as_view()),
+    path("study/reading/<uuid:content_id>/", ReadingView.as_view()),
+    path("phase2/cases/", CaseCatalogView.as_view()),
+    path("phase2/submissions/", WrittenSubmissionView.as_view()),
+    path("phase2/submissions/<uuid:submission_id>/", WrittenSubmissionView.as_view()),
+    path("phase2/submissions/<uuid:submission_id>/autosave/", WrittenSaveView.as_view()),
+    path("phase2/submissions/<uuid:submission_id>/submit/", WrittenSubmitView.as_view()),
+    path("simulation-catalog/", SimulationCatalogView.as_view()),
+    path("simulation-start/", SimulationStartView.as_view()),
+    path("practice/answers/", PracticeAnswerView.as_view()),
+    path("practice/questions/<uuid:question_id>/marks/", PracticeMarksView.as_view()),
+    path("practice/history/", PracticeHistoryView.as_view()),
+    path("study/accuracy/", LearningAccuracyView.as_view()),
     path("internal/wordpress-auth", wordpress_auth_gate, name="wordpress-auth-gate"),
     path("admin/content/", AdminContentListView.as_view()),
     path("admin/content/<uuid:content_id>/versions/", ContentRevisionView.as_view()),

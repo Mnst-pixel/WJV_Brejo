@@ -68,7 +68,7 @@ class IsolatedRoles:
         with self.connect() as connection:
             connection.execute(statement, prepare=False)
 
-    def django(self, *, role=ADMIN, target=None, seed=False):
+    def django(self, *, role=ADMIN, target=None, seed=False, runtime_probe=False):
         env = os.environ.copy()
         env.update({"DJANGO_SETTINGS_MODULE": "kairos.settings", "DJANGO_SECRET_KEY": secrets.token_hex(48),
             "POSTGRES_HOST": HOST, "POSTGRES_PORT": "5432", "POSTGRES_DB": "kairos",
@@ -95,6 +95,8 @@ from django.core.management import call_command
         program += f"call_command('migrate', *{list(target or [])!r}, interactive=False, verbosity=0)\n"
         if seed:
             program += "from core.models import User\nUser.objects.create(id=os.environ['KAIROS_DB_ROLES_USER_ID'], username='dbroles-synthetic', password='!unusable-synthetic', mfa_secret_encrypted='synthetic-only-no-secret')\n"
+        if runtime_probe:
+            program += f"import importlib.util\nspec=importlib.util.spec_from_file_location('scoped_runtime_probe', {str(ROOT / 'scripts' / 'scoped-runtime-probe.py')!r})\nprobe=importlib.util.module_from_spec(spec)\nspec.loader.exec_module(probe)\nassert probe.run()['synthetic_rows_rolled_back']\n"
         result = subprocess.run([sys.executable, "-c", program], cwd=ROOT / "apps" / "api", env=env,
             capture_output=True, text=True, timeout=180, check=False)
         if result.returncode:
@@ -138,8 +140,16 @@ def database_roles():
         assert connection.execute("SELECT count(*) FROM pg_roles WHERE rolname IN ('kairos_runtime','kairos_worker','kairos_migrator','kairos_backup')").fetchone()[0] == 0, "Refusing to alter existing role identities"
     try:
         state.create_database("kairos")
-        state.django(seed=True)
+        # Reproduce production's old schema before granting the migrator ownership.
+        # Starting at latest concealed absent P3 relations in the reconciliation SQL.
+        state.django(target=["core", "0001"])
         state.reconcile()
+        state.django(role="kairos_migrator")
+        with state.connect("kairos_runtime") as runtime:
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                runtime.execute("SELECT * FROM core_contentworkflow")
+        state.reconcile()
+        state.django(role="kairos_runtime", seed=True)
         with state.connect() as connection:
             for _, _, role in state.module.ROLES.values():
                 connection.execute(psycopg.sql.SQL("COMMENT ON ROLE {} IS {}").format(psycopg.sql.Identifier(role), psycopg.sql.Literal(state.marker)))
@@ -167,6 +177,17 @@ def test_real_roles_cannot_escalate_or_create_schema(database_roles):
             denied(state, connection, "CREATE TEMP TABLE forbidden_temp(id integer)")
             denied(state, connection, "SET ROLE kairos_test")
             denied(state, connection, "SET ROLE kairos_migrator")
+
+
+def test_runtime_api_editorial_and_private_notes_use_restricted_role(database_roles):
+    state = database_roles
+    with state.connect() as connection:
+        before = connection.execute("SELECT count(*) FROM core_user").fetchone()
+    state.django(role="kairos_runtime", runtime_probe=True)
+    with state.connect() as connection:
+        assert connection.execute("SELECT count(*) FROM core_user").fetchone() == before
+        assert connection.execute("SELECT count(*) FROM core_content").fetchone()[0] == 0
+        assert connection.execute("SELECT count(*) FROM core_studynote").fetchone()[0] == 0
 
 
 def test_worker_can_lock_owner_id_but_cannot_read_authentication_secrets(database_roles):

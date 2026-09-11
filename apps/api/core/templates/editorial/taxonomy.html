@@ -1,0 +1,4 @@
+{% extends 'editorial/base.html' %}{% block content %}
+{% if can_create %}<div class="actions"><a class="button" href="{% url 'editorial:subject-create' %}">Nova disciplina</a><a class="button secondary" href="{% url 'editorial:topic-create' %}">Novo tema ou subtema</a></div>{% endif %}
+{% for subject in page %}<section class="panel"><h2>{{ subject.name }}</h2><p>{{ subject.description }}</p><ul>{% for topic in subject.topics.all %}<li>{% if topic.parent %}{{ topic.parent.name }} → {% endif %}{{ topic.name }}</li>{% empty %}<li>Esta disciplina ainda não tem temas.</li>{% endfor %}</ul></section>{% empty %}<p class="panel">Cadastre a primeira disciplina para organizar o acervo.</p>{% endfor %}{% include 'editorial/pagination.html' %}
+{% endblock %}

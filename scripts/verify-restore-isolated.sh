@@ -6,6 +6,11 @@ umask 077
 die() { printf 'KAIROS_RESTORE_ISOLATED=FAIL reason=%s\n' "$1" >&2; exit 1; }
 [[ $# == 2 ]] || die 'usage: verify-restore-isolated.sh /srv/kairos/backups/kairos-TIMESTAMP.tar.gz.enc /absolute/passphrase-file'
 [[ $EUID == 0 ]] || die 'root required for protected backup and Docker access'
+[[ -x /usr/bin/docker && -x /usr/bin/env ]] || die 'fixed local Docker runtime required'
+# Ignore inherited contexts, remote daemons and Docker config/plugins. Creation,
+# inspection and cleanup must all address this same local socket.
+docker() { /usr/bin/env -i PATH=/usr/bin:/bin LANG=C.UTF-8 /usr/bin/docker --host unix:///var/run/docker.sock "$@"; }
+docker_timeout() { local duration=$1; shift; /usr/bin/timeout "$duration" /usr/bin/env -i PATH=/usr/bin:/bin LANG=C.UTF-8 /usr/bin/docker --host unix:///var/run/docker.sock "$@"; }
 for tool in docker python3 openssl realpath stat df timeout; do command -v "$tool" >/dev/null || die "missing prerequisite: $tool"; done
 export COMPOSE_PROJECT_NAME=kairos
 root=/srv/kairos/backups
@@ -85,6 +90,9 @@ my_image=$(image_id mariadb "${KAIROS_RESTORE_MY_IMAGE:-mariadb:12.3.3}")
 minio_image=$(image_id minio "${KAIROS_RESTORE_MINIO_IMAGE:-kairos-minio}")
 mc_image=$(image_id mc "${KAIROS_RESTORE_MC_IMAGE:-minio/mc:RELEASE.2025-08-13T08-35-41Z}")
 probe_image=''
+scoped_roles=${KAIROS_RESTORE_SCOPED_ROLES:-0}
+[[ $scoped_roles == 0 || $scoped_roles == 1 ]] || die 'invalid scoped restore opt-in'
+[[ $scoped_roles == 0 || -n ${KAIROS_RESTORE_API_IMAGE:-} ]] || die 'scoped restore requires a migration candidate'
 if [[ -n ${KAIROS_RESTORE_API_IMAGE:-} || -n ${KAIROS_RESTORE_API_REVISION:-} ]]; then
   [[ ${KAIROS_RESTORE_API_IMAGE:-} =~ ^sha256:[0-9a-f]{64}$ && ${KAIROS_RESTORE_API_REVISION:-} =~ ^[0-9a-f]{40}$ ]] || die 'exact migration candidate image and revision required'
   probe_image=$(image_id migration-api "$KAIROS_RESTORE_API_IMAGE")
@@ -194,7 +202,7 @@ create_container() {
 wait_ready() {
   local container=$1; shift
   for (( attempt=0; attempt<90; attempt++ )); do
-    if timeout 5 docker exec "$container" "$@" > /dev/null 2>&1; then return; fi
+    if docker_timeout 5 exec "$container" "$@" > /dev/null 2>&1; then return; fi
     sleep 2
   done
   die 'temporary database did not become ready'
@@ -206,7 +214,7 @@ new_volume pg
 create_container pg --network none --env-file "$work/pg.env" --mount "type=volume,src=$prefix-pg,dst=/var/lib/postgresql/data" "$pg_image"
 quiet docker start "$prefix-pg"
 wait_ready "$prefix-pg" pg_isready -h 127.0.0.1 -U kairos_restore -d kairos_restore
-quiet timeout 600 docker exec -i "$prefix-pg" pg_restore -U kairos_restore -d kairos_restore --no-owner --no-privileges --exit-on-error < "$work/extracted/postgres.dump"
+quiet docker_timeout 600 exec -i "$prefix-pg" pg_restore -U kairos_restore -d kairos_restore --no-owner --no-privileges --exit-on-error < "$work/extracted/postgres.dump"
 quiet docker exec "$prefix-pg" psql -U kairos_restore -d kairos_restore -v ON_ERROR_STOP=1 -Atc \
   "DO \$\$ BEGIN IF (SELECT count(*) FROM django_migrations)=0 OR (SELECT count(*) FROM core_user)=0 THEN RAISE EXCEPTION 'required database data missing'; END IF; IF EXISTS (SELECT 1 FROM pg_constraint WHERE NOT convalidated) OR EXISTS (SELECT 1 FROM pg_index WHERE NOT indisvalid) THEN RAISE EXCEPTION 'invalid database structures'; END IF; END \$\$;"
 docker exec "$prefix-pg" psql -U kairos_restore -d kairos_restore -v ON_ERROR_STOP=1 -Atc \
@@ -216,10 +224,17 @@ if [[ -n $probe_image ]]; then
   # disposable PostgreSQL; there is no production network, broker or storage.
   cp -- "$work/pg.env" "$work/probe.env"
   printf 'POSTGRES_HOST=127.0.0.1\nDJANGO_SECRET_KEY=%s\nKAIROS_RESTORE_RUN_ID=%s\nPYTHONPATH=/app\n' "$pw" "$runid" >> "$work/probe.env"
+  if [[ $scoped_roles == 1 ]]; then
+    # The provisioning SQL intentionally supports only database kairos. Make a
+    # second copy in this fresh network-none cluster; the archived restore remains.
+    quiet docker exec "$prefix-pg" createdb -U kairos_restore --template=kairos_restore kairos
+    sed -i 's/^POSTGRES_DB=kairos_restore$/POSTGRES_DB=kairos/' "$work/probe.env"
+    printf 'KAIROS_RESTORE_SCOPED_ROLES=1\n' >> "$work/probe.env"
+  fi
   create_container migration-probe --network "container:$prefix-pg" --user 10001:10001 --cap-drop ALL --read-only \
     --tmpfs /tmp:rw,nosuid,size=64m,uid=10001,gid=10001 --env-file "$work/probe.env" \
-    --mount "type=bind,src=$probe_source,dst=/probe.py,readonly" --entrypoint python "$probe_image" /probe.py
-  quiet timeout 300 docker start -a "$prefix-migration-probe"
+    --mount "type=bind,src=$(dirname "$probe_source"),dst=/restore-probes,readonly" --entrypoint python "$probe_image" /restore-probes/restore-migration-probe.py
+  quiet docker_timeout 300 start -a "$prefix-migration-probe"
   [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-migration-probe") == 0 ]] || die 'migration probe failed'
   install -m 0600 "$work/last-command.log" "$evidence/migration-probe.json"
   quiet python3 -c 'import json,sys; assert json.load(open(sys.argv[1]))["status"] == "PASS"' "$evidence/migration-probe.json"
@@ -233,8 +248,8 @@ new_volume my
 create_container my --network none --env-file "$work/my.env" --mount "type=volume,src=$prefix-my,dst=/var/lib/mysql" "$my_image"
 quiet docker start "$prefix-my"
 wait_ready "$prefix-my" healthcheck.sh --connect --innodb_initialized
-quiet timeout 600 docker exec -i "$prefix-my" sh -ec 'exec mariadb --user=root --password="$MARIADB_ROOT_PASSWORD" kairos_restore' < "$work/extracted/mariadb.sql"
-quiet timeout 300 docker exec "$prefix-my" sh -ec 'exec mariadb-check --user=root --password="$MARIADB_ROOT_PASSWORD" --check kairos_restore'
+quiet docker_timeout 600 exec -i "$prefix-my" sh -ec 'exec mariadb --user=root --password="$MARIADB_ROOT_PASSWORD" kairos_restore' < "$work/extracted/mariadb.sql"
+quiet docker_timeout 300 exec "$prefix-my" sh -ec 'exec mariadb-check --user=root --password="$MARIADB_ROOT_PASSWORD" --check kairos_restore'
 docker exec "$prefix-my" sh -ec 'exec mariadb --user=root --password="$MARIADB_ROOT_PASSWORD" --batch --skip-column-names kairos_restore -e "SELECT COUNT(*) FROM wp_options; SELECT COUNT(*) FROM wp_users;"' > "$work/my-counts" 2> "$work/my-errors"
 [[ $(wc -l < "$work/my-counts") == 2 ]] || die 'MariaDB counts missing'
 while read -r count; do [[ $count =~ ^[1-9][0-9]*$ ]] || die 'required WordPress data missing'; done < "$work/my-counts"
@@ -251,7 +266,7 @@ printf 'MINIO_ROOT_USER=kairos_restore\nMINIO_ROOT_PASSWORD=%s\n' "$pw" > "$work
 new_volume minio
 create_container minio-init --network none --user 0:0 \
   --mount "type=volume,src=$prefix-minio,dst=/data" --entrypoint /bin/sh "$minio_image" -ec 'chown 1000:1000 /data'
-quiet timeout 30 docker start -a "$prefix-minio-init"
+quiet docker_timeout 30 start -a "$prefix-minio-init"
 [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-minio-init") == 0 ]] || die 'temporary MinIO volume initialization failed'
 create_container minio --network "$net" --network-alias restore-minio --env-file "$work/minio.env" \
   --mount "type=volume,src=$prefix-minio,dst=/data" "$minio_image" server /data --console-address :9001
@@ -271,7 +286,7 @@ create_container mc --network "$net" --env-file "$work/minio.env" \
     mc mirror /backup restore/documents >/dev/null
     mc mirror restore/documents /returned >/dev/null
   '
-quiet timeout 600 docker start -a "$prefix-mc"
+quiet docker_timeout 600 start -a "$prefix-mc"
 [[ $(docker container inspect -f '{{.State.ExitCode}}' "$prefix-mc") == 0 ]] || die 'MinIO client restore failed'
 python3 "$work/archive-check.py" compare "$work/extracted/minio-documents" "$work/objects-returned" > "$evidence/minio-counts.txt" 2> "$work/object-errors"
 printf 'minio_restore_and_hashes=PASS\n' >> "$evidence/result.txt"

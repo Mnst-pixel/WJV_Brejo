@@ -38,6 +38,12 @@ class UserSerializer(serializers.ModelSerializer):
         from .permissions import active_role_slugs
         return sorted(active_role_slugs(obj))
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if value and User.objects.filter(email__iexact=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
+            raise serializers.ValidationError("Este e-mail não está disponível para a conta.")
+        return value
+
     def validate_preferences(self, value):
         allowed = {"reduced_motion", "reduced_density", "comfortable_reading", "focus_mode", "text_scale"}
         if not isinstance(value, dict) or set(value) - allowed or any((type(item) is not int or not 90 <= item <= 125) if key == "text_scale" else type(item) is not bool for key, item in value.items()):
@@ -56,7 +62,12 @@ class UserSerializer(serializers.ModelSerializer):
                     value = {**current.preferences, **value}
                 setattr(current, field, value)
             if validated_data:
-                current.save(update_fields=[*validated_data, "updated_at"])
+                from django.db import IntegrityError
+                try:
+                    with transaction.atomic():
+                        current.save(update_fields=[*validated_data, "updated_at"])
+                except IntegrityError:
+                    raise Conflict("Os dados da conta foram alterados. Confira o e-mail antes de tentar novamente.") from None
             return current
 
 
@@ -85,7 +96,20 @@ class ContentVersionSerializer(serializers.ModelSerializer):
 
 
 class ContentSerializer(serializers.ModelSerializer):
-    current_version = ContentVersionSerializer(read_only=True)
+    current_version = serializers.SerializerMethodField()
+
+    def get_current_version(self, obj):
+        from django.core.exceptions import ObjectDoesNotExist
+        from core.content_workflow import version_fingerprint
+        from rest_framework.exceptions import PermissionDenied
+        version = obj.current_version
+        try:
+            approved = bool(version and version.workflow.approval and version.workflow.approval.evidence.get("version_sha256") == version_fingerprint(version))
+        except ObjectDoesNotExist:
+            approved = False
+        if not approved:
+            raise PermissionDenied("O conteúdo não corresponde à versão revisada.")
+        return ContentVersionSerializer(version).data
 
     class Meta:
         model = Content
@@ -99,16 +123,29 @@ class AlternativeSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        from core.question_workflow import verify_published_question
+        verify_published_question(instance)
+        return super().to_representation(instance)
+
     statement = serializers.CharField(source="current_version.statement", read_only=True)
     alternatives = AlternativeSerializer(source="current_version.alternatives", many=True, read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    topic_name = serializers.CharField(source="topic.name", read_only=True, default="")
+    exam_title = serializers.CharField(source="exam_phase.exam.title", read_only=True)
+    edition = serializers.CharField(source="exam_phase.exam.edition", read_only=True)
+    year = serializers.IntegerField(source="exam_phase.exam.exam_date.year", read_only=True)
+    difficulty = serializers.CharField(source="current_version.metadata.difficulty", read_only=True, default="")
 
     class Meta:
         model = Question
-        fields = ["id", "exam_phase", "subject", "topic", "number", "statement", "alternatives"]
+        fields = ["id", "exam_phase", "subject", "topic", "number", "statement", "alternatives", "subject_name", "topic_name", "exam_title", "edition", "year", "difficulty"]
 
 
 class SimulationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
+        if "selection_config" in self.initial_data:
+            raise serializers.ValidationError("A configuração de preparação é registrada pelo servidor.")
         from core.services.attempts import validate_question_ids
         phase = attrs.get("exam_phase", getattr(self.instance, "exam_phase", None))
         ids = attrs.get("question_ids", getattr(self.instance, "question_ids", []))
@@ -140,7 +177,7 @@ class SimulationSerializer(serializers.ModelSerializer):
 class AttemptAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttemptAnswer
-        fields = ["id", "question", "selected_alternative", "free_text", "answer_version", "answered_at"]
+        fields = ["id", "question", "selected_alternative", "marked_for_review", "free_text", "answer_version", "answered_at"]
         read_only_fields = ["id", "answer_version", "answered_at"]
 
 
@@ -148,6 +185,14 @@ class AttemptSerializer(serializers.ModelSerializer):
     answers = AttemptAnswerSerializer(many=True, read_only=True)
     mode = serializers.SerializerMethodField()
     questions = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    duration_minutes = serializers.SerializerMethodField()
+
+    def get_title(self, obj):
+        return obj.frozen_definition.get("title", obj.simulation.title)
+
+    def get_duration_minutes(self, obj):
+        return obj.frozen_definition.get("duration_minutes", obj.simulation.duration_minutes)
 
     def get_mode(self, obj):
         return obj.frozen_definition.get("mode", obj.simulation.mode)
@@ -182,7 +227,7 @@ class AttemptSerializer(serializers.ModelSerializer):
         model = Attempt
         fields = [
             "id", "simulation", "mode", "status", "started_at", "submitted_at", "last_autosave_at",
-            "elapsed_seconds", "version", "answers", "questions", "snapshot_origin",
+            "elapsed_seconds", "version", "answers", "questions", "snapshot_origin", "title", "duration_minutes",
         ]
         read_only_fields = ["id", "status", "started_at", "submitted_at", "last_autosave_at", "elapsed_seconds", "version", "answers", "questions", "snapshot_origin"]
 
@@ -231,40 +276,72 @@ class GoalSerializer(OwnedSerializer):
 
 class StudyNoteSerializer(OwnedSerializer):
     expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
-    body = serializers.CharField(max_length=100000, allow_blank=True)
+    creation_key = serializers.UUIDField(write_only=True, required=False)
+    expected_owner = serializers.UUIDField(write_only=True, required=False)
+    account_id = serializers.UUIDField(source="owner_id", read_only=True)
+    body = serializers.CharField(max_length=100000, allow_blank=True, trim_whitespace=False)
+    subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
+    content_title = serializers.CharField(source="content_version.title", read_only=True, default=None)
+
     class Meta:
         model = StudyNote
-        fields = ["id", "subject", "topic", "title", "body", "version", "expected_version", "created_at", "updated_at"]
+        fields = ["id", "account_id", "subject", "subject_name", "topic", "content_version", "content_title", "title", "body", "version", "creation_key", "expected_owner", "expected_version", "created_at", "updated_at"]
         read_only_fields = ["id", "version", "created_at", "updated_at"]
 
     def create(self, validated_data):
-        from django.db import transaction
-        from .permissions import lock_study_user
-        with transaction.atomic():
-            lock_study_user(self.context["request"].user)
-            validated_data.pop("expected_version", None)
-            return super().create(validated_data)
+        from core.personal_notes import create_note
+        validated_data.pop("owner", None)
+        return create_note(self.context["request"].user, validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
-        from .exceptions import Conflict
-        from .permissions import lock_study_user
-        expected = validated_data.pop("expected_version", None)
-        with transaction.atomic():
-            user = self.context["request"].user
-            lock_study_user(user)
-            current = StudyNote.objects.select_for_update().get(pk=instance.pk, owner=user)
-            if expected != current.version:
-                raise Conflict({"detail": "Recarregue a nota antes de salvar.", "current_version": current.version})
-            validated_data["version"] = current.version + 1
-            return super().update(current, validated_data)
+        from core.personal_notes import update_note
+        return update_note(self.context["request"].user, instance.pk, validated_data)
 
 
 class FlashcardSerializer(OwnedSerializer):
+    front = serializers.CharField(max_length=10000, trim_whitespace=False)
+    back = serializers.CharField(max_length=20000, trim_whitespace=False)
+    source_reference = serializers.CharField(max_length=2000, allow_blank=True, required=False, trim_whitespace=False)
+    expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
+    expected_owner = serializers.UUIDField(write_only=True, required=False)
+    creation_key = serializers.UUIDField(write_only=True, required=False)
+    archived = serializers.BooleanField(write_only=True, required=False)
+    account_id = serializers.UUIDField(source="owner_id", read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
+
+    def validate(self, attrs):
+        if {"owner", "account_id", "version", "next_review_at", "archived_at", "creation_payload_hash"} & set(self.initial_data):
+            raise serializers.ValidationError("Conta, versão e agenda são controladas pelo servidor.")
+        for key in ("front", "back"):
+            if key in attrs and not attrs[key].strip():
+                raise serializers.ValidationError({key: "Preencha o texto do cartão."})
+        return attrs
+
+    def create(self, validated_data):
+        from core.personal_flashcards import create_card
+        validated_data.pop("owner", None)
+        return create_card(self.context["request"].user, validated_data)
+
+    def update(self, instance, validated_data):
+        from core.personal_flashcards import update_card
+        return update_card(self.context["request"].user, instance.pk, validated_data)
+
     class Meta:
         model = Flashcard
-        fields = ["id", "subject", "topic", "front", "back", "source_reference", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = ["id", "account_id", "subject", "subject_name", "topic", "front", "back", "source_reference", "version", "next_review_at", "archived_at", "expected_version", "expected_owner", "creation_key", "archived", "created_at", "updated_at"]
+        read_only_fields = ["id", "version", "next_review_at", "archived_at", "created_at", "updated_at"]
+
+
+class FlashcardReviewCommand(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    expected_version = serializers.IntegerField(min_value=1)
+    expected_owner = serializers.UUIDField(required=False)
+    idempotency_key = serializers.UUIDField()
+
+    def validate(self, attrs):
+        if set(self.initial_data) - set(self.fields):
+            raise serializers.ValidationError("A agenda e o histórico são calculados pelo servidor.")
+        return attrs
 
 
 class BookmarkSerializer(OwnedSerializer):
