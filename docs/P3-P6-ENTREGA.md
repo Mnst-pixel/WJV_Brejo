@@ -193,6 +193,8 @@ Fechamento A do editor após todas as correções: **563 API PASS/28 skips expl�
 
 “Disponível” abaixo significa produção verificada, não somente código local.
 
+Imagem do editor visual: commit `227609e2f5ebd1302c363141bfc939d3444f0d9d`; fonte SHA256 `ec0032f3e8183b2dea01342861501eccd5cfcb89e9ed90e8615d6b2b968502cd`; API `sha256:d3d33af5200f1c99c6cbcde810667d864b737788e0da39d78e23c42d79f93df3`; parser `sha256:991b375d2bbb3d414ea1c0d33a54f8ddfb6d9448b5742857255c2953a0e529c3`. Linux isolado: **590 API PASS/1 skip browser opt-in**, 181,41 s; **184 operações PASS/3 skips Git**, 21,44 s, mais 13 contratos Git PASS. WordPress/MariaDB: 12 concorrentes, 1 nonce aceito. PHP/Caddy/Gunicorn/inventário PASS. Execução `/opt/kairos/runtime/p0/20260911T030131Z-foundations`; evidência `/opt/kairos/runtime/tests/kairos-test-20260911T030218Z-a899fbdbfb64`; recibo `modernizacao/evidencias/p0p2-candidate-20260911T030131Z.json`. Build/integração/no-touch exit0; zero recursos preexistentes alterados. **Não implantado; esta imagem não contém as anotações em desenvolvimento.**
+
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
 |---|---|---|---|---|---|---|
 | Administração editorial sem JSON | Parcial | HTTP/RBAC e E2E real | Não | Não | Completar áreas e publicar release | `test_editorial_workspace.py`, `editorial-browser.json` |
@@ -200,7 +202,7 @@ Fechamento A do editor após todas as correções: **563 API PASS/28 skips expl�
 | Rascunho → revisão → aprovação → publicação | Sim, serviços reutilizados | Serviço, HTTP e E2E real | Não | Não | Deploy | `test_content_workflow.py`, `editorial-browser.json` |
 | Histórico/restauração de conteúdo | Sim, restaura para rascunho | HTTP e preservação da publicação | Não | Não | Comparação detalhada, agendamento e deploy | Teste de workflow completo |
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
-| Editor visual | AST, controles de formatação e leitura revisada | API/B/E2E real; Linux pendente | Não | Não | Release; editor de tabelas e anexos não incluído | `test_rich_text.py`, `rich_editor.cjs`, `P3-EDITOR-VISUAL.md` |
+| Editor visual | AST, controles de formatação e leitura revisada | API/B/E2E real e imagem Linux | Não | Não | Release; editor de tabelas e anexos não incluído | `test_rich_text.py`, `rich_editor.cjs`, `P3-EDITOR-VISUAL.md` |
 | Anexos relacionados e metadados pedagógicos | Parcial | Fundação de uploads | Não | Não | Múltiplos anexos e relações editoriais completas | Pendente |
 | Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente, E2E e imagem Linux | Não | Não | Release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
 | Planos, matrículas e limites | Formulários e decisões transacionais | API, B independente, E2E e imagem Linux | Não | Não | Release; cobrança não implementada | `test_subscription_workspace.py`, `P3-ASSINATURAS.md` |
