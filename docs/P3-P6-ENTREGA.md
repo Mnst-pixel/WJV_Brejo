@@ -262,4 +262,6 @@ Evidência: backup `kairos-predeploy-20260911T043307Z-8ce27bbc4683.tar.gz.enc`; 
 
 Imagem Next.js correspondente: **`sha256:651bf1767d3a6d90924e212bf7579dadd8196e53a2e7c20c42f6a02d7cef6824`**, commit **c12e53a**. Build e smoke Linux isolado PASS: health/login/CSS200, área privada307 para login sem API, uid10001/read-only/rede none; cleanup/no-touch v2 sem exceções PASS. Recibo `product-web-build-c12e53a.json`; detalhes de fonte, base e revisão B no guia de restore. O conjunto API/parser/web é atribuível ao mesmo commit, mas a produção conserva a release histórica até o cutover ensaiado.
 
+Preparação inativa da release **PASS** em 2026-09-11 04:59:44 UTC: checkout Git c12e53a limpo, 14 imagens pinadas, 12 arquivos de ambiente segregados, descriptor protegido e Compose config PASS. No-touch v2 PASS sem exceções; credenciais e containers produtivos continuam anteriores. Nenhuma migration. Script exato, hashes, A/B, limites de mounts, rollback e evidência em [P1-PREPARED-RELEASE.md](P1-PREPARED-RELEASE.md).
+
 `PRODUCT_CORE_READY=NO`
