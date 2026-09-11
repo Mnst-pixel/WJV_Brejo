@@ -95,7 +95,11 @@ Testes: API completa, revisão B independente, build/TypeScript/ESLint/Ruff e mi
 
 Fechamento A após correção do tempo: **480 API PASS/20 skips explícitos**, 79,97 s; **E2E PASS em 19,30 s**. Build Next.js/TypeScript, ESLint, Ruff e migrations sem drift passaram novamente. B backend repetiu **140 PASS/2 skips PostgreSQL/Redis** e reproduziu independemente tempo formal não inflável, checkpoints, replay, treino monotônico e prazo expirado. B frontend/harness executou controles de preparação, isolamento, paginação, snapshot, concorrência de edição/autosave, 409, falha, cancelamento e encerramento da fixture; rerun final após correção backend em fechamento.
 
-Commit/imagem/deploy/evidência final: em fechamento. Nenhum deploy deste lote. Pendências: composição entre múltiplos cadernos e quotas por disciplina, resultado visual por tema/tempo, tendências/comparação histórica e paginação do catálogo além de 500 cadernos. A segunda fase e as jornadas administrativas restantes continuam pendentes.
+Verificação B final frontend/harness após correção: **42 testes backend**, **11 controles TypeScript** e **4 cenários de encerramento** passaram, sem defeito reproduzível remanescente nesse recorte.
+
+Commit **`61964bbcaed9172e53bab0cf8059b6bf7937e45d`**, enviado ao GitHub. Fonte SHA256 `eb6f9bea965a2f0d9cf2ee350fb8db05d4a1b998da12c0c90034abdfda291abd`; API **`sha256:216552910f258c55b6f611f913d3bcba6ddca49095d42992de7fd763548c40b5`**; parser `sha256:c1f0e095982d9b54d0ea363411a6911ac0c39944f4f3a0d60673ea033423695f`. Execução Linux: **499 API PASS/1 skip browser opt-in**, 142,15 s; **184 operações/parser PASS/3 skips Git**, 13 contratos Git executados separadamente com sucesso. WordPress/MariaDB: 12 concorrentes, um nonce aceito; Caddy/PHP/Gunicorn/inventário PASS. Evidência `/opt/kairos/runtime/tests/kairos-test-20260911T003909Z-4dfcb1534db6`, recibo `modernizacao/evidencias/p0p2-candidate-20260911T003824Z.json`. Build/integração/no-touch exit 0, todas as alterações de recursos preexistentes iguais a zero. Scan de 17 valores de credenciais contra 351 arquivos: nenhuma ocorrência. **Imagem não implantada.** O incremento posterior de segunda fase não está coberto por essa imagem.
+
+Pendências: composição entre múltiplos cadernos e quotas por disciplina, resultado visual por tema/tempo, tendências/comparação histórica e paginação do catálogo além de 500 cadernos. A segunda fase e as jornadas administrativas restantes continuam pendentes.
 
 “Disponível” abaixo significa produção verificada, não somente código local.
 
