@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Forward migration rehearsal on an isolated restored database, never live data."""
 import hashlib
+import contextlib
 import json
 import os
 import re
@@ -109,15 +110,24 @@ def run():
         _, after_probe = fingerprint(connection, all_tables)
         if first != after_probe:
             raise RuntimeError("scoped_runtime_probe_changed_restored_rows")
-    print(json.dumps({"status": "PASS", "planned_migrations": planned,
+    return {"status": "PASS", "planned_migrations": planned,
                       "original_tables_checked": len(original) - int(EXPECTED_ACL_TABLE in original),
                       "original_rows_checked": sum(len(rows) for table, rows in original.items() if table != EXPECTED_ACL_TABLE),
                       "idempotent_rerun": True,
                       "excluded_expected_change": EXPECTED_ACL_TABLE,
                       "scoped_grants": "PASS" if scoped_result else "NOT_VERIFIED",
                       "scoped_runtime_api": scoped_result,
-                      "not_verified": ([] if scoped_result else ["scoped_grants"]) + ["backward_compatibility", "application_http", "whole_release_rollback"]}))
+                      "not_verified": ([] if scoped_result else ["scoped_grants"]) + ["backward_compatibility", "application_http", "whole_release_rollback"]}
+
+
+def emit_report(operation=run):
+    # Django configures stdout logging during setup. Expected 403/404/409 probes
+    # must not contaminate the machine-readable receipt or expose response data.
+    # Exceptions still propagate after leaving this context: no partial PASS.
+    with open(os.devnull, "w") as sink, contextlib.redirect_stdout(sink), contextlib.redirect_stderr(sink):
+        report = operation()
+    print(json.dumps(report))
 
 
 if __name__ == "__main__":
-    run()
+    emit_report()
