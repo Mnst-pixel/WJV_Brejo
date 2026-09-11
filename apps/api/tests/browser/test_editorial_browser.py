@@ -105,6 +105,10 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     assert result["readingWorkflow"].endswith("PASS")
     assert result["accountsWorkflow"].endswith("PASS")
     assert result["subscriptionsWorkflow"].endswith("PASS")
+    assert result["flashcardsWorkflow"].endswith("PASS")
+    from core.models import Flashcard, FlashcardReview
+    assert Flashcard.objects.get().version == 8
+    assert FlashcardReview.objects.get().snapshot["front"] == "Pergunta pessoal para revisão espaçada"
     invited = User.objects.get(username="pessoa-nova-browser")
     assert invited.is_active and not invited.has_usable_password()
     assert list(invited.role_assignments.values_list("role__slug", flat=True)) == ["editor"]

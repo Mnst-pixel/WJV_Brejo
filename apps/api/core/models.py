@@ -613,6 +613,18 @@ class Flashcard(OwnedModel):
     front = models.TextField()
     back = models.TextField()
     source_reference = models.TextField(blank=True)
+    version = models.PositiveIntegerField(default=1)
+    creation_key = models.UUIDField(null=True, blank=True, editable=False)
+    creation_payload_hash = models.CharField(max_length=64, blank=True, editable=False)
+    next_review_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "creation_key"], condition=Q(creation_key__isnull=False), name="card_owner_creation_key"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="card_positive_version"),
+        ]
+        indexes = [models.Index(fields=["owner", "archived_at", "next_review_at"], name="card_owner_review_due")]
 
 
 class FlashcardReview(UUIDModel):
@@ -621,9 +633,16 @@ class FlashcardReview(UUIDModel):
     rating = models.PositiveSmallIntegerField()
     reviewed_at = models.DateTimeField(auto_now_add=True)
     next_review_at = models.DateTimeField()
+    idempotency_key = models.UUIDField(null=True, blank=True, editable=False)
+    card_version = models.PositiveIntegerField(default=1)
+    snapshot = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        constraints = [models.CheckConstraint(condition=Q(rating__gte=1) & Q(rating__lte=5), name="flashcard_rating_range")]
+        constraints = [
+            models.CheckConstraint(condition=Q(rating__gte=1) & Q(rating__lte=5), name="flashcard_rating_range"),
+            models.CheckConstraint(condition=Q(card_version__gte=1), name="review_positive_card_version"),
+            models.UniqueConstraint(fields=["owner", "idempotency_key"], condition=Q(idempotency_key__isnull=False), name="card_review_owner_key"),
+        ]
 
 
 class Bookmark(OwnedModel):

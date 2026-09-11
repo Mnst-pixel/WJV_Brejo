@@ -1,0 +1,13 @@
+.flashcards-workspace header { margin-bottom: 24px; }
+.flashcards-workspace h2:focus { outline: 2px solid var(--bronze); outline-offset: 6px; }
+.flashcards-workspace .notes-layout textarea { min-height: 140px; }
+.flashcards-workspace .flashcard-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
+.flashcards-workspace .flashcard-answer { margin-block: 20px; padding: 18px; border: 1px solid var(--bronze); border-radius: 8px; }
+.flashcards-workspace fieldset { margin-block: 20px; padding: 16px; border: 1px solid var(--bronze); min-width: 0; }
+.flashcards-workspace .button-row { margin-block: 16px; }
+.flashcards-workspace .open-row span { white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.flashcards-workspace .open-row { width: 100%; margin-block: 14px; padding: 16px; text-align: left; background: transparent; color: var(--parchment-deep); border: 1px solid var(--bronze); border-radius: 8px; cursor: pointer; }
+.flashcards-workspace .open-row:hover:not(:disabled) { background: rgba(220, 201, 146, .08); }
+.flashcards-workspace details { margin-block: 16px; padding: 12px; border-bottom: 1px solid var(--bronze); }
+.flashcards-workspace details summary { cursor: pointer; line-height: 1.6; }
+.flashcards-workspace :is(button, input, textarea, select, summary):focus-visible { outline: 2px solid var(--parchment-deep); outline-offset: 3px; }

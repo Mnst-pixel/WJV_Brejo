@@ -21,7 +21,7 @@ DOCKER = ["/usr/bin/docker", "--host", "unix:///var/run/docker.sock"]
 DOCKER_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}
 IMMUTABLE = ("core_auditlog", "core_publicationapproval", "core_contentversion", "core_questionversion", "core_answerkeyversion", "core_alternative", "core_questionmetadata", "core_practicalcaseversion", "core_promptversion",
              "core_rubric", "core_rubriccriterion", "core_rubriccriteriondetails", "core_secondphasecasemetadata", "core_discursivequestion",
-             "core_writtencheckpoint", "core_writtencorrection", "core_writtencorrectionitem", "core_writtencorrectionreview", "core_readinghistory")
+             "core_writtencheckpoint", "core_writtencorrection", "core_writtencorrectionitem", "core_writtencorrectionreview", "core_readinghistory", "core_flashcardreview")
 
 
 class ProvisionError(Exception):

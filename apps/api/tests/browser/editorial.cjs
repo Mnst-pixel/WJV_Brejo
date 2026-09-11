@@ -205,11 +205,15 @@ function acceptsTarget(req, origin) {
     let expectedLostSave = 0;
     let expectedLostStart = 0;
     let expectedLostNote = 0;
+    let expectedLostFlashcard = 0;
+    let expectedFlashcardConflict = 0;
     learner.on('console', message => {
       if (message.type() !== 'error') return;
       if (expectedLostSave && message.location().url.endsWith('/autosave/') && message.text().includes('ERR_FAILED')) {expectedLostSave -= 1; return;}
       if (expectedLostStart && message.location().url.endsWith('/simulation-start/') && message.text().includes('ERR_FAILED')) {expectedLostStart -= 1; return;}
       if (expectedLostNote && message.location().url.includes('/api/notes/') && message.text().includes('ERR_FAILED')) {expectedLostNote -= 1; return;}
+      if (expectedLostFlashcard && message.location().url.includes('/api/flashcards/') && message.text().includes('ERR_FAILED')) {expectedLostFlashcard -= 1; return;}
+      if (expectedFlashcardConflict && message.location().url.includes('/api/flashcards/') && message.text().includes('409')) {expectedFlashcardConflict -= 1; return;}
       errors.push(message.text());
     });
     await learner.setViewportSize({width: 390, height: 844});
@@ -275,6 +279,9 @@ function acceptsTarget(req, origin) {
     assert.equal(await learner.getByLabel('Texto da anotação', {exact: true}).inputValue(), 'Alteração local ainda não enviada.');
     noteList = await (await studentContext.request.get(origin + '/api/notes/')).json();
     assert.equal(noteList.count, 1); assert.equal(noteList.results[0].version, 3);
+    const flashcardsWorkflow = await require('./flashcards.cjs')(learner, studentContext, origin, config.evidence, kind => {if (kind === 'conflict') expectedFlashcardConflict += 1; else expectedLostFlashcard += 1;});
+    assert.equal(expectedLostFlashcard, 0);
+    assert.equal(expectedFlashcardConflict, 0);
     await learner.goto(readingUrl);
     await learner.getByRole('heading', {name: 'Direitos fundamentais: roteiro de estudo', exact: true}).waitFor();
     await learner.getByRole('link', {name: 'Praticar esta disciplina', exact: true}).click();
@@ -502,7 +509,7 @@ function acceptsTarget(req, origin) {
     await accountAdmin.getByRole('button', {name: 'Salvar limites', exact: true}).click();
     await accountAdmin.getByText('Limites gerais salvos. Arquivos existentes permanecem preservados.', {exact: true}).waitFor();
     assert.deepEqual(errors, []);
-    const result = {workflow: 'PASS', richEditor, subscriptionsWorkflow: 'plan-enrollment-suspend-search-global-limits PASS', accountsWorkflow: 'create-edit-roles-disable-enable-revoke-smtp-state PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
+    const result = {workflow: 'PASS', richEditor, flashcardsWorkflow, subscriptionsWorkflow: 'plan-enrollment-suspend-search-global-limits PASS', accountsWorkflow: 'create-edit-roles-disable-enable-revoke-smtp-state PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
       studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));

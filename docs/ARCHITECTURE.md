@@ -71,4 +71,6 @@ Visual content uses a bounded rich-text AST inside ContentVersion.structured_dat
 
 Personal notes have owner-scoped creation receipts, optimistic editing and optional reviewed publication references. The library uses canonical paginated API data; browser recovery holds only unconfirmed text and reconciles before resending. Deletion remains disabled until receipts can survive it. See [P4-ANOTACOES.md](P4-ANOTACOES.md).
 
+Personal flashcards use the existing owned models with optimistic versions and append-only review receipts. Server-side recall scheduling freezes the text actually reviewed; subsequent edits reset the due queue while preserving history. Legacy scheduling is migrated from the latest review by the card owner. The library provides explicit comparison for stale drafts and keeps temporary recovery separate from canonical data. See [P4-FLASHCARDS.md](P4-FLASHCARDS.md).
+
 Database reconciliation supports the old schema before migrations and grants runtime access only after explicit reconciliation. Editorial transitions lock the mutable workflow and parent content, preserving immutable version ACLs. A real restored database passed forward migrations as `kairos_migrator` and synthetic HTTP API workflows as `kairos_runtime`; production activation remains separate. See [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md).

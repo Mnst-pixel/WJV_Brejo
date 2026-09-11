@@ -36,6 +36,8 @@ Subscription decisions require MFA, settings permission, an actor/target/state-b
 
 Rich text accepts a bounded AST with fixed block kinds and boolean emphasis marks. Revision commands validate API and form input centrally; approval/publication reject malformed or noncanonical stored structure without changing historical receipts. Body and AST must have the same normalized plain projection. Renderers use escaped text and fixed tags, never HTML injection; paste strips rich HTML and external embeds are unsupported.
 
+Flashcards and review history remain private to the authenticated study account. Server commands reject client-controlled ownership, schedule, version and snapshots; mutation locks recheck role/session state. Review UUIDs bind to a card, version and rating, so retries cannot change the prior receipt. Runtime reconciliation denies UPDATE/DELETE of review rows. Personal references are escaped text and never grant legal-review status or publication authority. See [P4-FLASHCARDS.md](P4-FLASHCARDS.md) for the candidate gates.
+
 Bootstrap root and administrator credentials must be rotated by the owner after handoff; Kairós will not rotate them without explicit authorization.
 
 The restricted PostgreSQL roles passed migration and API checks on an isolated copy of the real backup. Runtime cannot alter immutable versions, migration records or schema; workers cannot read authentication secrets; backup ACLs remain read-only even when the session default is disabled. Reconciliation and restore use the fixed local Docker socket with a minimal environment, including timed commands. These checks did not activate the roles in production. Evidence and remaining gates: [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md).

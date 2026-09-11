@@ -360,8 +360,36 @@ class StudyNoteViewSet(OwnedViewSet):
 
 
 class FlashcardViewSet(OwnedViewSet):
-    queryset = Flashcard.objects.all()
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+    queryset = Flashcard.objects.select_related("subject", "topic")
     serializer_class = FlashcardSerializer
+
+    def get_queryset(self):
+        from core.personal_flashcards import filter_cards
+        query = super().get_queryset()
+        return filter_cards(query, self.request.query_params) if self.action == "list" else query
+
+    @action(detail=True, methods=["post"])
+    def review(self, request, pk=None):
+        from core.personal_flashcards import review_card
+        from core.serializers import FlashcardReviewCommand
+        card = self.get_object()
+        command = FlashcardReviewCommand(data=request.data)
+        command.is_valid(raise_exception=True)
+        receipt = review_card(request.user, card.pk, command.validated_data)
+        return Response(self.review_data(receipt))
+
+    @staticmethod
+    def review_data(receipt):
+        return {"id": str(receipt.pk), "account_id": str(receipt.owner_id), "flashcard": str(receipt.flashcard_id),
+                "rating": receipt.rating, "card_version": receipt.card_version,
+                "reviewed_at": receipt.reviewed_at, "next_review_at": receipt.next_review_at, "snapshot": receipt.snapshot}
+
+    @action(detail=True, methods=["get"])
+    def history(self, request, pk=None):
+        card = self.get_object()
+        page = self.paginate_queryset(card.reviews.filter(owner=request.user).order_by("-reviewed_at", "pk"))
+        return self.get_paginated_response([self.review_data(receipt) for receipt in page])
 
 
 class BookmarkViewSet(OwnedViewSet):

@@ -299,10 +299,49 @@ class StudyNoteSerializer(OwnedSerializer):
 
 
 class FlashcardSerializer(OwnedSerializer):
+    front = serializers.CharField(max_length=10000, trim_whitespace=False)
+    back = serializers.CharField(max_length=20000, trim_whitespace=False)
+    source_reference = serializers.CharField(max_length=2000, allow_blank=True, required=False, trim_whitespace=False)
+    expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
+    expected_owner = serializers.UUIDField(write_only=True, required=False)
+    creation_key = serializers.UUIDField(write_only=True, required=False)
+    archived = serializers.BooleanField(write_only=True, required=False)
+    account_id = serializers.UUIDField(source="owner_id", read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
+
+    def validate(self, attrs):
+        if {"owner", "account_id", "version", "next_review_at", "archived_at", "creation_payload_hash"} & set(self.initial_data):
+            raise serializers.ValidationError("Conta, versão e agenda são controladas pelo servidor.")
+        for key in ("front", "back"):
+            if key in attrs and not attrs[key].strip():
+                raise serializers.ValidationError({key: "Preencha o texto do cartão."})
+        return attrs
+
+    def create(self, validated_data):
+        from core.personal_flashcards import create_card
+        validated_data.pop("owner", None)
+        return create_card(self.context["request"].user, validated_data)
+
+    def update(self, instance, validated_data):
+        from core.personal_flashcards import update_card
+        return update_card(self.context["request"].user, instance.pk, validated_data)
+
     class Meta:
         model = Flashcard
-        fields = ["id", "subject", "topic", "front", "back", "source_reference", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = ["id", "account_id", "subject", "subject_name", "topic", "front", "back", "source_reference", "version", "next_review_at", "archived_at", "expected_version", "expected_owner", "creation_key", "archived", "created_at", "updated_at"]
+        read_only_fields = ["id", "version", "next_review_at", "archived_at", "created_at", "updated_at"]
+
+
+class FlashcardReviewCommand(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    expected_version = serializers.IntegerField(min_value=1)
+    expected_owner = serializers.UUIDField(required=False)
+    idempotency_key = serializers.UUIDField()
+
+    def validate(self, attrs):
+        if set(self.initial_data) - set(self.fields):
+            raise serializers.ValidationError("A agenda e o histórico são calculados pelo servidor.")
+        return attrs
 
 
 class BookmarkSerializer(OwnedSerializer):
