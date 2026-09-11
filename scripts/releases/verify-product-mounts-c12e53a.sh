@@ -61,7 +61,7 @@ for service in ['redis','edge','wordpress']:
     require(checked(docker+['image','inspect','--format','{{.Id}}',images[service]])==images[service])
     require(set(json.loads(checked(docker+['image','inspect','--format','{{json .Config.Volumes}}',images[service]])) or {})<=expected_volumes[service])
 require('userns' not in checked(docker+['info','--format','{{json .SecurityOptions}}']))
-redis_live=json.loads(checked(docker+['container','inspect','--format','{"id":{{json .Id}},"image":{{json .Image}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"service":{{json (index .Config.Labels "com.docker.compose.service")}}','kairos-redis-1']))
+redis_live=json.loads(checked(docker+['container','inspect','--format','{"id":{{json .Id}},"image":{{json .Image}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"service":{{json (index .Config.Labels "com.docker.compose.service")}}}','kairos-redis-1']))
 require(redis_live['image']==images['redis'] and redis_live['project']=='kairos' and redis_live['service']=='redis' and re.fullmatch(r'[a-f0-9]{64}',redis_live['id']))
 uid=int(checked(docker+['exec',redis_live['id'],'id','-u','redis']))
 gid=int(checked(docker+['exec',redis_live['id'],'id','-g','redis']))
@@ -128,7 +128,7 @@ try:
                 require(len(ids)<=1)
                 if ids:
                     identity=ids[0];require(re.fullmatch(r'[a-f0-9]{64}',identity) and (not expected['id'] or expected['id']==identity))
-                    details=json.loads(checked(docker+['container','inspect','--format','{"name":{{json .Name}},"image":{{json .Image}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"run":{{json (index .Config.Labels "com.kairos.mount.probe")}}',identity]))
+                    details=json.loads(checked(docker+['container','inspect','--format','{"name":{{json .Name}},"image":{{json .Image}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"run":{{json (index .Config.Labels "com.kairos.mount.probe")}}}',identity]))
                     require(details=={'name':'/'+name,'image':expected['image'],'project':'kairos','run':runid})
                     checked(docker+['rm','-f',identity])
                 report['cleanup'][name]='PASS'
