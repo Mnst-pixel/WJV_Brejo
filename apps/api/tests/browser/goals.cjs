@@ -1,0 +1,73 @@
+const assert = require('node:assert/strict');
+const {join} = require('node:path');
+
+module.exports = async function goals(page, context, origin, evidence, expectFailure) {
+  await page.goto(origin + '/app/metas');
+  await page.getByLabel('O que você quer alcançar?', {exact: true}).fill('Consolidar minhas revisões');
+  await page.getByLabel('O que acompanhar?', {exact: true}).selectOption('flashcard_reviews');
+  await page.getByLabel('Quantidade desejada', {exact: true}).fill('01');
+  await page.getByLabel('Detalhes do plano', {exact: true}).fill('Meu plano <img src=x onerror=alert(1)>');
+  expectFailure();
+  await page.route('**/api/goals/', async route => {
+    if (route.request().method() !== 'POST') return route.continue();
+    const response = await route.fetch(); assert.equal(response.status(), 201); await route.abort('failed');
+  }, {times: 1});
+  await page.getByRole('button', {name: 'Salvar meta', exact: true}).click();
+  await page.getByText('Confira o salvamento antes de repetir.', {exact: false}).waitFor();
+  page.once('dialog', dialog => dialog.accept()); await page.reload();
+  await page.getByRole('button', {name: 'Conferir salvamento da meta', exact: true}).click();
+  await page.getByText('Salvamento confirmado no servidor.', {exact: true}).waitFor();
+  const list = await (await context.request.get(origin + '/api/goals/?mode=all')).json();
+  assert.equal(list.count, 1); const id = list.results[0].id;
+  assert.equal(list.results[0].progress, 100); assert.equal(list.results[0].measured_value, 1);
+  assert.equal(await page.getByRole('progressbar', {name: 'Progresso da meta'}).getAttribute('value'), '100');
+  assert.equal(await page.locator('.goals-workspace img').count(), 0);
+  await page.getByLabel('Detalhes do plano', {exact: true}).fill('Plano confirmado após falha na resposta.');
+  expectFailure();
+  await page.route(`**/api/goals/${id}/`, async route => {
+    const response = await route.fetch(); assert.equal(response.status(), 200); await route.abort('failed');
+  }, {times: 1});
+  await page.getByRole('button', {name: 'Salvar meta', exact: true}).click();
+  await page.getByText('Confira o salvamento antes de repetir.', {exact: false}).waitFor();
+  await page.getByRole('button', {name: 'Conferir salvamento da meta', exact: true}).click();
+  await page.getByText('Salvamento confirmado no servidor.', {exact: true}).waitFor();
+  await page.getByLabel('Detalhes do plano', {exact: true}).fill('Rascunho pessoal ainda não enviado.');
+  assert.equal(await page.getByRole('button', {name: 'Nova meta', exact: true}).isDisabled(), true);
+  page.once('dialog', dialog => dialog.accept()); await page.reload();
+  await page.getByRole('button', {name: 'Conferir salvamento da meta', exact: true}).click();
+  await page.getByText('Rascunho ainda não confirmado.', {exact: false}).waitFor();
+  assert.equal(await page.getByLabel('Detalhes do plano', {exact: true}).inputValue(), 'Rascunho pessoal ainda não enviado.');
+  await page.waitForFunction(() => [...document.querySelectorAll('button')].some(button => button.textContent === 'Salvar meta' && !button.disabled));
+  await page.getByRole('button', {name: 'Salvar meta', exact: true}).focus(); await page.keyboard.press('Enter');
+  await page.getByText('Meta salva na sua conta.', {exact: true}).waitFor();
+  await page.getByLabel('Detalhes do plano', {exact: true}).fill('Meu plano preservado na comparação.');
+  const csrf = await (await context.request.get(origin + '/api/auth/csrf')).json();
+  const external = await context.request.patch(origin + `/api/goals/${id}/`, {data: {title: 'Plano alterado em outra aba', expected_version: 3}, headers: {'X-CSRFToken': csrf.csrfToken}});
+  assert.equal(external.status(), 200);
+  expectFailure('conflict');
+  await page.getByRole('button', {name: 'Salvar meta', exact: true}).click();
+  await page.getByText('Confira o salvamento antes de repetir.', {exact: false}).waitFor();
+  await page.getByRole('button', {name: 'Conferir salvamento da meta', exact: true}).click();
+  await page.getByRole('region', {name: 'Comparar meta salva'}).getByText('Plano alterado em outra aba', {exact: true}).waitFor();
+  await page.getByRole('button', {name: 'Manter meu plano em edição', exact: true}).click();
+  assert.equal(await page.getByLabel('Detalhes do plano', {exact: true}).inputValue(), 'Meu plano preservado na comparação.');
+  await page.getByRole('button', {name: 'Salvar meta', exact: true}).click();
+  await page.getByText('Meta salva na sua conta.', {exact: true}).waitFor();
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({width, height: width === 390 ? 844 : 1000});
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  }
+  await page.setViewportSize({width: 390, height: 844});
+  await page.evaluate(() => {document.activeElement?.blur(); window.scrollTo({top: 0, behavior: 'instant'});});
+  await page.screenshot({path: join(evidence, 'goals-mobile.png'), fullPage: true});
+  await page.getByRole('button', {name: 'Arquivar meta', exact: true}).click();
+  await page.getByRole('button', {name: 'Reativar meta', exact: true}).waitFor();
+  await page.getByLabel('Exibir metas', {exact: true}).selectOption('archived');
+  await page.getByRole('button', {name: 'Atualizar metas', exact: true}).click();
+  await page.locator('.goal-list').getByText('Consolidar minhas revisões', {exact: true}).waitFor();
+  await page.getByRole('button', {name: 'Reativar meta', exact: true}).click();
+  await page.getByRole('button', {name: 'Arquivar meta', exact: true}).waitFor();
+  const final = await (await context.request.get(origin + `/api/goals/${id}/`)).json();
+  assert.equal(final.version, 7); assert.equal(final.progress, 100); assert.equal(final.archived_at, null);
+  return 'canonical-measurement-create-replay-lost-patch-draft-recovery-conflict-archive-mobile PASS';
+};

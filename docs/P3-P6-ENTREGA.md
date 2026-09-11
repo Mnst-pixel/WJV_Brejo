@@ -4,7 +4,7 @@ Execução incremental iniciada em 10/09/2026 a partir de `8a36d5fc993a26f621462
 
 **Entrega em andamento. PRODUCT_CORE_READY=NO.** A aprovação do trabalho P0–P2 autoriza a próxima implementação; não transforma os gates operacionais pendentes em evidências de produção.
 
-Revalidação mais recente: **11/09/2026 06:22:22 UTC**, antes da imagem de flashcards. Checkout/API/imagem/Compose continuam nos valores históricos abaixo, serviços saudáveis e sem reinícios, worker sem healthcheck, 19 migrations/3 usuários, papel PostgreSQL ainda privilegiado e pointer ausente. Disco livre49.175.019.520bytes; memória5.032.236KiB. Timers ativos/habilitados; backup043307 de68.909.504bytes, root0600/checksumPASS, restore previamente comprovado. Recibo `modernizacao/evidencias/p3-runtime-state-before-flashcards-image.json`. Nenhum deploy P3–P6 executado.
+Revalidação mais recente: **11/09/2026 07:03:46 UTC**, antes da imagem de metas. Checkout/API/imagem/Compose continuam nos valores históricos abaixo, serviços saudáveis e sem reinícios, worker sem healthcheck, 19 migrations/3 usuários, papel PostgreSQL ainda privilegiado e pointer ausente. Disco livre49.020.174.336bytes; memória5.014.676KiB. Timers ativos/habilitados. Novo backup automático `kairos-20260911T062755Z.tar.gz.enc`,68.907.168bytes/root0600/checksumPASS; restore deste arquivo ainda não ensaiado (o backup043307 tem restore comprovado). Recibo `modernizacao/evidencias/p3-runtime-state-before-goals-image.json`. Nenhum deploy P3–P6 executado.
 
 ## Baseline imediatamente anterior
 
@@ -226,12 +226,13 @@ Imagem do editor visual: commit `227609e2f5ebd1302c363141bfc939d3444f0d9d`; font
 | Planos, matrículas e limites | Formulários e decisões transacionais | API, B independente, E2E e imagem Linux | Não | Não | Release; cobrança não implementada | `test_subscription_workspace.py`, `P3-ASSINATURAS.md` |
 | Painel de operação completo | Parcial | Recortes P0–P3 | Não | Não | Saúde/ingestão/jobs/armazenamento em visão integrada | Entrega P0–P2 e matriz atual |
 | Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente, E2E e imagem Linux | Não | Autoria em candidato | Release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
-| Metas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Metas quantitativas e evolução das jornadas | Entrega P0–P2 |
+| Metas quantitativas | Métricas canônicas, períodos, disciplina, prioridade, replay/versão/recuperação | API/B/E2E real; PostgreSQL pendente | Não | Não se aplica às metas privadas | Imagem/release/deploy; agenda detalhada | `P4-METAS.md`, `test_quantitative_goals.py`, `goals.cjs` |
+| Arquivos e Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Evolução das jornadas | Entrega P0–P2 |
 | Biblioteca e anotações privadas | Catálogo, criação, edição, busca, referência histórica e recuperação | API/B/E2E real e imagem PostgreSQL | Não | Não se aplica ao texto privado | Release e demais recursos da biblioteca | `P4-ANOTACOES.md`, `test_personal_notes.py`, screenshot mobile |
 | Flashcards pessoais e revisão | Criação/edição/agenda/histórico/arquivo, conflitos e recuperação | API/B/E2E real e imagem PostgreSQL | Não | Não se aplica ao texto privado | Imagem web, release e deploy | `P4-FLASHCARDS.md`, `test_personal_flashcards.py`, `flashcards.cjs` |
 | Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC, E2E real e imagem PostgreSQL | Não | Não | Sessões personalizadas completas e deploy | `f391a46`, `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
 | Simulado 1ª fase, autosave e nota | Caderno, filtros, timer, marcas, recuperação, envio e resultado | API, E2E com perda de resposta e imagem Linux | Não | Autoria de caderno em candidato | Combinação de cadernos, analytics ampliado e deploy | `test_simulation_builder.py`, `editorial-browser.json` |
-| Analytics pedagógicos | Diário, disciplina/tema na API, acurácia, sequência e recomendações | API/ownership/formal e E2E dashboard | Não | Não | Comparação de provas, tempo médio e metas quantitativas | `test_learning.py`, `P4-ESTUDO.md` |
+| Analytics pedagógicos | Diário, disciplina/tema na API, acurácia, sequência e recomendações | API/ownership/formal e E2E dashboard | Não | Não | Comparação de provas e tempo médio | `test_learning.py`, `P4-ESTUDO.md` |
 | Casos/peças/espelhos de 2ª fase | Modelos, formulários, critérios, ordenação, workflow e prévia integral | API/RBAC, E2E e imagem Linux | Não | Não | Grants, release e correção operacional futura | `test_second_phase.py`, `P6-SEGUNDA-FASE.md` |
 | Prova 2ª fase, autosave e submissão | Catálogo, peça/discursivas, recuperação, envio e histórico | API/E2E com perda de confirmação e concorrência PostgreSQL | Não | Não | Release; corretor avançado na fase seguinte | `editorial-browser.json`, `test_second_phase_concurrency.py` |
 
@@ -253,7 +254,7 @@ Coleta real passou em 03:50:41 UTC: 72 containers/18 Kairós/27 redes; estado `4
 
 B final repetido: **34 testes PASS/10 skips POSIX locais** e **53 controles independentes PASS**, sem achado reproduzível remanescente. Hashes de modelo/IO conferem com a execução Linux A final. O receipt sem mudanças não fecha P1 e não transforma as funcionalidades candidatas em funcionalidades disponíveis em produção.
 
-Usuários, planos, editor visual, leitura e notas já compõem o candidato testado. Concluir as demais áreas do painel, metas quantitativas, flashcards e ampliações de simulados/analytics da matriz. Os quatro E2E exigidos foram executados no candidato; a disponibilidade em produção ainda depende da ativação operacional e da release coerente. Cada lote recebe evidências A/B, documentação e homologação antes da implantação.
+Usuários, planos, editor visual, leitura e notas já compõem o candidato testado. Concluir as demais áreas do painel, agenda/plano de estudo e ampliações de simulados/analytics da matriz. Flashcards e metas quantitativas têm implementações candidatas descritas abaixo. Os quatro E2E exigidos foram executados no candidato; a disponibilidade em produção ainda depende da ativação operacional e da release coerente. Cada lote recebe evidências A/B, documentação e homologação antes da implantação.
 
 ### Grants, migrations e recuperação do candidato de produto
 
@@ -274,5 +275,7 @@ Observação do worker legado e ensaio isolado de manutenção: **PASS**, sem im
 Flashcards: criação/edição privadas, agenda determinística, recibos históricos imutáveis, arquivamento, recuperação por conta e comparação de conflitos implementados. Migration0016 preserva texto/timestamps e última agenda própria do legado. A final588API PASS/32skips, Ruff/build/TS/ESLint PASS; E2E integrado49,60sPASS, um cartão v8 e uma revisão, incluindo perda de confirmação e conflito real. B backend80PASS/3skips; B UI21probes/18APIPASS, revisão visual final em fechamento. Nenhum deploy; PostgreSQL real ainda pendente. Arquivos, falhas corrigidas e rollback em [P4-FLASHCARDS.md](P4-FLASHCARDS.md).
 
 Imagem de flashcards aprovada: commit **5a5e82e**, API `sha256:7daa1078564a1b7cf63873278b742b94fb7a45125d415b01e038b605ba3be0e9`, parser `sha256:78c8fa535673ec9fa6cbd9092acfd637378b5575e44b7d08f0f96db2c96f0573`. **619 API +268 operações +13 contratos Git PASS**; skips explicitados no guia. Concorrência/migration/privilégios PostgreSQL e no-touch v2 PASS. B UI final repetida21probes/Chromium/screenshotPASS. Sem deploy; imagem web/descriptor novo ainda necessários. Evidência `p0p2-candidate-20260911T062434Z.json`; detalhes e rollback em [P4-FLASHCARDS.md](P4-FLASHCARDS.md).
+
+Metas quantitativas: formulário do aluno, métricas de questões/minutos registrados/simulados/revisões, conta e período canônicos, prioridade, filtro por disciplina, arquivo/reativação, replay, versão e recuperação implementados. Migration0017 preserva metas manuais. A final611API PASS/34skips, Ruff/build/TypeScript/ESLintPASS; B backend83PASS, B UI21probes/27APIPASS; E2E final54,95sPASS e390/768/1440sem overflow. PostgreSQL real pendente de imagem, sem deploy. Detalhes em [P4-METAS.md](P4-METAS.md).
 
 `PRODUCT_CORE_READY=NO`

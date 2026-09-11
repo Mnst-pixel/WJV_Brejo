@@ -106,6 +106,11 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     assert result["accountsWorkflow"].endswith("PASS")
     assert result["subscriptionsWorkflow"].endswith("PASS")
     assert result["flashcardsWorkflow"].endswith("PASS")
+    assert result["goalsWorkflow"].endswith("PASS")
+    from core.models import Goal
+    goal = Goal.objects.get()
+    assert goal.version == 7 and goal.metric == "flashcard_reviews" and goal.progress == 0
+    assert goal.description == "Meu plano preservado na comparação." and goal.archived_at is None
     from core.models import Flashcard, FlashcardReview
     assert Flashcard.objects.get().version == 8
     assert FlashcardReview.objects.get().snapshot["front"] == "Pergunta pessoal para revisão espaçada"

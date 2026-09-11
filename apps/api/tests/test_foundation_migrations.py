@@ -17,6 +17,7 @@ def test_legacy_attempt_preserved_and_machine_migration_reversible():
         old = executor.loader.project_state([("core", "0001_initial")]).apps
         user = old.get_model("core", "User").objects.create(username="migration-synthetic", password="!")
         note = old.get_model("core", "StudyNote").objects.create(owner_id=user.pk, title="Historical note", body="Exact text\n\n  ", version=9)
+        goal = old.get_model("core", "Goal").objects.create(owner_id=user.pk, title="Historical goal", progress=100, completed_at=timezone.now(), target_date=timezone.localdate())
         card = old.get_model("core", "Flashcard").objects.create(owner_id=user.pk, front="Historical question", back="Exact answer\n  ", source_reference="Legacy personal source")
         due = timezone.now() + timedelta(days=14)
         review = old.get_model("core", "FlashcardReview").objects.create(owner_id=user.pk, flashcard_id=card.pk, rating=4, next_review_at=due)
@@ -26,8 +27,11 @@ def test_legacy_attempt_preserved_and_machine_migration_reversible():
         attempt = old.get_model("core", "Attempt").objects.create(owner_id=user.pk, simulation_id=simulation.pk, elapsed_seconds=123, version=2)
         executor = MigrationExecutor(connection)
         executor.migrate(latest)
-        from core.models import Attempt, Flashcard, FlashcardReview, StudyNote, User
+        from core.models import Attempt, Flashcard, FlashcardReview, Goal, StudyNote, User
         def check_note():
+            restored_goal = Goal.objects.get(pk=goal.pk)
+            assert (restored_goal.title, restored_goal.progress, restored_goal.completed_at, restored_goal.target_date, restored_goal.created_at, restored_goal.updated_at) == (goal.title, goal.progress, goal.completed_at, goal.target_date, goal.created_at, goal.updated_at)
+            assert restored_goal.metric == "manual" and restored_goal.version == 1 and restored_goal.target_value is None and restored_goal.creation_key is None
             restored_note = StudyNote.objects.get(pk=note.pk)
             assert (restored_note.owner_id, restored_note.title, restored_note.body, restored_note.version, restored_note.created_at, restored_note.updated_at) == (user.pk, note.title, note.body, 9, note.created_at, note.updated_at)
             assert restored_note.content_version_id is None and restored_note.creation_key is None and restored_note.creation_payload_hash == ""

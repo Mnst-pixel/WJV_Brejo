@@ -580,14 +580,38 @@ class OwnedModel(TimeStampedModel):
 
 
 class Goal(OwnedModel):
+    class Metric(models.TextChoices):
+        MANUAL = "manual", "Conclusão manual"
+        QUESTIONS = "questions", "Questões respondidas"
+        MINUTES = "study_minutes", "Minutos de estudo registrados"
+        SIMULATIONS = "simulations", "Simulados concluídos"
+        REVIEWS = "flashcard_reviews", "Revisões de flashcards"
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     target_date = models.DateField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     progress = models.PositiveSmallIntegerField(default=0)
+    metric = models.CharField(max_length=24, choices=Metric.choices, default=Metric.MANUAL)
+    target_value = models.PositiveIntegerField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT, null=True, blank=True)
+    priority = models.PositiveSmallIntegerField(default=2)
+    version = models.PositiveIntegerField(default=1)
+    creation_key = models.UUIDField(null=True, blank=True, editable=False)
+    creation_payload_hash = models.CharField(max_length=64, blank=True, editable=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        constraints = [models.CheckConstraint(condition=Q(progress__lte=100), name="goal_progress_lte_100")]
+        constraints = [
+            models.CheckConstraint(condition=Q(progress__lte=100), name="goal_progress_lte_100"),
+            models.CheckConstraint(condition=Q(metric__in=["manual", "questions", "study_minutes", "simulations", "flashcard_reviews"]), name="goal_valid_metric"),
+            models.CheckConstraint(condition=Q(metric="manual") | (Q(target_value__isnull=False, target_value__gte=1, target_value__lte=100000, start_date__isnull=False, target_date__isnull=False, progress=0, completed_at__isnull=True) & Q(target_date__gte=models.F("start_date"))), name="goal_quantitative_shape"),
+            models.CheckConstraint(condition=Q(subject__isnull=True) | Q(metric="questions"), name="goal_subject_questions_only"),
+            models.CheckConstraint(condition=Q(priority__gte=1, priority__lte=3), name="goal_priority_range"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="goal_positive_version"),
+            models.UniqueConstraint(fields=["owner", "creation_key"], condition=Q(creation_key__isnull=False), name="goal_owner_creation_key"),
+        ]
 
 
 class StudyNote(OwnedModel):

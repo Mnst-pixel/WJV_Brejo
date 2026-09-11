@@ -344,8 +344,14 @@ class OwnedViewSet(viewsets.ModelViewSet):
 
 
 class GoalViewSet(OwnedViewSet):
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
     queryset = Goal.objects.all()
     serializer_class = GoalSerializer
+
+    def get_queryset(self):
+        from core.personal_goals import filter_goals, measured
+        query = measured(super().get_queryset())
+        return filter_goals(query, self.request.query_params) if self.action == "list" else query
 
 
 class StudyNoteViewSet(OwnedViewSet):

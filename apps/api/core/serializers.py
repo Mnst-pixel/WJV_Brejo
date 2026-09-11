@@ -240,38 +240,49 @@ class OwnedSerializer(serializers.ModelSerializer):
 
 class GoalSerializer(OwnedSerializer):
     progress = serializers.IntegerField(min_value=0, max_value=100, required=False)
+    description = serializers.CharField(max_length=5000, allow_blank=True, required=False)
+    target_value = serializers.IntegerField(min_value=1, max_value=100000, allow_null=True, required=False)
+    priority = serializers.IntegerField(min_value=1, max_value=3, required=False)
+    expected_version = serializers.IntegerField(min_value=1, write_only=True, required=False)
+    expected_owner = serializers.UUIDField(write_only=True, required=False)
+    creation_key = serializers.UUIDField(write_only=True, required=False)
+    archived = serializers.BooleanField(write_only=True, required=False)
+    account_id = serializers.UUIDField(source="owner_id", read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
+    measured_value = serializers.FloatField(read_only=True)
+    measured_at = serializers.DateTimeField(read_only=True)
+    achieved = serializers.SerializerMethodField()
+
+    def get_achieved(self, obj):
+        from core.personal_goals import effective_progress
+        return effective_progress(obj) == 100
+
+    def to_representation(self, obj):
+        from core.personal_goals import effective_progress
+        result = super().to_representation(obj)
+        result["progress"] = effective_progress(obj)
+        return result
 
     def validate(self, attrs):
-        if "completed_at" in self.initial_data:
-            raise serializers.ValidationError("A conclusão é registrada automaticamente pelo progresso.")
+        if {"owner", "account_id", "version", "completed_at", "measured_value", "measured_at", "achieved", "archived_at", "creation_payload_hash"} & set(self.initial_data):
+            raise serializers.ValidationError("Conta, versão e medição são controladas pelo servidor.")
+        if self.instance and "expected_version" not in attrs:
+            raise serializers.ValidationError({"expected_version": "Confira a versão salva antes de alterar a meta."})
         return attrs
 
     def create(self, validated_data):
-        from django.db import transaction
-        from django.utils import timezone
-        from core.services.study_state import _lock
-        with transaction.atomic():
-            _lock(self.context["request"].user)
-            validated_data["completed_at"] = timezone.now() if validated_data.get("progress", 0) == 100 else None
-            return super().create(validated_data)
+        from core.personal_goals import create_goal
+        validated_data.pop("owner", None)
+        return create_goal(self.context["request"].user, validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
-        from django.shortcuts import get_object_or_404
-        from django.utils import timezone
-        from core.services.study_state import _lock
-        user = self.context["request"].user
-        with transaction.atomic():
-            _lock(user)
-            current = get_object_or_404(Goal.objects.select_for_update(), pk=instance.pk, owner=user)
-            progress = validated_data.get("progress", current.progress)
-            validated_data["completed_at"] = (current.completed_at or timezone.now()) if progress == 100 else None
-            return super().update(current, validated_data)
+        from core.personal_goals import update_goal
+        return update_goal(self.context["request"].user, instance.pk, validated_data)
 
     class Meta:
         model = Goal
-        fields = ["id", "title", "description", "target_date", "completed_at", "progress", "created_at", "updated_at"]
-        read_only_fields = ["id", "completed_at", "created_at", "updated_at"]
+        fields = ["id", "account_id", "title", "description", "metric", "target_value", "start_date", "target_date", "subject", "subject_name", "priority", "completed_at", "progress", "achieved", "measured_value", "measured_at", "version", "creation_key", "expected_owner", "expected_version", "archived", "archived_at", "created_at", "updated_at"]
+        read_only_fields = ["id", "completed_at", "version", "archived_at", "created_at", "updated_at"]
 
 
 class StudyNoteSerializer(OwnedSerializer):

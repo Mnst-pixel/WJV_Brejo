@@ -77,7 +77,8 @@ class LearningDashboardView(APIView):
             cursor -= timedelta(days=1)
         completed = StudyProgress.objects.filter(owner=request.user, target_kind="content", percent=100,
             content_version_id__in=published_content().values("current_version_id"))
-        goal = Goal.objects.filter(owner=request.user, progress__lt=100).order_by(F("target_date").asc(nulls_last=True), "created_at").first()
+        from core.personal_goals import incomplete, measured
+        goal = incomplete(measured(Goal.objects.filter(owner=request.user, archived_at__isnull=True))).order_by(F("target_date").asc(nulls_last=True), "priority", "created_at").first()
         next_step = resume()
         if not next_step and goal and goal.target_date and goal.target_date <= today:
             next_step = {"kind": "goal", "title": goal.title, "reason": "Sua meta tem prazo próximo ou já chegou à data planejada.", "href": "/metas"}
