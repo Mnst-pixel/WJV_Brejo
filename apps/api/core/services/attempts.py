@@ -96,9 +96,11 @@ def _definition(simulation, *, require_approval):
 
 
 def ensure_results_unlocked(owner, *, exclude_attempt=None):
+    from core.second_phase_models import WrittenSubmission
     # Inspect immutable captured mode, not a mutable simulation relationship.
     formal = Q(frozen_definition__mode="formal") | Q(frozen_definition={}, simulation__mode="formal")
-    if Attempt.objects.filter(formal, owner=owner, status="active").exclude(pk=exclude_attempt).exists():
+    if (Attempt.objects.filter(formal, owner=owner, status="active").exclude(pk=exclude_attempt).exists() or
+            WrittenSubmission.objects.filter(owner=owner, status="active", mode="formal").exists()):
         raise Conflict("Finalize o simulado formal em andamento antes de consultar gabaritos de outras tentativas.")
 
 

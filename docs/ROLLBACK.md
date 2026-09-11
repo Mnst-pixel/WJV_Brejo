@@ -15,3 +15,5 @@ The canonical transition must preserve the prior checkout, image IDs, effective 
 If rollback would require changing host Nginx, firewall, Docker daemon, or an unrelated project, stop and request explicit owner direction.
 
 Product simulation migrations 0009/0010 are additive. Prefer retaining schema, preparation fingerprints and review flags when returning to a compatible safe artifact; reversing these migrations destroys those fields. Do not reopen vulnerable consultation/MCP paths during rollback. The module contract and pending production gates are in [P5-SIMULADOS.md](P5-SIMULADOS.md).
+
+Second-phase migration 0011 adds written submissions, responses, checkpoints and editorial/correction structures. Preserve these tables on artifact rollback. Dropping them would discard student texts and approval evidence; whole-database recovery requires reconciliation of post-backup submissions. See [P6-SEGUNDA-FASE.md](P6-SEGUNDA-FASE.md).

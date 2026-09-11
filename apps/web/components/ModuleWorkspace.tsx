@@ -8,6 +8,7 @@ import {useStudyPreferences} from "@/lib/use-study-preferences";
 import {Icon, type IconName} from "./Icon";
 import {QuestionPractice} from "./QuestionPractice";
 import {SimulationWorkspace} from "./SimulationWorkspace";
+import {WrittenExamWorkspace} from "./WrittenExamWorkspace";
 
 export function ModuleWorkspace({module}: {module: string}) {
   const info = moduleInfo[module];
@@ -20,7 +21,7 @@ export function ModuleWorkspace({module}: {module: string}) {
       {module === "simulados" && <SimulationWorkspace/>}
       {module === "questoes" && <QuestionPractice/>}
       {module === "estudar" && <StudyWorkspace/>}
-      {module === "segunda-fase" && <SecondPhaseWorkspace/>}
+      {module === "segunda-fase" && <WrittenExamWorkspace/>}
       {module === "biblioteca" && <LibraryWorkspace/>}
       {module === "configuracoes" && <SettingsWorkspace/>}
     </div>
@@ -179,10 +180,6 @@ function Consultant() {
 
 function StudyWorkspace() {
   return <div className="study-layout"><aside className="topic-rail"><h2>Matérias</h2>{["Ética Profissional","Constitucional","Administrativo","Civil"].map((item,index) => <button className={index === 0 ? "selected" : ""} key={item} type="button"><span>{String(index + 1).padStart(2,"0")}</span>{item}</button>)}</aside><article className="reading-surface"><span className="reading-source">Última revisão humana: pendente de conteúdo oficial</span><h2>Ética Profissional</h2><p>Este espaço reúne conteúdo versionado, tópicos, notas e referências. A versão publicada nunca substitui silenciosamente a anterior.</p><div className="reading-actions"><button type="button"><Icon name="note"/>Adicionar nota</button><button type="button"><Icon name="target"/>Criar meta</button><button type="button"><Icon name="chat"/>Consultar</button></div><EmptyState icon="book" title="Conteúdo em preparação" text="A importação do legado começa como não verificada e exige revisão humana antes de aparecer aqui."/></article></div>;
-}
-
-function SecondPhaseWorkspace() {
-  return <div className="workspace-grid"><section className="work-panel wide"><h2>Editor de peça</h2><div className="piece-outline">{["Competência e endereçamento","Legitimidade","Preliminares","Fundamentos","Pedidos"].map((item,index) => <button key={item} type="button"><span>{index + 1}</span>{item}<Icon name="arrow"/></button>)}</div></section><aside className="work-panel"><h2>Gate de publicação</h2><ul className="check-list pending"><li>Peça determinável</li><li>Espelho versionado</li><li>Pontuação consistente</li><li>Fonte oficial</li><li>Revisão humana</li></ul></aside></div>;
 }
 
 function LibraryWorkspace() {

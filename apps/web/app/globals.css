@@ -658,3 +658,12 @@ html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
 .exam-score { font-size: 1.5rem; color: var(--gold); }
 .simulation-workspace details { border-top: 1px solid var(--line); padding: 16px 0; }
 .simulation-workspace summary { cursor: pointer; }
+.written-workspace { display: grid; gap: 24px; min-width: 0; overflow-wrap: anywhere; }
+.written-workspace .open-row { grid-template-columns: minmax(0, 1fr) auto; gap: 18px; }
+.written-workspace form, .written-workspace label { display: grid; gap: 10px; }
+.written-workspace select { min-height: 48px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--deep-cave); color: var(--text); color-scheme: dark; max-width: 100%; }
+.written-editor textarea { width: 100%; max-width: 100%; min-height: 420px; padding: 24px; margin: 14px 0; background: #efead7; color: #17261f; font: inherit; line-height: 1.8; border-radius: 8px; resize: vertical; }
+.written-editor:fullscreen { overflow: auto; background: var(--deep-cave); padding: 32px max(24px, calc((100vw - 1000px) / 2)); }
+.written-editor .preserve-text { line-height: 1.8; }
+.written-editor textarea[readonly] { min-height: 160px; }
+@media(max-width:600px) { .written-workspace .open-row { grid-template-columns: minmax(0, 1fr); } .written-editor textarea { padding: 16px; } }

@@ -101,6 +101,22 @@ Commit **`61964bbcaed9172e53bab0cf8059b6bf7937e45d`**, enviado ao GitHub. Fonte 
 
 Pendências: composição entre múltiplos cadernos e quotas por disciplina, resultado visual por tema/tempo, tendências/comparação histórica e paginação do catálogo além de 500 cadernos. A segunda fase e as jornadas administrativas restantes continuam pendentes.
 
+### Lote P6 — casos, espelhos e prova escrita
+
+Alteração/motivo: extensão dos modelos existentes de caso/rubrica, com área, metadados temporais, discursivas, critérios individuais, dependências e equivalências. Painel Django oferece criação de área/caderno/caso/espelho, adição/ordenação de itens, prévia reservada integral e decisões editoriais independentes. Next.js substitui a tela demonstrativa por catálogo publicado, editor longo, contador, navegação, autosave, recuperação, tela cheia, histórico e submissão imutável. Estruturas de correção/revisão preparam a fase seguinte; nenhum corretor é declarado operacional.
+
+Arquivos: `core/second_phase_{models,workflow,forms,editorial,views}.py`, `services/written_submissions.py`, migration `0011_second_phase_written_exams`, modelos/admin/rotas, guards de formal, templates e JS editorial, `WrittenExamWorkspace.tsx`, ModuleWorkspace/CSS, testes API/concorrência/navegador e SQL de privilégios. Guia: [P6-SEGUNDA-FASE.md](P6-SEGUNDA-FASE.md).
+
+Bugs encontrados/corrigidos: envio aceitava conjunto de respostas incompleto/adulterado; formulário genérico podia restaurar ponteiro de caso antigo; editor conseguia arquivar publicação; locks de responsáveis precisavam ordem consistente; rubricas e novas tabelas precisavam grants imutáveis; caderno duplicado produzia 500; revisão omitia contexto reservado e dependências; setas não alteravam ordem real e renomear referência apagava dependência silenciosamente. Corrigidos com bloqueios backend, projeção completa para revisão, erros de formulário e preservação explícita de referência órfã.
+
+Migration 0011 é aditiva, sem publicação/conversão de conteúdo legado. Rollback mantém tabelas, textos, checkpoints e recibos; não reverter schema destrutivamente. Deploy exige restore/migrations reais e reconciliação dos grants antes de ativar as rotas.
+
+Testes parciais já obtidos: **500 API PASS/23 skips**, **E2E das quatro jornadas PASS em 23,92 s**, incluindo gravação de texto longo seguida de perda intencional da resposta HTTP, refresh e envio da peça/discursiva. Revisão B backend após correções de formulário: **102 PASS/2 skips**, SQL **9 PASS/7 skips**; catálogo **14 queries para 1 e 10 casos**. Build/TypeScript/ESLint/Ruff e migrations sem drift passaram. Após os últimos ajustes de ordenação/dependências/foco, as verificações completas estão sendo repetidas. PostgreSQL inclui três novos cenários concorrentes, ainda pendentes da imagem exata.
+
+Fechamento A: **500 API PASS/23 skips**, 87,42 s; **E2E completo PASS em 23,78 s**, incluindo setas de ordenação. Build/TypeScript, ESLint, Ruff, migrations sem drift e 9 testes SQL passaram. Screenshot mobile final conferida visualmente, sem overflow e com foco/restauração do scroll. B frontend: **20 testes backend, 10 controles TypeScript, 6 controles Chromium e 4 cenários da fixture PASS**, incluindo dependência órfã preservada e rejeitada pelo Django.
+
+Commit/imagem: em fechamento. Deploy: nenhum. Evidência visual `modernizacao/evidencias/p3-editorial-browser/phase2-submitted-mobile.png`; recibo completo do navegador no mesmo diretório. O lote não está incluído na imagem `61964bb`. Pendências: imagem Linux, restauração/migrations/privilégios reais e release; correção humana/IA operacional é fase posterior.
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -116,8 +132,8 @@ Pendências: composição entre múltiplos cadernos e quotas por disciplina, res
 | Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC, E2E real e imagem PostgreSQL | Não | Não | Sessões personalizadas completas e deploy | `f391a46`, `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
 | Simulado 1ª fase, autosave e nota | Caderno, filtros, timer, marcas, recuperação, envio e resultado | API e E2E com perda de resposta; imagem nova pendente | Não | Autoria de caderno em candidato | Combinação de cadernos, analytics ampliado e deploy | `test_simulation_builder.py`, `editorial-browser.json` |
 | Analytics pedagógicos | Parcial | Consultas básicas | Não verificado | Não | Metas quantitativas, tendências e recomendações determinísticas | Pendente P4/P5 |
-| Casos/peças/espelhos de 2ª fase | Modelos iniciais | Insuficiente | Não | Não | Modelo complementar e editor visual de critérios | Pendente P6 |
-| Prova 2ª fase, autosave e submissão | Não completa | Não | Não | Não | Editor, recuperação, envio imutável e histórico | Pendente P6 |
+| Casos/peças/espelhos de 2ª fase | Modelos, formulários, critérios, ordenação, workflow e prévia integral | API/RBAC e E2E; imagem em preparação | Não | Não | Imagem, grants, release e correção operacional futura | `test_second_phase.py`, `P6-SEGUNDA-FASE.md` |
+| Prova 2ª fase, autosave e submissão | Catálogo, peça/discursivas, recuperação, envio e histórico | API/E2E com perda de confirmação; PG pendente | Não | Não | Imagem/release; corretor avançado na fase seguinte | `editorial-browser.json`, `test_second_phase_concurrency.py` |
 
 ## Execução do navegador
 

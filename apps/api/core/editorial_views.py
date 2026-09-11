@@ -43,6 +43,7 @@ def editorial_access(permission):
 
 def context(request, **values):
     return {"can_create": request_has_permission(request, "content.create"),
+            "can_phase2": request_has_permission(request, "case.read"),
             "can_questions": request_has_permission(request, "question.read"),
             "can_edit": request_has_permission(request, "content.edit"), **values}
 

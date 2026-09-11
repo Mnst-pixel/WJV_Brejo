@@ -63,8 +63,10 @@ def validated_context(context):
 
 
 def ensure_no_formal_ai(user):
+    from core.second_phase_models import WrittenSubmission
     formal = Q(frozen_definition__mode="formal") | Q(frozen_definition={}, simulation__mode="formal")
-    if Attempt.objects.filter(formal, owner=user, status=Attempt.Status.ACTIVE).exists():
+    if (Attempt.objects.filter(formal, owner=user, status=Attempt.Status.ACTIVE).exists() or
+            WrittenSubmission.objects.filter(owner=user, status="active", mode="formal").exists()):
         raise PermissionDenied("O assistente permanece bloqueado durante o simulado formal, mesmo sem contexto de tentativa.")
 
 

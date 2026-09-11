@@ -174,9 +174,10 @@ class TopicAdmin(PolicyAdmin):
 
 admin.site.register(models.Topic, TopicAdmin)
 admin.site.register(models.Question, ReadOnlyPolicyAdmin)
+admin.site.register(models.PracticalCase, ReadOnlyPolicyAdmin)
 
 for model in (models.Subject, models.Content, models.SourceRegistry, models.AssetRegistry,
-              models.Exam, models.ExamPhase, models.PracticalCase,
+              models.Exam, models.ExamPhase,
               models.SourceDocument, models.CoverageRecord):
     admin.site.register(model, PolicyAdmin)
 

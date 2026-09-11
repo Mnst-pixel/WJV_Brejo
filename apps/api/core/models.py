@@ -846,3 +846,8 @@ from .upload_models import Enrollment, Plan, UploadPolicy  # noqa: E402,F401
 from .study_models import BrowserImportReceipt, StudyActivity, StudyMark, StudyPanelState, StudyProgress  # noqa: E402,F401
 from .content_models import ContentWorkflow, LegacyContentImport, LegacyContentItem  # noqa: E402,F401
 from .question_models import QuestionMetadata, QuestionWorkflow  # noqa: E402,F401
+from .second_phase_models import (  # noqa: E402,F401
+    SecondPhaseArea, SecondPhaseCaseMetadata, DiscursiveQuestion, RubricCriterionDetails,
+    SecondPhaseWorkflow, WrittenSubmission, WrittenResponse, WrittenCheckpoint,
+    WrittenCorrection, WrittenCorrectionItem, WrittenCorrectionReview,
+)

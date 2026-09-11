@@ -2,9 +2,16 @@ from django.urls import path
 
 from core import editorial_views as views
 from core import question_editorial as questions
+from core import second_phase_editorial as phase2
 
 app_name = "editorial"
 urlpatterns = [
+    path("segunda-fase/", phase2.case_list, name="phase2"),
+    path("segunda-fase/areas/nova/", phase2.area_create, name="phase2-area-create"),
+    path("segunda-fase/provas/nova/", phase2.exam_create, name="phase2-exam-create"),
+    path("segunda-fase/casos/novo/", phase2.case_edit, name="phase2-create"),
+    path("segunda-fase/versoes/<uuid:workflow_id>/", phase2.case_detail, name="phase2-case"),
+    path("segunda-fase/versoes/<uuid:workflow_id>/revisar/", phase2.case_edit, name="phase2-revise"),
     path("questoes/", questions.question_list, name="questions"),
     path("questoes/nova/", questions.question_create, name="question-create"),
     path("questoes/versoes/<uuid:workflow_id>/", questions.question_detail, name="question-version"),

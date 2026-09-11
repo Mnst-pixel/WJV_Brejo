@@ -62,6 +62,8 @@ class DatabaseRolesTests(unittest.TestCase):
         self.assertIn("REVOKE UPDATE,DELETE ON public.core_auditlog FROM kairos_runtime", sql)
         self.assertIn("REVOKE UPDATE,DELETE ON public.core_alternative FROM kairos_runtime", sql)
         self.assertIn("REVOKE UPDATE,DELETE ON public.core_questionmetadata FROM kairos_runtime", sql)
+        for table in ("rubric", "rubriccriterion", "rubriccriteriondetails", "secondphasecasemetadata", "discursivequestion", "writtencheckpoint", "writtencorrection", "writtencorrectionitem", "writtencorrectionreview"):
+            self.assertIn(f"REVOKE UPDATE,DELETE ON public.core_{table} FROM kairos_runtime", sql)
 
     def test_changed_plan_refused_without_any_command(self):
         def fail(*args, **kwargs):
