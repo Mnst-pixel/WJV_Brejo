@@ -1,21 +1,24 @@
 set -Eeuo pipefail
 /usr/bin/python3 -I - <<'PY'
-import datetime,fcntl,hashlib,importlib.util,json,os,pathlib,re,stat,subprocess,sys,time
+import datetime,fcntl,hashlib,importlib.util,json,os,pathlib,re,secrets,stat,subprocess,sys,time
 P=pathlib.Path
 revision='c12e53a7416902315391d1b8c0a48603cbb1db6e'
 checkout=P('/opt/kairos/releases')/revision
 descriptor=P('/opt/kairos/runtime/releases')/('product-'+revision)
 secret_dir=P('/opt/kairos/secrets')/('product-'+revision)
 base=P('/opt/kairos/runtime/p0/20260911T042557Z-foundations')
-work=base/'mount-verification'
 env={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LANG':'C.UTF-8','HOME':'/nonexistent','DOCKER_HOST':'unix:///var/run/docker.sock','COMPOSE_PROJECT_NAME':'kairos','PYTHONDONTWRITEBYTECODE':'1','GIT_CONFIG_NOSYSTEM':'1','GIT_CONFIG_GLOBAL':'/dev/null'}
 os.environ.clear();os.environ.update(env);os.umask(0o077);sys.dont_write_bytecode=True
 docker=['/usr/bin/docker','--host','unix:///var/run/docker.sock']
-runid=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+runid=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(4)
+work=base/('mount-verification-'+runid)
 report={'commit':revision,'production_deploy':False,'checks':{},'cleanup':{}}
 created={}
 def require(condition):
     if not condition:raise RuntimeError('mount verification invariant failed; details withheld')
+def reply_lines(output):
+    # redis-cli emits an additional empty separator after an error in pipe mode.
+    return [row for row in output.strip().splitlines() if row.strip()]
 def protected(path,directory=False):
     info=path.lstat()
     require(info.st_uid==0 and not info.st_mode&0o022 and (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode) and info.st_nlink==1))
@@ -72,8 +75,8 @@ try:
     info=os.fstat(lock);require(stat.S_ISREG(info.st_mode) and info.st_uid==0 and info.st_nlink==1 and stat.S_IMODE(info.st_mode)==0o600)
     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     require(not work.exists() and not work.is_symlink());work.mkdir(mode=0o700)
-    before='/opt/kairos/runtime/baselines/mount-product-c12e53a-before'
-    after='/opt/kairos/runtime/baselines/mount-product-c12e53a-after'
+    before='/opt/kairos/runtime/baselines/mount-product-'+runid+'-before'
+    after='/opt/kairos/runtime/baselines/mount-product-'+runid+'-after'
     for path in [P(before),P(after)]:require(not path.exists() and not path.is_symlink())
     require(logged('before',['/bin/bash',str(checkout/'scripts/vps-snapshot.sh'),before])==0)
     manifest=work/'no-changes.json';manifest.write_text(json.dumps({'version':2,'release_commit':revision,'config_changes':[],'network_changes':[],'edge_binding_change':None}))
@@ -81,13 +84,23 @@ try:
         acl=module('mount_redis_acl','redis-acl.py')
         values=acl.read_recovery(secret_dir/'recovery.env')
         require((secret_dir/'redis.acl').read_text()==acl.render(values))
-        runtime=secret_dir/'runtime';require(not runtime.exists() and not runtime.is_symlink());runtime.mkdir(mode=0o700)
-        fd=os.open(runtime/'redis.acl',os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600)
-        with os.fdopen(fd,'wb') as stream:
-            stream.write((secret_dir/'redis.acl').read_bytes());stream.flush();os.fsync(stream.fileno());os.fchown(stream.fileno(),uid,gid);os.fchmod(stream.fileno(),0o400)
+        report['phase']='runtime_acl'
+        runtime=secret_dir/'runtime'
+        if not runtime.exists() and not runtime.is_symlink():
+            runtime.mkdir(mode=0o700)
+            fd=os.open(runtime/'redis.acl',os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600)
+            with os.fdopen(fd,'wb') as stream:
+                stream.write((secret_dir/'redis.acl').read_bytes());stream.flush();os.fsync(stream.fileno());os.fchown(stream.fileno(),uid,gid);os.fchmod(stream.fileno(),0o400)
+        # A retry may verify the exact preceding artifact, never replace or broaden it.
+        protected(runtime,True);require(stat.S_IMODE(runtime.stat().st_mode)==0o700)
+        require(set(path.name for path in runtime.iterdir())=={'redis.acl'})
+        info=(runtime/'redis.acl').lstat()
+        require(stat.S_ISREG(info.st_mode) and info.st_nlink==1 and info.st_uid==uid and info.st_gid==gid and stat.S_IMODE(info.st_mode)==0o400)
+        require((runtime/'redis.acl').read_bytes()==(secret_dir/'redis.acl').read_bytes())
         for name in ['infra/caddy/Caddyfile','wordpress/mu-plugins/kairos-admin-gate.php']:
             path=checkout/name;protected(path);path.chmod(0o644)
         report['checks']['code_mount_permissions']='PASS'
+        report['phase']='redis_start'
         redis=create('redis',images['redis'],['--user',f'{uid}:{gid}','--tmpfs',f'/data:rw,nosuid,size=64m,uid={uid},gid={gid}','--mount',f'type=bind,src={runtime}/redis.acl,dst=/etc/kairos/users.acl,readonly'],['redis-server','--save','','--appendonly','no','--aclfile','/etc/kairos/users.acl','--maxmemory','64mb','--bind','127.0.0.1'])
         checked(docker+['start',redis])
         for attempt in range(20):
@@ -97,23 +110,29 @@ try:
         require('NOAUTH' in ready.stdout)
         def commands(lines):
             result=run(docker+['exec','-i',redis,'redis-cli','--raw'],'\n'.join(lines)+'\n')
-            require(result.returncode==0);return result.stdout.strip().splitlines()
+            require(result.returncode==0);return reply_lines(result.stdout)
+        report['phase']='redis_cache_scope'
         rows=commands(['AUTH kairos_cache '+values['KAIROS_REDIS_CACHE_PASSWORD'],'SET kairos:cache:v2:probe verified','GET kairos:cache:v2:probe','SET kairos:broker:v1:forbidden no','CONFIG GET maxmemory','ACL SETUSER escalation on','FLUSHALL'])
         require(rows[:3]==['OK','OK','verified'] and len(rows)==7 and all(row.startswith('NOPERM') for row in rows[3:]))
+        report['phase']='redis_broker_scopes'
         for principal,key in acl.PRINCIPALS.items():
             if principal=='kairos_cache':continue
             rows=commands(['AUTH '+principal+' '+values[key],'LPUSH kairos:broker:v1:probe item','RPOP kairos:broker:v1:probe','GET kairos:cache:v2:probe','ACL SETUSER escalation on'])
             require(rows[:3]==['OK','1','item'] and len(rows)==5 and all(row.startswith('NOPERM') for row in rows[3:]))
+        report['phase']='redis_admin_auth'
         require(commands(['AUTH default '+values['REDIS_PASSWORD'],'PING'])==['OK','PONG'])
         report['checks']['real_scoped_redis_acl']='PASS'
+        report['phase']='caddy'
         caddy=create('edge',images['edge'],['--user','1000:1000','--tmpfs','/data:rw,nosuid,size=16m,uid=1000,gid=1000','--tmpfs','/config:rw,nosuid,size=16m,uid=1000,gid=1000','--env','KAIROS_PROXY_TOKEN=synthetic-mount-validation-only','--mount',f'type=bind,src={checkout}/infra/caddy/Caddyfile,dst=/etc/caddy/Caddyfile,readonly','--entrypoint','caddy'],['validate','--config','/etc/caddy/Caddyfile','--adapter','caddyfile'])
         require(logged('caddy',docker+['start','-a',caddy])==0)
         require(checked(docker+['inspect','--format','{{.State.Running}}|{{.State.ExitCode}}',caddy])=='false|0')
         report['checks']['caddy_nonroot_config']='PASS'
+        report['phase']='wordpress'
         wordpress=create('wordpress',images['wordpress'],['--user','33:33','--tmpfs','/var/www/html:rw,nosuid,size=16m,uid=33,gid=33','--mount',f'type=bind,src={checkout}/wordpress/mu-plugins/kairos-admin-gate.php,dst=/gate.php,readonly','--entrypoint','php'],['-l','/gate.php'])
         require(logged('wordpress',docker+['start','-a',wordpress])==0)
         require(checked(docker+['inspect','--format','{{.State.Running}}|{{.State.ExitCode}}',wordpress])=='false|0')
         report['checks']['wordpress_nonroot_plugin']='PASS'
+        report['phase']='database_plan'
         roles=module('mount_database_roles','database-roles.py')
         sql_plan=roles.plan(roles.recovery_values(secret_dir/'recovery.env'))
         (work/'database-plan.json').write_text(json.dumps(sql_plan,indent=2))
@@ -137,6 +156,7 @@ try:
         report['no_touch_exit']=logged('no-touch',['/usr/bin/python3','-I',str(checkout/'scripts/compare-release-snapshots.py'),before,after,'--manifest',str(manifest)]) if report['after_exit']==0 else 125
     required={'code_mount_permissions':'PASS','real_scoped_redis_acl':'PASS','caddy_nonroot_config':'PASS','wordpress_nonroot_plugin':'PASS','database_plan':'PREPARED_ONLY'}
     report['status']='PASS' if not report.get('failure') and report['checks']==required and all(item=='PASS' for item in report['cleanup'].values()) and report['after_exit']==report['no_touch_exit']==0 else 'FAIL'
+    report['work']=str(work)
     (work/'result.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
 finally:os.close(lock)
 sys.exit(0 if report.get('status')=='PASS' else 1)
