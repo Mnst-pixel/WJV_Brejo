@@ -157,6 +157,8 @@ Verificação A final: **531 API PASS/25 skips explícitos**, 98,72 s; **E2E com
 
 B backend final: **57 PASS/3 skips**, com probes independentes de conversão do superusuário legado, preservação do papel canônico, proteção de administrador comum e autoconcessão. B UI final: **20 PASS/2 skips PostgreSQL**, navegação por teclado, banner, filtro e 390 px sem overflow; nenhum achado reproduzível remanescente. Migração isolada reversa/reaplicada preservou dados e colisões abortaram sem expor informações pessoais. Testes PostgreSQL/Redis e imagem exata serão registrados após execução Linux. **Não implantado.** Planos e painel operacional completo são os próximos recortes.
 
+Commit de usuários **`13835b89f6dafc8f2cd2fa971d7ea5dbfec7f079`**, enviado ao GitHub. Fonte SHA256 `2c56dfe71ad035b7c99aefb840b819ae8a18e72f259f5d7f84af606b84a58d75`; API **`sha256:033f3b55bd4a8707ff1fdea30aef0d4d141856035368176a715a55a21db9c62f`**; parser `sha256:112450a0d52fad8dcd433ddfc77e92326949a3ae3c32c77729ba27fec083beb1`. Linux isolado: **555 API PASS/1 skip browser opt-in**, 174,06 s; **184 operações/parser PASS/3 skips Git**, 21,56 s, mais 13 contratos Git PASS. Confirmação concorrente de recuperação em PostgreSQL e cooldown entre workers Redis passaram. WordPress/MariaDB:12 concorrentes/1 nonce aceito; PHP/Caddy/Gunicorn/inventário PASS. Execução `/opt/kairos/runtime/p0/20260911T021823Z-foundations`; evidência `/opt/kairos/runtime/tests/kairos-test-20260911T021910Z-91b122bbe3c1`; recibo `modernizacao/evidencias/p0p2-candidate-20260911T021823Z.json`. Build/integração/no-touch exit0 e zero mudanças em recursos preexistentes. **Imagem não implantada e não cobre o lote posterior de planos/matrículas.**
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -167,7 +169,7 @@ B backend final: **57 PASS/3 skips**, com probes independentes de conversão do 
 | Histórico/restauração de conteúdo | Sim, restaura para rascunho | HTTP e preservação da publicação | Não | Não | Comparação detalhada, agendamento e deploy | Teste de workflow completo |
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
-| Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente e E2E; Linux pendente | Não | Não | Imagem/release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
+| Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente, E2E e imagem Linux | Não | Não | Release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
 | Planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
 | Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente, E2E e imagem Linux | Não | Autoria em candidato | Release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
 | Metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Metas quantitativas e jornadas de notas/flashcards | Entrega P0–P2 |
