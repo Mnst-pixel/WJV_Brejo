@@ -115,7 +115,11 @@ Testes parciais já obtidos: **500 API PASS/23 skips**, **E2E das quatro jornada
 
 Fechamento A: **500 API PASS/23 skips**, 87,42 s; **E2E completo PASS em 23,78 s**, incluindo setas de ordenação. Build/TypeScript, ESLint, Ruff, migrations sem drift e 9 testes SQL passaram. Screenshot mobile final conferida visualmente, sem overflow e com foco/restauração do scroll. B frontend: **20 testes backend, 10 controles TypeScript, 6 controles Chromium e 4 cenários da fixture PASS**, incluindo dependência órfã preservada e rejeitada pelo Django.
 
-Commit/imagem: em fechamento. Deploy: nenhum. Evidência visual `modernizacao/evidencias/p3-editorial-browser/phase2-submitted-mobile.png`; recibo completo do navegador no mesmo diretório. O lote não está incluído na imagem `61964bb`. Pendências: imagem Linux, restauração/migrations/privilégios reais e release; correção humana/IA operacional é fase posterior.
+B backend final após hash ampliado: **102 PASS/2 skips**, três concorrências P6 explicitamente pendentes no executor local; SQL 9 PASS/7 skips. Provas independentes confirmaram bloqueio ao alterar número da versão, identidade ou versão da rubrica.
+
+Commit **`80349c6372cd5b086e6760bec0ad46223b1c3006`**, enviado ao GitHub. Fonte SHA256 `359c2946f6b92eb2fbdc976093f8d70a91ce58cb7019920d80e59bee351ed0f3`; API **`sha256:b16ee2cd825c9f6028d16046ceb68ce29bea9c57076874361e8a0697223395ae`**; parser `sha256:250b9c362406b5f55a3d4e967dbba0a715692884f9a89be7103f10ca6d86ce12`. Linux/PostgreSQL: **522 API PASS/1 skip browser opt-in**, 161,28 s, incluindo as três concorrências de prova escrita. Operações/parser **184 PASS/3 skips Git**, cobertos separadamente por 13 contratos Git. WordPress/MariaDB: 12 concorrentes, um nonce aceito; Caddy/PHP/Gunicorn/inventário PASS. Evidência `/opt/kairos/runtime/tests/kairos-test-20260911T011517Z-45c38c9eda55`; recibo `modernizacao/evidencias/p0p2-candidate-20260911T011431Z.json`. Build/integração/no-touch exit 0; zero alterações de recursos preexistentes. Scan de 17 valores contra 367 arquivos: nenhuma ocorrência.
+
+**Imagem não implantada.** Screenshot final `modernizacao/evidencias/p3-editorial-browser/phase2-submitted-mobile.png`; recibo do navegador no mesmo diretório. Pendências: restore/migrations/privilégios reais e release; correção humana/IA operacional é fase posterior. A imagem não inclui o incremento posterior de jornada de leitura/analytics.
 
 “Disponível” abaixo significa produção verificada, não somente código local.
 
