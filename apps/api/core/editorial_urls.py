@@ -1,9 +1,15 @@
 from django.urls import path
 
 from core import editorial_views as views
+from core import question_editorial as questions
 
 app_name = "editorial"
 urlpatterns = [
+    path("questoes/", questions.question_list, name="questions"),
+    path("questoes/nova/", questions.question_create, name="question-create"),
+    path("questoes/versoes/<uuid:workflow_id>/", questions.question_detail, name="question-version"),
+    path("questoes/versoes/<uuid:workflow_id>/revisar/", questions.question_revise, name="question-revise"),
+    path("provas/nova/", questions.exam_create, name="exam-create"),
     path("", views.dashboard, name="dashboard"),
     path("conteudos/", views.content_list, name="contents"),
     path("conteudos/novo/", views.content_create, name="content-create"),

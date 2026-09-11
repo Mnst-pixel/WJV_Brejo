@@ -3,6 +3,9 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import socket
+import time
+from urllib.request import urlopen
 from uuid import uuid4
 
 import pyotp
@@ -12,13 +15,51 @@ from django.core.cache import cache
 
 from core.content_workflow import published_content
 from core.mfa import encrypt_secret
-from core.models import Role, User, UserRole
+from core.models import AttemptAnswer, Role, User, UserRole
+from core.question_workflow import published_questions
 
 pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.skipif(
     os.environ.get("KAIROS_BROWSER_TESTS") != "1", reason="Opt-in browser run requires local Node, Playwright and isolated Next.js")]
 
 
-def test_editorial_browser_full_workflow(live_server, settings, tmp_path):
+@pytest.fixture
+def next_server(live_server):
+    """Bounded loopback-only server, disposed with this one test even on failure."""
+    web = Path(__file__).resolve().parents[4] / "apps" / "web"
+    if not (web / ".next" / "BUILD_ID").is_file():
+        pytest.fail("Build the isolated Next.js candidate before the browser test.")
+    with socket.socket() as reservation:
+        reservation.bind(("127.0.0.1", 0))
+        port = reservation.getsockname()[1]
+    environment = os.environ | {"INTERNAL_API_URL": live_server.url, "KAIROS_DEMO_MODE": "false"}
+    server = subprocess.Popen([os.environ["KAIROS_NODE_BIN"], str(web / "node_modules/next/dist/bin/next"),
+        "start", "--hostname", "127.0.0.1", "--port", str(port)], cwd=web, env=environment,
+        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    origin = f"http://127.0.0.1:{port}"
+    try:
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            if server.poll() is not None:
+                pytest.fail("Isolated Next.js exited before readiness.")
+            try:
+                with urlopen(origin + "/app/api/health", timeout=1) as response:
+                    if response.status == 200:
+                        break
+            except OSError:
+                time.sleep(0.2)
+        else:
+            pytest.fail("Isolated Next.js readiness timed out.")
+        yield origin
+    finally:
+        server.terminate()
+        try:
+            server.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server.kill()
+            server.wait(timeout=5)
+
+
+def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp_path):
     settings.MFA_ENCRYPTION_KEY = Fernet.generate_key().decode()
     settings.ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
     settings.SESSION_COOKIE_SECURE = False
@@ -33,7 +74,7 @@ def test_editorial_browser_full_workflow(live_server, settings, tmp_path):
             mfa_enabled=role != "aluno", mfa_secret_encrypted=encrypt_secret(secret) if role != "aluno" else "")
         UserRole.objects.create(user=user, role=Role.objects.get(slug=role))
         principals[role] = {"username": user.username, "password": password, "secret": secret}
-    config = {"api": live_server.url, "next": os.environ["KAIROS_E2E_NEXT_URL"], "principals": principals,
+    config = {"api": live_server.url, "next": next_server, "principals": principals,
               "evidence": os.environ.get("KAIROS_BROWSER_EVIDENCE_DIR", str(tmp_path))}
     script = Path(__file__).with_name("editorial.cjs")
     completed = subprocess.run([os.environ["KAIROS_NODE_BIN"], str(script)], input=json.dumps(config),
@@ -47,4 +88,6 @@ def test_editorial_browser_full_workflow(live_server, settings, tmp_path):
     assert result["workflow"] == "PASS" and result["mobileOverflow"] is False
     assert result["browserErrors"] == []
     assert published_content().count() == 1
+    assert published_questions().count() == 1
+    assert AttemptAnswer.objects.filter(is_correct=True).count() == 1
     cache.clear()

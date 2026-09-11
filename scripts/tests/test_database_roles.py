@@ -60,6 +60,8 @@ class DatabaseRolesTests(unittest.TestCase):
         self.assertIn("REVOKE ALL ON TABLES FROM PUBLIC,kairos_runtime,kairos_worker", sql)
         self.assertIn("REVOKE INSERT,UPDATE,DELETE ON public.django_migrations FROM kairos_runtime", sql)
         self.assertIn("REVOKE UPDATE,DELETE ON public.core_auditlog FROM kairos_runtime", sql)
+        self.assertIn("REVOKE UPDATE,DELETE ON public.core_alternative FROM kairos_runtime", sql)
+        self.assertIn("REVOKE UPDATE,DELETE ON public.core_questionmetadata FROM kairos_runtime", sql)
 
     def test_changed_plan_refused_without_any_command(self):
         def fail(*args, **kwargs):

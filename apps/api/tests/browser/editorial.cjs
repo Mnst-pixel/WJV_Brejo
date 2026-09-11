@@ -62,6 +62,8 @@ function acceptsTarget(req, origin) {
     throw error;
   }
   const errors = [];
+  // Close our browser before the Python watchdog so a stalled test cannot orphan it.
+  const deadline = setTimeout(() => {void browser.close().catch(() => undefined);}, 140000);
   const contexts = [];
   await mkdir(config.evidence, {recursive: true});
   async function login(role, viewport = {width: 1440, height: 1000}) {
@@ -149,6 +151,37 @@ function acceptsTarget(req, origin) {
     await publisher.keyboard.press('Tab');
     assert(await publisher.evaluate(() => document.activeElement !== document.body));
     assert(await publisher.evaluate(() => document.fonts.check('400 16px Montserrat')));
+    await publisher.getByRole('link', {name: 'Questões e provas', exact: true}).click();
+    await publisher.getByRole('link', {name: 'Nova prova ou caderno', exact: true}).click();
+    await publisher.getByLabel('Nome da prova ou caderno').fill('Caderno pedagógico de teste');
+    await publisher.getByLabel('Organizadora ou autoria').fill('Equipe de teste');
+    await publisher.getByLabel('Edição ou identificação do caderno').fill('Teste isolado');
+    await publisher.getByLabel('Data da prova ou referência do caderno').fill('2026-09-10');
+    await publisher.getByLabel('Fonte da prova ou da autoria').fill('https://example.invalid/caderno');
+    await publisher.getByRole('button', {name: 'Salvar prova', exact: true}).click();
+    await editor.getByRole('link', {name: 'Questões e provas', exact: true}).click();
+    await editor.getByRole('link', {name: 'Nova questão', exact: true}).click();
+    await editor.getByLabel('Prova ou caderno').selectOption({label: 'Caderno pedagógico de teste · Teste isolado · 2026'});
+    await editor.getByLabel('Disciplina').selectOption({label: 'Direito Constitucional'});
+    await editor.getByLabel('Enunciado').fill('No cenário sintético, qual alternativa corresponde ao fundamento apresentado?');
+    await editor.getByLabel('Alternativa A', {exact: false}).fill('Primeira opção para o teste.');
+    await editor.getByLabel('Alternativa B', {exact: false}).fill('Segunda opção para o teste.');
+    await editor.getByLabel('Alternativa correta').selectOption('B');
+    await editor.getByLabel('Explicação do gabarito').fill('A segunda alternativa corresponde ao fundamento sintético revisado.');
+    await editor.getByLabel('Origem').selectOption('authored');
+    await editor.getByLabel('Fonte consultada').fill('https://example.invalid/fundamento');
+    await editor.getByLabel('Fundamento jurídico').fill('Fundamento sintético de validação do produto.');
+    await editor.getByRole('button', {name: 'Salvar questão como rascunho', exact: true}).click();
+    await editor.getByLabel('Comentário da decisão').fill('Conferir enunciado, alternativas, gabarito e fundamento.');
+    await editor.getByRole('button', {name: 'Enviar questão para revisão', exact: true}).click();
+    await reviewer.goto(editor.url());
+    await reviewer.getByLabel('Comentário da decisão').fill('Pacote sintético conferido independentemente.');
+    await reviewer.getByLabel('Situação jurídica verificada').selectOption('current');
+    await reviewer.getByRole('button', {name: 'Aprovar questão', exact: true}).click();
+    await publisher.goto(reviewer.url());
+    await publisher.getByLabel('Comentário da decisão').fill('Publicação autorizada para o teste isolado.');
+    await publisher.getByRole('button', {name: 'Publicar questão', exact: true}).click();
+    await publisher.getByText('Publicado · Versão', {exact: false}).waitFor();
     // Student denial is expected and must not be hidden behind a UI-only menu check.
     const studentContext = await browser.newContext(); contexts.push(studentContext);
     const csrf = await (await studentContext.request.get(origin + '/api/auth/csrf')).json();
@@ -157,8 +190,33 @@ function acceptsTarget(req, origin) {
     assert.equal(signedIn.status(), 200);
     const denied = await studentContext.request.get(origin + '/admin/editorial/');
     assert.equal(denied.status(), 403);
+    const learner = await studentContext.newPage();
+    learner.on('pageerror', error => errors.push(error.message));
+    learner.on('console', message => {if (message.type() === 'error') errors.push(message.text());});
+    await learner.setViewportSize({width: 390, height: 844});
+    await learner.goto(origin + '/app/questoes');
+    await learner.getByRole('heading', {name: 'No cenário sintético, qual alternativa corresponde ao fundamento apresentado?'}).waitFor();
+    assert.equal(await learner.getByText('A segunda alternativa corresponde ao fundamento sintético revisado.', {exact: true}).count(), 0);
+    await learner.getByRole('radio', {name: 'B Segunda opção para o teste.'}).check();
+    await learner.getByRole('button', {name: 'Responder', exact: true}).click();
+    await learner.getByRole('heading', {name: 'Resposta correta', exact: true}).waitFor();
+    await learner.getByRole('button', {name: 'Salvar favorita', exact: true}).click();
+    await learner.getByRole('button', {name: 'Remover favorita', exact: true}).waitFor();
+    await learner.getByRole('button', {name: 'Marcar para revisão', exact: true}).click();
+    await learner.getByRole('button', {name: 'Retirar da revisão', exact: true}).waitFor();
+    await learner.reload();
+    await learner.getByRole('button', {name: 'Remover favorita', exact: true}).waitFor();
+    await learner.getByRole('button', {name: 'Retirar da revisão', exact: true}).waitFor();
+    await learner.getByText('Acerto ·', {exact: false}).waitFor();
+    assert(await learner.locator('.open-row h3').evaluate(element => element.getBoundingClientRect().width > 250));
+    assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    assert(await learner.locator('.skip-link').evaluate(element => element.getBoundingClientRect().bottom < 0));
+    await learner.screenshot({path: join(config.evidence, 'practice-mobile.png'), fullPage: true});
+    await learner.setViewportSize({width: 1440, height: 1000});
+    await learner.screenshot({path: join(config.evidence, 'practice-desktop.png'), fullPage: true});
     assert.deepEqual(errors, []);
-    const result = {workflow: 'PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
+    const result = {workflow: 'PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
       studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));
@@ -167,6 +225,7 @@ function acceptsTarget(req, origin) {
     const state = page && !page.isClosed() ? await page.evaluate(() => ({ready: document.readyState, scripts: document.scripts.length, next: typeof window.next, url: location.pathname})).catch(() => null) : null;
     throw new Error(`${error.message}; state=${JSON.stringify(state)}; browserErrors=${JSON.stringify(errors)}`);
   } finally {
+    clearTimeout(deadline);
     await Promise.all(contexts.map(context => context.close()));
     await browser.close();
     for (const socket of upgrades) socket.destroy();

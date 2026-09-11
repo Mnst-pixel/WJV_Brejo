@@ -54,3 +54,5 @@ Ingestion states are immutable and audited:
 `discovered -> downloaded -> quarantined -> parsed -> normalized -> classified -> verified -> human_review -> approved -> indexed -> published`.
 
 Only an authorized reviewer can transition from human review to approval. Publication and indexing reject absent approval records.
+
+Objective questions extend the existing version tables with `QuestionMetadata` and `QuestionWorkflow`. A human approval signs question text, alternatives, answer key and legal metadata as one package. Student serialization and attempt capture verify that package. Practice uses the existing transactional attempt engine; results and bookmarks remain owned by the authenticated user. See [P5-QUESTOES.md](P5-QUESTOES.md) for endpoints, migrations and rollback.

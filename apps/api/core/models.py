@@ -522,6 +522,7 @@ class Attempt(TimeStampedModel):
 
 
 class AttemptAnswer(TimeStampedModel):
+    is_correct = models.BooleanField(null=True, blank=True, editable=False)
     attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.PROTECT, related_name="attempt_answers")
     selected_alternative = models.ForeignKey(Alternative, on_delete=models.PROTECT, null=True, blank=True)
@@ -530,6 +531,7 @@ class AttemptAnswer(TimeStampedModel):
     answered_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        indexes = [models.Index(fields=["question", "is_correct"], name="question_answer_accuracy")]
         constraints = [models.UniqueConstraint(fields=["attempt", "question"], name="unique_attempt_question"), models.CheckConstraint(condition=Q(answer_version__gte=1), name="attempt_answer_version_positive")]
 
 
@@ -841,3 +843,4 @@ class CoverageRecord(TimeStampedModel):
 from .upload_models import Enrollment, Plan, UploadPolicy  # noqa: E402,F401
 from .study_models import BrowserImportReceipt, StudyActivity, StudyMark, StudyPanelState, StudyProgress  # noqa: E402,F401
 from .content_models import ContentWorkflow, LegacyContentImport, LegacyContentItem  # noqa: E402,F401
+from .question_models import QuestionMetadata, QuestionWorkflow  # noqa: E402,F401

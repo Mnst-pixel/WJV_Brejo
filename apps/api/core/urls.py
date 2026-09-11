@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .practice_views import LearningAccuracyView, PracticeAnswerView, PracticeHistoryView, PracticeMarksView
 from .rbac_views import RoleCatalogView, UserRolesView
 from .mcp_views import MCPDelegationView, MCPToolCallView
 from .study_views import BrowserImportView, StudyActivityView, StudyPanelView, StudyRecordView, StudySummaryView
@@ -28,6 +29,10 @@ router.register("coverage", views.CoverageRecordViewSet, basename="coverage")
 router.register("admin/audit", views.AuditLogViewSet, basename="audit")
 
 urlpatterns = [
+    path("practice/answers/", PracticeAnswerView.as_view()),
+    path("practice/questions/<uuid:question_id>/marks/", PracticeMarksView.as_view()),
+    path("practice/history/", PracticeHistoryView.as_view()),
+    path("study/accuracy/", LearningAccuracyView.as_view()),
     path("internal/wordpress-auth", wordpress_auth_gate, name="wordpress-auth-gate"),
     path("admin/content/", AdminContentListView.as_view()),
     path("admin/content/<uuid:content_id>/versions/", ContentRevisionView.as_view()),

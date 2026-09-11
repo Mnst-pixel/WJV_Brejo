@@ -58,16 +58,15 @@ button { color: inherit; }
 .skip-link {
   position: fixed;
   z-index: 1000;
-  top: 12px;
+  top: -200px;
   left: 12px;
-  transform: translateY(-150%);
   padding: 12px 18px;
   border-radius: 6px;
   background: var(--parchment);
   color: var(--ink);
   font-weight: 700;
 }
-.skip-link:focus { transform: translateY(0); }
+.skip-link:focus { top: 12px; }
 
 .app-shell { min-height: 100vh; }
 .app-shell > main { min-height: 100vh; margin-left: var(--sidebar-width); }
@@ -627,3 +626,21 @@ html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
   .form-grid { grid-template-columns: 1fr; }
   .work-panel { padding: 22px 18px; }
 }
+
+.practice-workspace { display: grid; gap: 24px; min-width: 0; }
+.practice-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 16px; padding: 0; border: 0; min-width: 0; }
+.practice-filters label { display: grid; gap: 8px; min-width: 0; }
+.practice-filters input, .practice-filters select { width: 100%; min-width: 0; }
+.practice-answers { border: 0; padding: 0; min-width: 0; }
+.practice-answers legend { margin-bottom: 16px; }
+.practice-answers .alternative { cursor: pointer; min-width: 0; }
+.practice-answers .alternative input { width: 18px; height: 18px; flex: 0 0 18px; accent-color: var(--bronze, #a88752); }
+.practice-answers .alternative .alternative-text { width: auto; height: auto; border: 0; border-radius: 0; background: none; color: inherit; display: block; flex: 1; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.practice-result { border-top: 1px solid currentColor; margin-top: 24px; padding-top: 20px; }
+.preserve-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.practice-workspace .open-row h3 { overflow-wrap: anywhere; }
+.practice-workspace details summary { cursor: pointer; padding: 10px 0; }
+.practice-filters select { min-height: 48px; padding: 0 12px; border: 1px solid rgba(220,201,146,.35); border-radius: 6px; background: var(--deep-cave); color: var(--text); color-scheme: dark; }
+.practice-workspace .open-row { grid-template-columns: minmax(0, 1fr); padding: 18px 0; }
+.practice-workspace .work-panel-heading { flex-wrap: wrap; }
+.practice-workspace .work-panel-heading .outline-button { width: auto; flex: 0 0 auto; }

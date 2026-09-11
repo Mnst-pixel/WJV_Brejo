@@ -372,8 +372,14 @@ class ContentViewSet(viewsets.ReadOnlyModelViewSet):
 
 class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [CanStudy]
-    queryset = Question.objects.filter(current_version__approved_by__isnull=False, current_version__approval_date__isnull=False, current_version__published_at__isnull=False).exclude(current_version__legal_status="legacy_unverified").select_related("current_version").prefetch_related("current_version__alternatives")
+    queryset = Question.objects.none()
     serializer_class = QuestionSerializer
+
+    def get_queryset(self):
+        from .question_workflow import package_queryset, published_questions
+        from .practice_views import filter_questions
+        query = package_queryset(published_questions()).order_by("exam_phase", "number", "pk")
+        return filter_questions(query, self.request.query_params, self.request.user)
 
 
 class SimulationViewSet(OwnedViewSet):

@@ -17,7 +17,7 @@ ROLES = {
     "backup": ("KAIROS_BACKUP_DB_USER", "KAIROS_BACKUP_DB_PASSWORD", "kairos_backup"),
 }
 CONTAINER = "kairos-postgres-1"
-IMMUTABLE = ("core_auditlog", "core_publicationapproval", "core_contentversion", "core_questionversion", "core_answerkeyversion", "core_practicalcaseversion", "core_promptversion")
+IMMUTABLE = ("core_auditlog", "core_publicationapproval", "core_contentversion", "core_questionversion", "core_answerkeyversion", "core_alternative", "core_questionmetadata", "core_practicalcaseversion", "core_promptversion")
 
 
 class ProvisionError(Exception):

@@ -57,6 +57,28 @@ Rollback: retornar ao artefato anterior remove as novas rotas e formulários, pr
 
 ## Matriz funcional
 
+### Lote P3/P5 — autoria de questões e treino persistente
+
+Alteração: formulários de prova/caderno e questão; pacote versionado com enunciado, alternativas, gabarito, dificuldade, origem, subtema, fundamento, fonte, vigência, anulação e alteração de gabarito. Revisão independente, publicação e arquivamento auditados. A nova revisão preserva publicação anterior e tentativas congeladas. A tela Next.js substitui a questão demonstrativa por filtros reais, resposta calculada no servidor, explicação, favorito, revisão e histórico recuperados da conta.
+
+Motivo: a fundação anterior não oferecia autoria leiga nem treino completo conectado aos dados publicados. O fluxo reutiliza o engine transacional; nenhum backend foi substituído e nenhum conteúdo legado foi publicado automaticamente.
+
+Arquivos: `core/question_{models,workflow,forms,editorial}.py`, `core/practice_views.py`, serializers/views/urls, services/attempts e study_state, formulários/templates editoriais, migrations 0007/0008, `QuestionPractice.tsx`, `ModuleWorkspace.tsx`, CSS, testes de questões/treino/concorrência/navegador e `scripts/database-roles.py`.
+
+Migrations: `0007_question_editorial` e `0008_objective_answer_facts`, aditivas. Não recalculam respostas antigas. Grants candidatos agora impedem UPDATE/DELETE em alternativas e metadados. Ainda exigem execução e verificação em banco real antes de declarar privilégio mínimo operacional.
+
+Bugs encontrados e corrigidos pela revisão: acesso a gabaritos via treino genérico durante formal; oracle de estatística com dois formais simultâneos; alternativa/metadado alterados depois da aprovação; sete queries adicionais por questão; bloqueio FOR UPDATE sobre FK nullable no PostgreSQL; marcações da questão anterior durante GET pendente; retentativa infinita em erro definitivo; histórico assíncrono antigo sobrepondo atualização recente. A conferência visual também corrigiu largura do histórico, selects e link de salto de conteúdo.
+
+Testes: suites HTTP/RBAC/ownership, idempotência, restrição de formal, adulteração por UPDATE e INSERT, crescimento de queries e migrações sem drift. Suíte anterior à última correção específica PostgreSQL: 467 API PASS/19 skips; testes novos de crescimento e concorrência foram acrescentados. Revisão B do módulo: 57 PASS/1 skip PostgreSQL antes da correção OF(self), com nova validação de imagem pendente. E2E real ampliado passou com criação de prova/questão → revisão/publicação → aluno responder → histórico → marcações → refresh; último registro anterior à adição do deadline interno: 15,24 s. Desktop e mobile 390×844, zero overflow, coluna de leitura com largura mínima verificada. Build Next.js, TypeScript e ESLint passaram. Evidências atuais em `modernizacao/evidencias/p3-editorial-browser/`, incluindo `practice-mobile.png` e `practice-desktop.png`.
+
+Benchmark B: 1 questão = 12 queries; 10 questões = 12 queries (antes, 19 e 82). Medição em banco isolado local, não representa latência pública nem benchmark de capacidade de produção.
+
+Fechamento local: suíte completa com **468 PASS/20 skips explícitos** (inclui novo teste PostgreSQL de admissão concorrente, executável na imagem). E2E após deadline interno e última correção PostgreSQL: **PASS em 12,26 s**, sem erros de console, com histórico legível, foco/link de salto e marcas recuperadas. SQL de privilégios: 9 testes PASS; migrations sem drift, Ruff, TypeScript, ESLint e build otimizados PASS. B confirmou retentativa/ownership, eliminação de N+1, descarte de histórico antigo e encerramento normal do browser antes do watchdog externo. A verificação real PostgreSQL do candidato ainda está pendente nesta revisão documental.
+
+Executor: servidor manual Next.js recebeu bloqueio automático sem justificativa adicional. Foi substituído por fixture de teste loopback com porta descartável, API do live_server, readiness limitada, timeout e encerramento em finally; essa alternativa foi aceita e executada. O navegador tem deadline interno anterior ao watchdog externo. Nenhum perfil pessoal ou dado de produção usado.
+
+Commit/imagem/deploy: candidato ainda em fechamento; registrar hashes após validação Linux. Nenhum deploy deste lote. Rollback: voltar ao artefato anterior seguro mantendo schema e registros; não fazer reverse migration destrutiva nem retornar à API vulnerável. Restore e reconciliação de grants fazem parte do gate da release, descritos em [P5-QUESTOES.md](P5-QUESTOES.md).
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -69,7 +91,7 @@ Rollback: retornar ao artefato anterior remove as novas rotas e formulários, pr
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
 | Usuários/planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
 | Dashboard, metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Jornada e próximo passo pedagógico | Entrega P0–P2 |
-| Questões e sessões personalizadas | Modelos/serviços iniciais | Fundação P0–P2 | Não verificado | Não | Autoria/revisão, filtros e histórico completo | Pendente P5 |
+| Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC e E2E real; imagem PG pendente | Não | Não | Sessões personalizadas completas e deploy | `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
 | Simulado 1ª fase, autosave e nota | Engine inicial | Consistência P0–P2 | Não verificado | Não | Configuração e E2E completo | `test_attempt_consistency.py` |
 | Analytics pedagógicos | Parcial | Consultas básicas | Não verificado | Não | Metas quantitativas, tendências e recomendações determinísticas | Pendente P4/P5 |
 | Casos/peças/espelhos de 2ª fase | Modelos iniciais | Insuficiente | Não | Não | Modelo complementar e editor visual de critérios | Pendente P6 |
@@ -77,7 +99,7 @@ Rollback: retornar ao artefato anterior remove as novas rotas e formulários, pr
 
 ## Execução do navegador
 
-Harness opt-in `tests/browser/test_editorial_browser.py`: Django test database descartável, Next.js local, proxy somente loopback e usuários sintéticos. A senha e o TOTP sintéticos passam por stdin e nunca são gravados em evidências. Definir `KAIROS_BROWSER_TESTS=1`, `KAIROS_NODE_BIN`, `KAIROS_PLAYWRIGHT_MODULE`, `KAIROS_CHROMIUM_EXECUTABLE`, `KAIROS_E2E_NEXT_URL` e diretório externo de evidências `KAIROS_BROWSER_EVIDENCE_DIR`. Executar pytest com `--ds=kairos.test_settings`. Nunca apontar esse harness para produção.
+Harness opt-in `tests/browser/test_editorial_browser.py`: Django test database descartável, Next.js iniciado/encerrado pela própria fixture, proxy somente loopback e usuários sintéticos. A senha e o TOTP sintéticos passam por stdin e nunca são gravados em evidências. Definir `KAIROS_BROWSER_TESTS=1`, `KAIROS_NODE_BIN`, `KAIROS_PLAYWRIGHT_MODULE`, `KAIROS_CHROMIUM_EXECUTABLE` e diretório externo de evidências `KAIROS_BROWSER_EVIDENCE_DIR`. Preparar build Next.js local e executar pytest com `--ds=kairos.test_settings`. Nunca apontar esse harness para produção.
 
 Fallback de automação: Browser plugin not available; Playwright regular instalado no runtime. O Chrome local usa perfil descartável, sem perfil pessoal. Alvos: login Next.js/senha/TOTP → formulários Django → publicação por três papéis; bloqueio de aluno; desktop 1440×1000 e mobile 390×844.
 

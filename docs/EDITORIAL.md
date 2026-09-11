@@ -33,4 +33,4 @@ Em **Acervo antigo**, selecione o acervo e a disciplina de destino. Confira a pr
 
 ## Limitações do primeiro lote
 
-O editor atual recebe texto simples e preserva parágrafos. Texto HTML aparece como texto, sem executar código. Editor visual, múltiplos anexos, classificação/mesclagem em lote, agendamento, autoria de questões e espelhos ainda são próximos incrementos. Não é necessário digitar hashes ou identificadores técnicos; os formulários cuidam desses registros.
+O editor atual recebe texto simples e preserva parágrafos. Texto HTML aparece como texto, sem executar código. Editor visual, múltiplos anexos, classificação/mesclagem em lote, agendamento e espelhos ainda são próximos incrementos. Autoria e revisão de questões estão descritas no [guia de questões](P5-QUESTOES.md). Não é necessário digitar hashes ou identificadores técnicos; os formulários cuidam desses registros.

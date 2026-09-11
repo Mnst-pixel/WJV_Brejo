@@ -16,7 +16,6 @@ from core.exceptions import Conflict
 from core.models import (
     Flashcard,
     Goal,
-    Question,
     StudyNote,
     StudySession,
     Topic,
@@ -136,11 +135,8 @@ def _target(kind, target_id):
         from core.content_workflow import published_content
         query = published_content()
     elif kind == "question":
-        query = Question.objects.filter(
-            current_version__published_at__isnull=False,
-            current_version__approved_by__isnull=False,
-            current_version__approval_date__isnull=False,
-        ).exclude(current_version__legal_status="legacy_unverified")
+        from core.question_workflow import published_questions
+        query = published_questions()
     elif kind == "document_version":
         from core.services.documents import published_document_versions
         query = published_document_versions()

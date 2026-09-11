@@ -257,6 +257,7 @@ def test_future_annulment_does_not_change_current_attempt(student, approved_simu
     attempt = create_attempt(simulation=simulation, owner=student)
     assert attempt.frozen_definition["questions"][0]["annulled"] is False
     Annulment.objects.filter(pk=annulment.pk).update(effective_at=timezone.now() - timedelta(seconds=1))
+    submit_attempt(attempt_id=attempt.pk, owner=student)
     successor = create_attempt(simulation=simulation, owner=student)
     assert successor.frozen_definition["questions"][0]["annulled"] is True
     attempt.refresh_from_db()

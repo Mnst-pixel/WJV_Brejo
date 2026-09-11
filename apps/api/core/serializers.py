@@ -99,12 +99,23 @@ class AlternativeSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        from core.question_workflow import verify_published_question
+        verify_published_question(instance)
+        return super().to_representation(instance)
+
     statement = serializers.CharField(source="current_version.statement", read_only=True)
     alternatives = AlternativeSerializer(source="current_version.alternatives", many=True, read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    topic_name = serializers.CharField(source="topic.name", read_only=True, default="")
+    exam_title = serializers.CharField(source="exam_phase.exam.title", read_only=True)
+    edition = serializers.CharField(source="exam_phase.exam.edition", read_only=True)
+    year = serializers.IntegerField(source="exam_phase.exam.exam_date.year", read_only=True)
+    difficulty = serializers.CharField(source="current_version.metadata.difficulty", read_only=True, default="")
 
     class Meta:
         model = Question
-        fields = ["id", "exam_phase", "subject", "topic", "number", "statement", "alternatives"]
+        fields = ["id", "exam_phase", "subject", "topic", "number", "statement", "alternatives", "subject_name", "topic_name", "exam_title", "edition", "year", "difficulty"]
 
 
 class SimulationSerializer(serializers.ModelSerializer):
