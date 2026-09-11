@@ -50,6 +50,9 @@ def state(value):
     require(isinstance(value, dict) and set(value) == {"docker_socket", "projection", "runtime"} and value["docker_socket"] == SOCKET, "invalid_state_origin")
     policy.projection(value["projection"])
     containers = keyed(value["projection"]["containers"])
+    for row in containers.values():
+        if policy.owned(row):
+            require(all(not link.get("ipv6") for link in row["networks"]), "owned_ipv6_not_supported")
     runtime = keyed(value["runtime"], {"id", "name", "project", "service", "image", "revision"})
     require(containers.keys() == runtime.keys(), "runtime_inventory_mismatch")
     for name, row in runtime.items():
@@ -126,7 +129,7 @@ def validate(plan, before):
             require(all(item[key] is None for key in ("service", "image", "revision")) and item["bindings"] == [] and item["networks"] == [], "removed_container_has_configuration")
             continue
         require(isinstance(item["service"], str) and re.fullmatch(r"[a-z0-9][a-z0-9_-]*", item["service"]) and re.fullmatch(r"sha256:[a-f0-9]{64}", item["image"] or ""), "invalid_service_image")
-        require(item["revision"] is None or COMMIT.fullmatch(item["revision"]), "invalid_image_revision")
+        require(item["revision"] in (None, "") or COMMIT.fullmatch(item["revision"]), "invalid_image_revision")
         if item["service"] in {"api", "web", "worker", "beat", "parser"} and item["operation"] != "retain":
             require(item["revision"] == plan["release_commit"], "application_revision_mismatch")
         require(isinstance(item["bindings"], list), "invalid_bindings")
@@ -142,7 +145,9 @@ def validate(plan, before):
         for net_name, link in links.items():
             require(net_name in desired_nets and desired_nets[net_name]["operation"] != "remove", "unplanned_membership")
             subnet, gateway = network_config(desired_nets[net_name]["configuration"])
-            if link["ipv4"] == "dynamic":
+            if link["ipv4"] in ("", None):
+                require(item["operation"] == "retain", "only_retained_container_can_have_no_address")
+            elif link["ipv4"] == "dynamic":
                 require(item["operation"] in {"create", "replace"}, "retained_ip_must_be_exact")
             else:
                 address = ipaddress.ip_address(link["ipv4"])
@@ -190,6 +195,9 @@ def bind(plan, before, after):
             for net_name, link in links.items():
                 desired = desired_links[net_name]["ipv4"]
                 subnet, gateway = network_config(desired_nets[net_name]["configuration"])
+                if link["ipv4"] in ("", None):
+                    require(item["operation"] == "retain" and desired == link["ipv4"], "inactive_endpoint_mismatch")
+                    continue
                 actual_ip = ipaddress.ip_address(link["ipv4"])
                 require(actual_ip in subnet and actual_ip not in {subnet.network_address, subnet.broadcast_address, gateway}, "dynamic_ip_outside_allocation")
                 require(desired == "dynamic" or link["ipv4"] == desired, "exact_ip_mismatch")

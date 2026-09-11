@@ -4,7 +4,7 @@ Este documento registra o trabalho técnico que falta. Não é um procedimento e
 
 ## Plano de rede anterior à alteração
 
-Progresso incremental: [P1-TRANSITION-PLAN.md](P1-TRANSITION-PLAN.md) registra o modelo puro de plano/receipt implementado e testado A/B. A coleta real, freeze protegido, vínculo ao snapshot integral e integração com o coordenador continuam pendentes. O modelo sozinho não fecha os gates abaixo.
+Progresso incremental: [P1-TRANSITION-PLAN.md](P1-TRANSITION-PLAN.md) e [P1-TRANSITION-IO.md](P1-TRANSITION-IO.md) registram modelo, coleta real, freeze protegido, vínculo ao snapshot e registros de início/conclusão. O ciclo sem mudanças passou no VPS, com lock e comparador integral. Ainda faltam a integração do coordenador, nova comparação completa imediatamente antes da primeira mutação, backup/restore, manutenção, filas, migrations/grants, troca de release e rollback. As bibliotecas sozinhas não fecham os gates abaixo.
 
 O comparador v2 confere hashes exatos de projeções, inclusive IDs de containers/endpoints. IDs novos só existem depois da criação. Um coordenador não pode preencher o hash esperado usando o estado final e chamar isso de autorização prévia.
 

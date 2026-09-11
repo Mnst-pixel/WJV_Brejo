@@ -54,6 +54,21 @@ class TransitionPlanTests(unittest.TestCase):
         self.assertEqual(receipt["allocations"]["containers"]["kairos-edge-1"], "d" * 64)
         self.assertEqual(transition.verify_receipt(self.plan, self.before, self.after, receipt), manifest)
 
+    def test_retained_stopped_container_preserves_absent_address(self):
+        self.before["projection"]["containers"][0]["networks"][0]["ipv4"] = ""
+        self.before["projection"]["networks"][0]["containers"] = []
+        declared = plan(self.before)
+        after = copy.deepcopy(self.before)
+        transition.bind(declared, self.before, after)
+        altered = copy.deepcopy(declared)
+        altered["containers"][0]["operation"] = "replace"
+        with self.assertRaises(ValueError):
+            transition.validate(altered, self.before)
+        after["projection"]["containers"][0]["networks"][0]["ipv4"] = "172.30.1.2"
+        after["projection"]["networks"][0]["containers"] = [{"id": "b" * 64, "name": "kairos-edge-1", "ipv4": "172.30.1.2/24", "ipv6": ""}]
+        with self.assertRaises(ValueError):
+            transition.bind(declared, self.before, after)
+
     def test_receipt_cannot_change_authority_or_digest(self):
         self.replace()
         manifest, receipt = transition.bind(self.plan, self.before, self.after)
@@ -62,6 +77,26 @@ class TransitionPlanTests(unittest.TestCase):
                 transition.verify_receipt(self.plan, self.before, self.after, {**receipt, key: value})
         with self.assertRaises(ValueError):
             transition.verify_receipt(self.plan, self.before, self.after, {**receipt, "extra_scope": "admin"})
+
+    def test_inactive_owned_endpoint_cannot_hide_ipv6(self):
+        self.before["projection"]["containers"][0]["networks"][0]["ipv4"] = ""
+        self.before["projection"]["networks"][0]["containers"] = []
+        declared = plan(self.before)
+        after = copy.deepcopy(self.before)
+        after["projection"]["containers"][0]["networks"][0]["ipv6"] = "2001:db8::7"
+        with self.assertRaises(ValueError):
+            transition.bind(declared, self.before, after)
+        with self.assertRaises(ValueError):
+            transition.validate(plan(after), after)
+
+    def test_missing_legacy_revision_is_preserved_but_new_application_requires_commit(self):
+        self.before["runtime"][0]["revision"] = ""
+        declared = plan(self.before)
+        declared["containers"][0]["revision"] = ""
+        transition.bind(declared, self.before, copy.deepcopy(self.before))
+        declared["containers"][0].update(service="api", operation="replace")
+        with self.assertRaises(ValueError):
+            transition.validate(declared, self.before)
 
     def test_plan_requires_exact_baseline_and_every_owned_identity(self):
         for key, value in (("baseline_sha256", "0" * 64), ("docker_socket", "tcp://remote:2375"), ("containers", []), ("networks", [])):
