@@ -95,6 +95,7 @@ function acceptsTarget(req, origin) {
   }
   try {
     // Real requests prove that even a loopback trap cannot receive forwarded credentials.
+    const richEditor = await require('./rich_editor.cjs')(browser, config.evidence);
     let leaked = 0;
     const trap = createServer((req, res) => {leaked += 1; res.end('Unexpected forwarding');});
     await new Promise(resolve => trap.listen(0, '127.0.0.1', resolve));
@@ -125,7 +126,16 @@ function acceptsTarget(req, origin) {
     await editor.getByRole('link', {name: 'Criar conteúdo', exact: true}).click();
     await editor.getByLabel('Disciplina').selectOption({label: 'Direito Constitucional'});
     await editor.getByLabel('Título').fill('Direitos fundamentais: roteiro de estudo');
-    await editor.getByLabel('Texto').fill('Texto sintético de teste.\n\nA revisão humana verifica a fonte, o marco temporal e os fundamentos.');
+    await editor.getByRole('textbox', {name: 'Texto:', exact: true}).fill('Texto sintético de teste.\n\nA revisão humana verifica a fonte, o marco temporal e os fundamentos.');
+    await editor.getByRole('textbox', {name: 'Texto:', exact: true}).press('Control+Home');
+    await editor.getByRole('textbox', {name: 'Texto:', exact: true}).press('Control+Shift+ArrowRight');
+    await editor.getByRole('button', {name: 'Negrito', exact: true}).click();
+    assert.equal(await editor.locator('.visual-editor strong').textContent(), 'Texto ');
+    assert.equal(await editor.locator('textarea[name="body"]').isVisible(), false);
+    await editor.setViewportSize({width: 390, height: 844});
+    assert.equal(await editor.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await editor.screenshot({path: join(config.evidence, 'rich-editor-mobile.png'), fullPage: true});
+    await editor.setViewportSize({width: 1440, height: 1000});
     await editor.getByLabel('Link da fonte consultada').fill('https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm');
     await editor.getByRole('button', {name: 'Salvar rascunho', exact: true}).click();
     await editor.getByRole('heading', {name: 'Prévia do conteúdo'}).waitFor();
@@ -213,6 +223,7 @@ function acceptsTarget(req, origin) {
     assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
     await learner.screenshot({path: join(config.evidence, 'reading-mobile.png'), fullPage: true});
+    assert.equal(await learner.locator('.rich-text strong').textContent(), 'Texto ');
     await learner.getByRole('link', {name: 'Praticar esta disciplina', exact: true}).click();
     await learner.waitForURL('**/app/questoes?subject=*');
     const linkedSubject = new URL(learner.url()).searchParams.get('subject');
@@ -438,7 +449,7 @@ function acceptsTarget(req, origin) {
     await accountAdmin.getByRole('button', {name: 'Salvar limites', exact: true}).click();
     await accountAdmin.getByText('Limites gerais salvos. Arquivos existentes permanecem preservados.', {exact: true}).waitFor();
     assert.deepEqual(errors, []);
-    const result = {workflow: 'PASS', subscriptionsWorkflow: 'plan-enrollment-suspend-search-global-limits PASS', accountsWorkflow: 'create-edit-roles-disable-enable-revoke-smtp-state PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
+    const result = {workflow: 'PASS', richEditor, subscriptionsWorkflow: 'plan-enrollment-suspend-search-global-limits PASS', accountsWorkflow: 'create-edit-roles-disable-enable-revoke-smtp-state PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
       studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));

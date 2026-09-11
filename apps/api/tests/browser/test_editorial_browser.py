@@ -89,7 +89,9 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     result = json.loads(completed.stdout)
     assert result["workflow"] == "PASS" and result["mobileOverflow"] is False
     assert result["browserErrors"] == []
+    assert result["richEditor"].endswith("PASS")
     assert published_content().count() == 1
+    assert published_content().get().current_version.structured_data["rich_text"]["schema"] == "kairos-rich-text-v1"
     assert published_questions().count() == 1
     assert AttemptAnswer.objects.filter(is_correct=True).count() == 2
     from core.study_models import StudyProgress

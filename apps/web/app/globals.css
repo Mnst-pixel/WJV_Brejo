@@ -675,3 +675,4 @@ html[data-comfortable-reading="true"] .assistant-answer > p { max-width: 68ch; }
 .written-editor .preserve-text { line-height: 1.8; }
 .written-editor textarea[readonly] { min-height: 160px; }
 @media(max-width:600px) { .written-workspace .open-row { grid-template-columns: minmax(0, 1fr); } .written-editor textarea { padding: 16px; } }
+.rich-text{overflow-wrap:anywhere;line-height:1.8}.rich-text p,.rich-text li,.rich-text blockquote{white-space:pre-wrap}.rich-text blockquote{border-left:3px solid #8e744d;margin:1em 0;padding-left:18px}.rich-text ul,.rich-text ol{padding-left:26px}.rich-text h3,.rich-text h4{line-height:1.4;margin:1.4em 0 .6em}

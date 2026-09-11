@@ -1,5 +1,6 @@
 """Server-rendered editorial workspace backed by the existing command services."""
 import hashlib
+import json
 from functools import wraps
 from uuid import uuid4
 
@@ -60,10 +61,12 @@ def context(request, **values):
 
 
 def revision_values(cleaned):
-    values = {name: cleaned.get(name) for name in RevisionForm.base_fields}
+    values = {name: cleaned.get(name) for name in RevisionForm.base_fields if name != "rich_document"}
     # This digest authenticates authored text, never claims the linked website was fetched.
     values["source_hash"] = hashlib.sha256(values["body"].encode()).hexdigest()
     values["structured_data"] = {"provenance": {"kind": "human_authored", "hash_kind": "authored_text_sha256", "source_fetched": False}}
+    if cleaned.get("rich_document"):
+        values["structured_data"]["rich_text"] = cleaned["rich_document"]
     return values
 
 
@@ -153,7 +156,9 @@ def version_detail(request, version_id):
 @editorial_access("content.edit")
 def revision_create(request, version_id):
     base = get_object_or_404(ContentVersion, pk=version_id, workflow__isnull=False)
-    initial = {name: getattr(base, name) for name in RevisionForm.base_fields}
+    initial = {name: getattr(base, name) for name in RevisionForm.base_fields if name != "rich_document"}
+    rich = base.structured_data.get("rich_text") if isinstance(base.structured_data, dict) else None
+    initial["rich_document"] = json.dumps(rich, ensure_ascii=False) if rich else ""
     initial["changes_summary"] = f"Revisão baseada na versão {base.version_number}."
     form = RevisionForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():

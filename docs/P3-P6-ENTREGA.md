@@ -177,6 +177,20 @@ Commit **`17679fd51037a21f60c8372d849b066a075b4412`**, enviado ao GitHub. Fonte 
 
 Git: PR de produto em rascunho [#3](https://github.com/Mnst-pixel/WJV_Brejo/pull/3), empilhado sobre a branch P0–P2. Não houve merge nem reescrita de histórico.
 
+### Lote P3 — editor visual e leitura formatada
+
+Alteração/motivo: editor visual com negrito, itálico, limpeza de destaque, parágrafo/títulos/citação/listas e desfazer formatação. Texto simples permanece canônico; uma AST limitada preserva a apresentação na revisão e na leitura Next.js. Não há dependência externa nova nem migration. O operador não vê HTML/JSON; revisão humana e hash da versão continuam obrigatórios.
+
+Arquivos: rich_text, serviço content_workflow, editorial_forms/views, templatetag, templates/CSS/JS editorial, `RichText.tsx`, ReadingWorkspace/CSS, testes de AST/serviço/API e helper permanente `tests/browser/rich_editor.cjs`. Guia: [P3-EDITOR-VISUAL.md](P3-EDITOR-VISUAL.md).
+
+Bugs corrigidos: CRLF de formulário rejeitava texto válido; limpeza mantinha marca herdada; seleção entre itens fundia listas; seleção de texto na raiz perdia o contexto dos parágrafos vizinhos; colagem substitutiva no limite era recusada; API contornava a validação do formulário. Validação agora é central, na criação e antes de aprovar/publicar; estruturas antigas inválidas são preservadas e exigem nova revisão. Nenhum HTML foi executado nos probes.
+
+Build Next.js/TypeScript/ESLint PASS; Ruff PASS e migrations sem drift. E2E final **PASS em 32,48 s**, incluindo cinco regressões permanentes de edição em contexto sem rede e fluxo real de autoria → destaque → revisão → publicação → leitura formatada. Screenshot real `rich-editor-mobile.png` conferida, fonte/cores preservadas e sem overflow em 390×844. Fixture de teste corrigida para fornecer autor obrigatório; a suíte API completa está sendo repetida.
+
+B backend final: **67 PASS/3 skips PostgreSQL**, 15,40 s; API inválida/divergente 400 sem conteúdo residual, LF/CRLF/CR equivalentes, bloqueio após adulteração e nenhuma revalidação silenciosa. B frontend final: **37 testes Django PASS**, Chromium/React renderer, helper permanente e cleanup após falha sintética passaram; nenhum achado remanescente no recorte. Imagem exata será registrada após Linux. **Não implantado.** Rollback conserva corpo, AST e recibos, sem reabrir aprovação de estruturas inválidas. Anexos e demais recursos pedagógicos continuam pendentes.
+
+Fechamento A do editor após todas as correções: **563 API PASS/28 skips explícitos**, 91,46 s. E2E final e reviews B acima correspondem ao mesmo código; teste de fixture corrigido passou também na suíte completa. Nenhuma migration pendente; build/lint/type/inspeção visual passaram. A imagem será construída a partir do commit exato.
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -186,7 +200,8 @@ Git: PR de produto em rascunho [#3](https://github.com/Mnst-pixel/WJV_Brejo/pull
 | Rascunho → revisão → aprovação → publicação | Sim, serviços reutilizados | Serviço, HTTP e E2E real | Não | Não | Deploy | `test_content_workflow.py`, `editorial-browser.json` |
 | Histórico/restauração de conteúdo | Sim, restaura para rascunho | HTTP e preservação da publicação | Não | Não | Comparação detalhada, agendamento e deploy | Teste de workflow completo |
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
-| Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
+| Editor visual | AST, controles de formatação e leitura revisada | API/B/E2E real; Linux pendente | Não | Não | Release; editor de tabelas e anexos não incluído | `test_rich_text.py`, `rich_editor.cjs`, `P3-EDITOR-VISUAL.md` |
+| Anexos relacionados e metadados pedagógicos | Parcial | Fundação de uploads | Não | Não | Múltiplos anexos e relações editoriais completas | Pendente |
 | Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente, E2E e imagem Linux | Não | Não | Release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
 | Planos, matrículas e limites | Formulários e decisões transacionais | API, B independente, E2E e imagem Linux | Não | Não | Release; cobrança não implementada | `test_subscription_workspace.py`, `P3-ASSINATURAS.md` |
 | Painel de operação completo | Parcial | Recortes P0–P3 | Não | Não | Saúde/ingestão/jobs/armazenamento em visão integrada | Entrega P0–P2 e matriz atual |

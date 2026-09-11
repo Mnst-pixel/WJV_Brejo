@@ -23,3 +23,5 @@ Reading migrations 0012/0013 preserve explicit publication associations and prio
 Account migration 0014 adds a recovery-email uniqueness constraint after checking collisions without printing addresses. Keep the index and new accounts on safe artifact rollback. Do not fall back to role changes without optimistic versions or unlocked password reset confirmation. Access delivery remains externally dependent on SMTP. See [P3-USUARIOS.md](P3-USUARIOS.md).
 
 Subscription workspace has no new migration. Preserve plans, enrollment and upload policies on rollback. Keep the legacy-admin write block and protected-target rules; returning to old generic forms would reintroduce an alternative authorization path. Quota changes never delete existing files. See [P3-ASSINATURAS.md](P3-ASSINATURAS.md).
+
+The visual editor is additive inside existing structured_data; keep it with the plain body on rollback. Older clients may display plain text but must not edit approved versions, weaken package hashes or re-enable invalid AST approval. Legacy malformed drafts require a new explicit revision, never automatic repair or re-signing. See [P3-EDITOR-VISUAL.md](P3-EDITOR-VISUAL.md).

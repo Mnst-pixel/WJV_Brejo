@@ -34,6 +34,8 @@ If a secret is found in Git history, treat it as compromised, block deployment, 
 
 Subscription decisions require MFA, settings permission, an actor/target/state-bound signed form receipt and fresh authorization under transaction locks. Self-enrollment administration, machine principals and unauthorized protected-account changes are denied. Legacy plan/enrollment/policy POST routes and direct old save handlers are disabled; GET links redirect to the guarded workspace, with malformed identifiers returning 404. Existing private files remain intact when quotas are reduced.
 
+Rich text accepts a bounded AST with fixed block kinds and boolean emphasis marks. Revision commands validate API and form input centrally; approval/publication reject malformed or noncanonical stored structure without changing historical receipts. Body and AST must have the same normalized plain projection. Renderers use escaped text and fixed tags, never HTML injection; paste strips rich HTML and external embeds are unsupported.
+
 Bootstrap root and administrator credentials must be rotated by the owner after handoff; Kairós will not rotate them without explicit authorization.
 
 The September 10 value scan matched `DATAJUD_API_KEY` between the live configuration and the existing `.env.example`. Its value was not emitted; the example now leaves the field empty. No external credential was rotated and history was preserved. Confirm the official key's public status and current validity with CNJ before enabling DataJud; the match alone is not proof of a private-user credential compromise. The integration remains externally unverified.
