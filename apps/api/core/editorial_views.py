@@ -27,8 +27,9 @@ def editorial_access(permission):
         def guarded(request, *args, **kwargs):
             if not request.user.is_authenticated:
                 return redirect("/app/entrar/?editorial=1")
+            allowed = (permission,) if isinstance(permission, str) else permission
             if (not request.user.mfa_enabled or is_service_account(request.user) or
-                    not request_has_permission(request, permission)):
+                    not any(request_has_permission(request, item) for item in allowed)):
                 raise PermissionDenied("Esta área exige um papel autorizado e autenticação em duas etapas.")
             if request.method not in {"GET", "POST"}:
                 return HttpResponseNotAllowed(["GET", "POST"])
@@ -36,13 +37,23 @@ def editorial_access(permission):
                 return view(request, *args, **kwargs)
             except APIException as exc:
                 # Domain errors remain readable, escaped and free of raw database details.
-                return render(request, "editorial/error.html", {"title": "A operação não foi concluída", "detail": exc.detail}, status=exc.status_code)
+                def messages_of(value):
+                    if isinstance(value, dict):
+                        return [line for child in value.values() for line in messages_of(child)]
+                    if isinstance(value, (list, tuple)):
+                        return [line for child in value for line in messages_of(child)]
+                    return [str(value)]
+                return render(request, "editorial/error.html", context(request, title="A operação não foi concluída", error_lines=messages_of(exc.detail)[:30]), status=exc.status_code)
         return guarded
     return decorate
 
 
 def context(request, **values):
     return {"can_create": request_has_permission(request, "content.create"),
+            "can_content": request_has_permission(request, "content.read"),
+            "can_users": request_has_permission(request, "users.read"),
+            "can_settings": request_has_permission(request, "settings.read"),
+            "can_audit": request_has_permission(request, "audit.read"),
             "can_phase2": request_has_permission(request, "case.read"),
             "can_questions": request_has_permission(request, "question.read"),
             "can_edit": request_has_permission(request, "content.edit"), **values}
@@ -56,11 +67,21 @@ def revision_values(cleaned):
     return values
 
 
-@editorial_access("content.read")
+@editorial_access(("content.read", "users.read", "audit.read", "settings.read"))
 def dashboard(request):
-    counts = [(label, ContentWorkflow.objects.filter(state=state).count()) for state, label in Content.Status.choices]
+    from datetime import timedelta
+    from django.db.models import Count
+    from django.utils import timezone
+    from core.models import User
+    allowed = request_has_permission(request, "content.read")
+    grouped = dict(ContentWorkflow.objects.values("state").annotate(total=Count("pk")).values_list("state", "total")) if allowed else {}
+    counts = [(label, grouped.get(state, 0)) for state, label in Content.Status.choices] if allowed else []
+    users = None
+    if request_has_permission(request, "users.read"):
+        users = {"total": User.objects.count(), "new": User.objects.filter(created_at__gte=timezone.now() - timedelta(days=7)).count(),
+            "active_students": User.objects.filter(is_active=True, last_login__gte=timezone.now() - timedelta(days=30), role_assignments__role__slug="aluno").distinct().count()}
     return render(request, "editorial/dashboard.html", context(request, title="Painel editorial", counts=counts,
-        subject_count=Subject.objects.count(), content_count=Content.objects.count()))
+        users_summary=users, subject_count=Subject.objects.count() if allowed else None, content_count=Content.objects.count() if allowed else None))
 
 
 @editorial_access("content.read")

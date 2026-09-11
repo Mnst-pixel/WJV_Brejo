@@ -1,1 +1,1 @@
-{% extends 'editorial/base.html' %}{% block content %}<section class="panel"><p role="alert">{{ detail }}</p><a class="button" href="{% url 'editorial:contents' %}">Voltar ao conteúdo</a></section>{% endblock %}
+{% extends 'editorial/base.html' %}{% block content %}<section class="panel"><div role="alert">{% for line in error_lines %}<p>{{ line }}</p>{% endfor %}</div><a class="button" href="{% url 'editorial:dashboard' %}">Voltar ao painel</a></section>{% endblock %}

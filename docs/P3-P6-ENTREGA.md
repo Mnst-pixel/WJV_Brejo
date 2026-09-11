@@ -143,6 +143,20 @@ Commit **`ee6b1cf30f12181e9da885b139bfbed8aedd21e3`**, enviado ao GitHub. Fonte 
 
 **Não implantado.** Rollback preserva schema, leituras e recibos; não remover tabelas após uso e não reintroduzir hash menos abrangente. Release exige baseline, backup/restore, migrations/grants reais e coordenador P1. Próxima etapa: administração completa e recursos de estudo restantes. Esta imagem não cobre alterações posteriores de gestão de usuários.
 
+### Lote P3 — administração de usuários e recuperação de acesso
+
+Alteração/motivo: área de usuários com busca, filtros, cadastro sem senha, edição, papéis por caixas de seleção, suspensão/reativação, revogação e entrega de acesso. MFA, RBAC e versão otimista são revalidados no backend; suporte consulta somente cadastro autorizado. Contas com superusuário legado são identificadas e uma decisão explícita converte o privilégio para os papéis selecionados, sem autoelevação ou manutenção silenciosa do flag.
+
+Arquivos: `core/account_{commands,forms,editorial}.py`, recovery_policy, rbac_views, models/serializers/views, rotas/templates/CSS editorial, migration 0014 e testes de contas/concorrência/navegador. Guia: [P3-USUARIOS.md](P3-USUARIOS.md).
+
+Bugs corrigidos: decisões de papel sem versão; recuperação concorrente com o mesmo token; falha SMTP distinguindo conta existente por HTTP 500; ausência de limite compartilhado de recuperação; e-mail ambíguo por diferença de caixa; flag legado mantendo autoridade após seleção de Aluno. SMTP ausente/falho permanece um estado explícito, sem mensagem real enviada ou segredo exposto.
+
+Migration **0014_unique_recovery_email** verifica colisões sem imprimir endereços e aplica índice parcial insensível a caixa. Não mescla nem exclui cadastros. Rollback conserva índice, contas e auditoria; artefato anterior deve preservar versão obrigatória e bloqueio de recuperação concorrente.
+
+Verificação A final: **531 API PASS/25 skips explícitos**, 98,72 s; **E2E completo PASS em 31,22 s**, incluindo as jornadas educacionais anteriores e criar → editar → papéis → suspender → reativar → revogar → SMTP indisponível. Ruff PASS e migrations sem drift. Next.js não foi alterado neste lote. Screenshot `accounts-mobile.png` e recibo `accountsWorkflow` no diretório externo de evidências do navegador.
+
+B backend final: **57 PASS/3 skips**, com probes independentes de conversão do superusuário legado, preservação do papel canônico, proteção de administrador comum e autoconcessão. B UI final: **20 PASS/2 skips PostgreSQL**, navegação por teclado, banner, filtro e 390 px sem overflow; nenhum achado reproduzível remanescente. Migração isolada reversa/reaplicada preservou dados e colisões abortaram sem expor informações pessoais. Testes PostgreSQL/Redis e imagem exata serão registrados após execução Linux. **Não implantado.** Planos e painel operacional completo são os próximos recortes.
+
 “Disponível” abaixo significa produção verificada, não somente código local.
 
 | Funcionalidade | Implementada | Testada | Disponível ao aluno | Disponível ao admin | Pendência | Evidência |
@@ -153,14 +167,15 @@ Commit **`ee6b1cf30f12181e9da885b139bfbed8aedd21e3`**, enviado ao GitHub. Fonte 
 | Histórico/restauração de conteúdo | Sim, restaura para rascunho | HTTP e preservação da publicação | Não | Não | Comparação detalhada, agendamento e deploy | Teste de workflow completo |
 | Legado não verificado | Prévia/importação/revisão | Serviço existente; UI a ampliar | Não | Não | Mesclar/rejeitar/classificar em lote | `content_workflow.py` |
 | Editor visual e anexos relacionados | Não | Não | Não | Não | WYSIWYG, múltiplos anexos e metadados pedagógicos | Pendente |
-| Usuários/planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
-| Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente e E2E; Linux candidato pendente | Não | Autoria em candidato | Imagem/release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
+| Usuários e acesso | Formulários, papéis, suspensão, revogação e MFA | API, B independente e E2E; Linux pendente | Não | Não | Imagem/release; SMTP externo para entrega de acesso | `test_account_workspace.py`, `P3-USUARIOS.md` |
+| Planos e painel de operação completo | Fundação backend | P0–P2 | Não verificado | Não verificado | Jornadas leigas completas | Entrega P0–P2 |
+| Leitura, progresso e dashboard | Publicação versionada, histórico e próximo passo determinístico | API, B independente, E2E e imagem Linux | Não | Autoria em candidato | Release, notas e marcações na leitura | `test_learning.py`, `P4-ESTUDO.md`, screenshots |
 | Metas, notas, arquivos, Pomodoro | Fundação existente | P0–P2 | Release antiga apenas | Não | Metas quantitativas e jornadas de notas/flashcards | Entrega P0–P2 |
 | Questões e treino | Autoria/revisão/publicação, filtros, resposta, marcas e histórico | API/RBAC, E2E real e imagem PostgreSQL | Não | Não | Sessões personalizadas completas e deploy | `f391a46`, `test_question_editorial.py`, `test_practice.py`, `editorial-browser.json` |
-| Simulado 1ª fase, autosave e nota | Caderno, filtros, timer, marcas, recuperação, envio e resultado | API e E2E com perda de resposta; imagem nova pendente | Não | Autoria de caderno em candidato | Combinação de cadernos, analytics ampliado e deploy | `test_simulation_builder.py`, `editorial-browser.json` |
+| Simulado 1ª fase, autosave e nota | Caderno, filtros, timer, marcas, recuperação, envio e resultado | API, E2E com perda de resposta e imagem Linux | Não | Autoria de caderno em candidato | Combinação de cadernos, analytics ampliado e deploy | `test_simulation_builder.py`, `editorial-browser.json` |
 | Analytics pedagógicos | Diário, disciplina/tema na API, acurácia, sequência e recomendações | API/ownership/formal e E2E dashboard | Não | Não | Comparação de provas, tempo médio e metas quantitativas | `test_learning.py`, `P4-ESTUDO.md` |
-| Casos/peças/espelhos de 2ª fase | Modelos, formulários, critérios, ordenação, workflow e prévia integral | API/RBAC e E2E; imagem em preparação | Não | Não | Imagem, grants, release e correção operacional futura | `test_second_phase.py`, `P6-SEGUNDA-FASE.md` |
-| Prova 2ª fase, autosave e submissão | Catálogo, peça/discursivas, recuperação, envio e histórico | API/E2E com perda de confirmação; PG pendente | Não | Não | Imagem/release; corretor avançado na fase seguinte | `editorial-browser.json`, `test_second_phase_concurrency.py` |
+| Casos/peças/espelhos de 2ª fase | Modelos, formulários, critérios, ordenação, workflow e prévia integral | API/RBAC, E2E e imagem Linux | Não | Não | Grants, release e correção operacional futura | `test_second_phase.py`, `P6-SEGUNDA-FASE.md` |
+| Prova 2ª fase, autosave e submissão | Catálogo, peça/discursivas, recuperação, envio e histórico | API/E2E com perda de confirmação e concorrência PostgreSQL | Não | Não | Release; corretor avançado na fase seguinte | `editorial-browser.json`, `test_second_phase_concurrency.py` |
 
 ## Execução do navegador
 

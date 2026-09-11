@@ -3,9 +3,15 @@ from django.urls import path
 from core import editorial_views as views
 from core import question_editorial as questions
 from core import second_phase_editorial as phase2
+from core import account_editorial as accounts
 
 app_name = "editorial"
 urlpatterns = [
+    path("usuarios/", accounts.account_list, name="accounts"),
+    path("usuarios/novo/", accounts.account_create, name="account-create"),
+    path("usuarios/<uuid:user_id>/", accounts.account_detail, name="account"),
+    path("usuarios/<uuid:user_id>/editar/", accounts.account_edit, name="account-edit"),
+    path("usuarios/<uuid:user_id>/papeis/", accounts.account_roles, name="account-roles"),
     path("segunda-fase/", phase2.case_list, name="phase2"),
     path("segunda-fase/areas/nova/", phase2.area_create, name="phase2-area-create"),
     path("segunda-fase/provas/nova/", phase2.exam_create, name="phase2-exam-create"),

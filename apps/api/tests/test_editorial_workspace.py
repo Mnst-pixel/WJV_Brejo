@@ -68,8 +68,9 @@ def test_editorial_complete_human_workflow_and_restore():
 def test_student_support_and_machine_cannot_enter_or_create(role):
     client, _ = operator(role)
     for route in ["dashboard", "contents", "content-create", "subject-create", "legacy"]:
-        assert client.get(reverse("editorial:" + route)).status_code == 403
-        assert client.post(reverse("editorial:" + route), {"name": "Ataque"}).status_code == 403
+        status = 200 if role == "suporte" and route == "dashboard" else 403
+        assert client.get(reverse("editorial:" + route)).status_code == status
+        assert client.post(reverse("editorial:" + route), {"name": "Ataque"}).status_code == status
     assert Subject.objects.count() == 0
 
 

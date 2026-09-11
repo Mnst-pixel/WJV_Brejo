@@ -253,29 +253,42 @@ class PasswordResetRequestView(APIView):
 
     def post(self, request):
         email = str(request.data.get("email", "")).strip().lower()
+        from core.recovery_policy import allow_recovery_delivery
+        response = {"detail": "Se a conta existir e o e-mail estiver configurado, as instruções serão enviadas."}
+        if not email or len(email) > 254 or not allow_recovery_delivery(request, email):
+            return Response(response, status=202)
         user = User.objects.filter(email__iexact=email, is_active=True).first()
         if user and settings.SMTP_URL:
+            from smtplib import SMTPException
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             link = f"{settings.KAIROS_BASE_URL}/app/redefinir-senha?uid={uid}&token={token}"
-            send_mail("Redefinição de senha do Kairós", f"Use este link uma única vez: {link}", settings.DEFAULT_FROM_EMAIL, [user.email])
-            record_audit("auth.password_reset.requested", actor=user, request=request, target=user)
-        return Response({"detail": "Se a conta existir e o e-mail estiver configurado, as instruções serão enviadas."}, status=202)
+            try:
+                sent = send_mail("Redefinição de senha do Kairós", f"Use este link uma única vez: {link}", settings.DEFAULT_FROM_EMAIL, [user.email])
+            except (OSError, SMTPException):
+                sent = 0
+            record_audit("auth.password_reset.requested" if sent else "auth.password_reset.delivery_failed", request=request, target=user)
+        return Response(response, status=202)
 
 
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request):
+        from django.core.exceptions import ValidationError as PasswordValidationError
         try:
-            user = User.objects.get(pk=force_str(urlsafe_base64_decode(request.data.get("uid", ""))))
-        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+            user = User.objects.select_for_update().get(pk=force_str(urlsafe_base64_decode(request.data.get("uid", ""))), is_active=True)
+        except (User.DoesNotExist, ValueError, TypeError, OverflowError, UnicodeError, PasswordValidationError):
             return Response({"detail": "Token inválido."}, status=400)
         token = str(request.data.get("token", ""))
         password = str(request.data.get("new_password", ""))
         if not default_token_generator.check_token(user, token):
             return Response({"detail": "Token inválido ou expirado."}, status=400)
-        validate_password(password, user=user)
+        try:
+            validate_password(password, user=user)
+        except PasswordValidationError as exc:
+            raise ValidationError({"new_password": exc.messages}) from None
         user.set_password(password)
         user.session_version += 1
         user.save(update_fields=["password", "session_version", "updated_at"])

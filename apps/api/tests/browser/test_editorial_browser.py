@@ -67,8 +67,9 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     settings.CSRF_COOKIE_SECURE = False
     cache.clear()
     principals = {}
-    display_names = {"editor": "Autora de teste", "revisor-juridico": "Revisora de teste", "administrador-de-conteudo": "Editora de publicação", "aluno": "Aluno de teste"}
-    for role in ("editor", "revisor-juridico", "administrador-de-conteudo", "aluno"):
+    settings.SMTP_URL = ""
+    display_names = {"editor": "Autora de teste", "revisor-juridico": "Revisora de teste", "administrador-de-conteudo": "Editora de publicação", "aluno": "Aluno de teste", "administrador": "Administrador de teste"}
+    for role in display_names:
         password = uuid4().hex + "-test-Only!"
         secret = pyotp.random_base32()
         user = User.objects.create_user(username="browser-" + uuid4().hex, password=password, display_name=display_names[role],
@@ -100,4 +101,8 @@ def test_editorial_browser_full_workflow(live_server, next_server, settings, tmp
     assert written.responses.get(target_code="Q1").text == "Resposta discursiva que permanece na conta."
     assert result["phase2Workflow"].endswith("PASS")
     assert result["readingWorkflow"].endswith("PASS")
+    assert result["accountsWorkflow"].endswith("PASS")
+    invited = User.objects.get(username="pessoa-nova-browser")
+    assert invited.is_active and not invited.has_usable_password()
+    assert list(invited.role_assignments.values_list("role__slug", flat=True)) == ["editor"]
     cache.clear()

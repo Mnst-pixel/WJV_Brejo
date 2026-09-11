@@ -38,6 +38,12 @@ class UserSerializer(serializers.ModelSerializer):
         from .permissions import active_role_slugs
         return sorted(active_role_slugs(obj))
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if value and User.objects.filter(email__iexact=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
+            raise serializers.ValidationError("Este e-mail não está disponível para a conta.")
+        return value
+
     def validate_preferences(self, value):
         allowed = {"reduced_motion", "reduced_density", "comfortable_reading", "focus_mode", "text_scale"}
         if not isinstance(value, dict) or set(value) - allowed or any((type(item) is not int or not 90 <= item <= 125) if key == "text_scale" else type(item) is not bool for key, item in value.items()):
@@ -56,7 +62,12 @@ class UserSerializer(serializers.ModelSerializer):
                     value = {**current.preferences, **value}
                 setattr(current, field, value)
             if validated_data:
-                current.save(update_fields=[*validated_data, "updated_at"])
+                from django.db import IntegrityError
+                try:
+                    with transaction.atomic():
+                        current.save(update_fields=[*validated_data, "updated_at"])
+                except IntegrityError:
+                    raise Conflict("Os dados da conta foram alterados. Confira o e-mail antes de tentar novamente.") from None
             return current
 
 

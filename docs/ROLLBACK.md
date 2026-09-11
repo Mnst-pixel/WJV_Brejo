@@ -19,3 +19,5 @@ Product simulation migrations 0009/0010 are additive. Prefer retaining schema, p
 Second-phase migration 0011 adds written submissions, responses, checkpoints and editorial/correction structures. Preserve these tables on artifact rollback. Dropping them would discard student texts and approval evidence; whole-database recovery requires reconciliation of post-backup submissions. See [P6-SEGUNDA-FASE.md](P6-SEGUNDA-FASE.md).
 
 Reading migrations 0012/0013 preserve explicit publication associations and prior progress snapshots. Keep both on rollback. Approval hashes from earlier product candidates require a new human-reviewed successor; never rewrite historical receipts or downgrade integrity verification to reopen content. See [P4-ESTUDO.md](P4-ESTUDO.md).
+
+Account migration 0014 adds a recovery-email uniqueness constraint after checking collisions without printing addresses. Keep the index and new accounts on safe artifact rollback. Do not fall back to role changes without optimistic versions or unlocked password reset confirmation. Access delivery remains externally dependent on SMTP. See [P3-USUARIOS.md](P3-USUARIOS.md).

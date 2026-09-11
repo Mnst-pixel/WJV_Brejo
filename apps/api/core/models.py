@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 from pgvector.django import VectorField
 
 
@@ -37,6 +38,11 @@ class User(AbstractUser):
     session_version = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
+        constraints = [models.UniqueConstraint(Lower("email"), condition=~Q(email=""), name="user_email_unique_ci")]
 
     def __str__(self):
         return self.display_name or self.username

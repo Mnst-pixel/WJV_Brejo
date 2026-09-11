@@ -368,8 +368,39 @@ function acceptsTarget(req, origin) {
     assert.equal(await learner.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await learner.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
     await learner.screenshot({path: join(config.evidence, 'learning-dashboard-mobile.png'), fullPage: true});
+    const accountAdmin = await login('administrador', {width: 390, height: 844});
+    await accountAdmin.getByRole('link', {name: 'Usuários', exact: true}).click();
+    await accountAdmin.getByRole('link', {name: 'Criar usuário', exact: true}).click();
+    await accountAdmin.getByLabel('Nome da pessoa').fill('Pessoa cadastrada pelo painel');
+    await accountAdmin.getByLabel('Nome de acesso').fill('pessoa-nova-browser');
+    await accountAdmin.getByLabel('E-mail para acesso').fill('new-learner@example.invalid');
+    await accountAdmin.getByLabel('Motivo da alteração').fill('Cadastro sintético para validar a operação leiga.');
+    await accountAdmin.getByRole('button', {name: 'Criar conta', exact: true}).click();
+    await accountAdmin.getByRole('heading', {name: 'Pessoa cadastrada pelo painel', exact: true}).waitFor();
+    const accountUrl = accountAdmin.url();
+    assert.equal((await studentContext.request.get(accountUrl)).status(), 403);
+    assert.equal((await editor.request.get(accountUrl)).status(), 403);
+    await accountAdmin.getByRole('link', {name: 'Editar cadastro', exact: true}).click();
+    await accountAdmin.getByLabel('Nome da pessoa').fill('Pessoa com cadastro revisado');
+    await accountAdmin.getByLabel('Motivo da alteração').fill('Conferência cadastral autorizada para o teste.');
+    await accountAdmin.getByRole('button', {name: 'Salvar cadastro', exact: true}).click();
+    await accountAdmin.getByRole('link', {name: 'Administrar papéis', exact: true}).click();
+    await accountAdmin.getByLabel('Aluno', {exact: true}).uncheck();
+    await accountAdmin.getByLabel('Editor', {exact: true}).check();
+    assert.equal(await accountAdmin.getByLabel('Superadministrador', {exact: true}).count(), 0);
+    await accountAdmin.getByLabel('Motivo da alteração').fill('Conceder função editorial limitada, sem publicação.');
+    await accountAdmin.getByRole('button', {name: 'Salvar papéis', exact: true}).click();
+    for (const action of ['disable', 'enable', 'revoke', 'access']) {
+      await accountAdmin.getByRole('combobox', {name: 'Ação:', exact: true}).selectOption(action);
+      await accountAdmin.getByLabel('Motivo da alteração').fill('Validar alteração auditada de acesso no teste isolado.');
+      await accountAdmin.getByRole('button', {name: 'Aplicar ação de acesso', exact: true}).click();
+      await accountAdmin.getByRole('heading', {name: 'Pessoa com cadastro revisado', exact: true}).waitFor();
+    }
+    await accountAdmin.getByText('Envio indisponível: o serviço de e-mail ainda não foi configurado.', {exact: true}).waitFor();
+    assert.equal(await accountAdmin.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await accountAdmin.screenshot({path: join(config.evidence, 'accounts-mobile.png'), fullPage: true});
     assert.deepEqual(errors, []);
-    const result = {workflow: 'PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
+    const result = {workflow: 'PASS', accountsWorkflow: 'create-edit-roles-disable-enable-revoke-smtp-state PASS', readingWorkflow: 'published-read-progress-refresh-discipline-practice-dashboard-period PASS', phase2Workflow: 'case-rubric-review-publish-write-lost-autosave-reload-submit PASS', questionWorkflow: 'author-review-publish-answer-history-marks-reload PASS', simulationWorkflow: 'start-answer-autosave-lost-response-review-mark-refresh-resume-submit-grade PASS', login: 'Next.js password + real TOTP', mobileOverflow, browserErrors: errors,
       studentDenied: denied.status(), proxyExfiltration: '5 rejected; trap received zero requests', viewports: ['1440x1000', '390x844'], productionAccess: false};
     await writeFile(join(config.evidence, 'editorial-browser.json'), JSON.stringify(result, null, 2));
     process.stdout.write(JSON.stringify(result));
