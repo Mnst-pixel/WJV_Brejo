@@ -40,3 +40,11 @@ E2E Chromium inicial56,20sPASS com os quatro fluxos de produto anteriores, medi�
 Agenda semanal detalhada, planejamento de carga por disciplina e recomendações avançadas permanecem evoluções; a medição e o próximo passo básico funcionam sem IA. `PRODUCT_CORE_READY=NO`.
 
 Verificação final local: **611API PASS/34skips explícitos**,155,87s; Ruff/migrations sem drift, build Next.js/TypeScript/ESLint PASS. B UI repetida: **21probes e27API PASS**, Chromium11labels/foco/escape e390/768/1440sem overflow. E2E funcional repetido55,76sPASS; o teste de teclado agora aguarda a conclusão da conferência assíncrona antes de focar o botão. A primeira repetição falhou por tentar focar o botão enquanto ainda estava desabilitado; não houve falha da API. E2E final completo54,95sPASS com captura no topo, sem foco de navegação sobreposto.
+
+## Retomada em18/09/2026
+
+Commit do módulo: `9a457cc171d9f0d27d37bd5477bbc1557b27a028`. A execução Linux iniciada em11/09 terminou com **644API PASS/1skip**, inclusive as corridas PostgreSQL de metas, mas **2falhas/266PASS/18skips operacionais**. Portanto a imagem não foi aprovada. Ambas as falhas eram `NotNullViolation` de `core_goal.creation_payload_hash`: os INSERTs SQL dos testes de DML e de constraint após restore ainda usavam o schema antigo. Migration e API não apresentaram falha nesse ensaio.
+
+Correção: fixtures SQL agora informam tipo manual, prioridade, versão e hash vazio; o teste após restore exige especificamente `goal_progress_lte_100`, evitando aceitar outro erro como evidência. O probe isolado com `kairos_runtime` também passa a verificar metas pela API real (medição, replay, titularidade e conflito) e reverte todas as linhas sintéticas ao terminar. Nenhuma concessão de privilégio ou constraint foi relaxada. Verificação Linux completa deve ser repetida para aprovar o novo commit.
+
+Baseline18/09/2026 03:15:50UTC: checkout/API/Compose históricos preservados, containers saudáveis/sem restart, worker sem healthcheck,19migrations/3usuários. Backup automático17/09 06:34:22UTC,69.301.296bytes/root0600/checksumPASS; restore deste arquivo ainda não testado. Pointer canônico ausente. Recibo `p3-resume-baseline-20260918.json`; diagnóstico sem secrets em `goals-integration-failure-cause-20260918.json`. Sem deploy.

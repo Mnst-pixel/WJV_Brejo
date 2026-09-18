@@ -212,7 +212,7 @@ def test_runtime_dml_and_immutable_table_boundary(database_roles):
     state = database_roles
     goal_id = uuid4()
     with state.connect("kairos_runtime") as connection:
-        connection.execute("INSERT INTO core_goal(id,owner_id,title,description,progress,created_at,updated_at) VALUES(%s,%s,'Synthetic goal','',0,now(),now())", (goal_id, state.user_id))
+        connection.execute("INSERT INTO core_goal(id,owner_id,title,description,progress,metric,priority,version,creation_payload_hash,created_at,updated_at) VALUES(%s,%s,'Synthetic goal','',0,'manual',2,1,'',now(),now())", (goal_id, state.user_id))
         connection.execute("UPDATE core_goal SET progress=50 WHERE id=%s", (goal_id,))
         assert connection.execute("SELECT progress FROM core_goal WHERE id=%s", (goal_id,)).fetchone() == (50,)
         connection.execute("DELETE FROM core_goal WHERE id=%s", (goal_id,))
@@ -295,5 +295,6 @@ def test_backup_role_pg_dump_and_restore_recover_synthetic_database(database_rol
         for table in ("core_user", "core_auditlog", "core_role", "django_migrations"):
             assert recovered.execute(f"SELECT count(*) FROM {table}").fetchone() == original.execute(f"SELECT count(*) FROM {table}").fetchone()
         assert recovered.execute("SELECT id FROM core_user WHERE username='dbroles-synthetic'").fetchone()[0] == state.user_id
-        with pytest.raises(state.psycopg.errors.CheckViolation):
-            recovered.execute("INSERT INTO core_goal(id,owner_id,title,description,progress,created_at,updated_at) VALUES(%s,%s,'Impossible','',101,now(),now())", (uuid4(), state.user_id))
+        with pytest.raises(state.psycopg.errors.CheckViolation) as rejected:
+            recovered.execute("INSERT INTO core_goal(id,owner_id,title,description,progress,metric,priority,version,creation_payload_hash,created_at,updated_at) VALUES(%s,%s,'Impossible','',101,'manual',2,1,'',now(),now())", (uuid4(), state.user_id))
+        assert rejected.value.diag.constraint_name == "goal_progress_lte_100"

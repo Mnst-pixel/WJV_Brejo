@@ -73,9 +73,27 @@ def run():
         if changed["version"] != 2:
             raise RuntimeError("scoped_note_version_not_incremented")
         expect(learner.patch(url, {"body": "Stale text", "expected_version": 1}, format="json"), 409)
+        from django.utils import timezone
+        from core.study_models import StudyActivity
+        today = str(timezone.localdate())
+        goal_payload = {"title": "Synthetic quantitative goal", "metric": "study_minutes", "target_value": 2,
+            "start_date": today, "target_date": today, "creation_key": str(uuid4()), "expected_owner": str(student.pk)}
+        goal = expect(learner.post("/api/goals/", goal_payload, format="json"), 201)
+        if goal["progress"] != 0:
+            raise RuntimeError("scoped_goal_initial_progress")
+        StudyActivity.objects.create(owner=student, kind="reading", event_key=str(uuid4()), occurred_at=timezone.now(), duration_seconds=60, payload_hash="a" * 64)
+        goal_url = f"/api/goals/{goal['id']}/"
+        measured = expect(learner.get(goal_url), 200)
+        if measured["progress"] != 50 or measured["measured_value"] != 1:
+            raise RuntimeError("scoped_goal_measurement")
+        if expect(learner.post("/api/goals/", goal_payload, format="json"), 201)["id"] != goal["id"]:
+            raise RuntimeError("scoped_goal_replay")
+        expect(outsider.get(goal_url), 404)
+        expect(learner.patch(goal_url, {"title": "Changed synthetic goal", "expected_version": 1}, format="json"), 200)
+        expect(learner.patch(goal_url, {"title": "Stale goal", "expected_version": 1}, format="json"), 409)
         expect(transition(publisher, approved["id"], "archived"), 200)
         # Rollback includes sessions, audit records and immutable version inserts.
         transaction.set_rollback(True)
-    return {"runtime_superuser": False, "editorial_api": "PASS", "note_api": "PASS",
+    return {"runtime_superuser": False, "editorial_api": "PASS", "note_api": "PASS", "goal_api": "PASS",
         "ownership": "PASS", "idempotency": "PASS", "stale_write": "PASS", "synthetic_rows_rolled_back": True,
         "not_verified": ["edge_http", "browser", "password_login", "mfa_challenge", "whole_release_rollback"]}
