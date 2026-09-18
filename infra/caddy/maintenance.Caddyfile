@@ -1,0 +1,19 @@
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	header {
+		-Server
+		-X-Powered-By
+		Content-Type "text/plain; charset=utf-8"
+		Cache-Control "private, no-store"
+		Retry-After "60"
+		X-Content-Type-Options "nosniff"
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		Referrer-Policy "no-referrer"
+		X-Kairos-Maintenance "1"
+	}
+	respond "Kairós está em manutenção. Os dados já salvos permanecem preservados. Tente novamente em alguns minutos." 503
+}

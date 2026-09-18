@@ -17,7 +17,11 @@ ROLES = {
     "backup": ("KAIROS_BACKUP_DB_USER", "KAIROS_BACKUP_DB_PASSWORD", "kairos_backup"),
 }
 CONTAINER = "kairos-postgres-1"
-IMMUTABLE = ("core_auditlog", "core_publicationapproval", "core_contentversion", "core_questionversion", "core_answerkeyversion", "core_practicalcaseversion", "core_promptversion")
+DOCKER = ["/usr/bin/docker", "--host", "unix:///var/run/docker.sock"]
+DOCKER_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}
+IMMUTABLE = ("core_auditlog", "core_publicationapproval", "core_contentversion", "core_questionversion", "core_answerkeyversion", "core_alternative", "core_questionmetadata", "core_practicalcaseversion", "core_promptversion",
+             "core_rubric", "core_rubriccriterion", "core_rubriccriteriondetails", "core_secondphasecasemetadata", "core_discursivequestion",
+             "core_writtencheckpoint", "core_writtencorrection", "core_writtencorrectionitem", "core_writtencorrectionreview", "core_readinghistory", "core_flashcardreview")
 
 
 class ProvisionError(Exception):
@@ -114,7 +118,10 @@ END LOOP; END $$;""",
         "REVOKE INSERT,UPDATE,DELETE ON public.django_migrations FROM kairos_runtime;",
     ])
     for table in IMMUTABLE:
-        statements.append(f"REVOKE UPDATE,DELETE ON public.{table} FROM kairos_runtime;")
+        # P3+ relations are absent before forward migrations on the P0 database.
+        # Only skip an absent relation; an existing relation must be hardened or
+        # the enclosing transaction fails. New tables receive no runtime defaults.
+        statements.append(f"DO $$ BEGIN IF to_regclass('public.{table}') IS NOT NULL THEN REVOKE UPDATE,DELETE ON public.{table} FROM kairos_runtime; END IF; END $$;")
     statements.extend([
         "REVOKE UPDATE,DELETE ON public.core_sourcedocumentversion FROM kairos_runtime;",
         "GRANT UPDATE(state,approved_by_id,approval_date,published_at,updated_at) ON public.core_sourcedocumentversion TO kairos_runtime;",
@@ -141,14 +148,14 @@ def apply(values, expected_plan_hash, runner=subprocess.run):
     report = plan(values)
     if not expected_plan_hash or report["plan_sha256"] != expected_plan_hash:
         raise ProvisionError("plan_changed")
-    inspection = runner(["docker", "container", "inspect", "--format", '{{json .Config.Labels}}', CONTAINER], capture_output=True, text=True, timeout=20, check=False)
+    inspection = runner([*DOCKER, "container", "inspect", "--format", '{{json .Config.Labels}}', CONTAINER], env=dict(DOCKER_ENV), capture_output=True, text=True, timeout=20, check=False)
     if inspection.returncode:
         raise ProvisionError("container_inspection_failed")
     labels = json.loads(inspection.stdout)
     if labels.get("com.docker.compose.project") != "kairos" or labels.get("com.docker.compose.service") != "postgres":
         raise ProvisionError("container_identity_mismatch")
-    command = ["docker", "exec", "-i", CONTAINER, "psql", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-U", values["POSTGRES_USER"], "-d", "kairos"]
-    result = runner(command, input=render_sql(values), capture_output=True, text=True, timeout=300, check=False)
+    command = [*DOCKER, "exec", "-i", CONTAINER, "psql", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-U", values["POSTGRES_USER"], "-d", "kairos"]
+    result = runner(command, env=dict(DOCKER_ENV), input=render_sql(values), capture_output=True, text=True, timeout=300, check=False)
     if result.returncode:
         # PostgreSQL diagnostics can include SQL literals. Never forward them to caller or journal.
         raise ProvisionError("database_reconciliation_failed")

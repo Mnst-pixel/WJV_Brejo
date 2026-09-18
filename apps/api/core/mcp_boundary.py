@@ -125,6 +125,8 @@ def mint_delegation(request, body):
     user = request.user
     if is_service_account(user) or not user_has_permission(user, "ai.consult"):
         raise PermissionDenied("Delegação exige uma conta humana autorizada.")
+    from core.services.ai_policy import ensure_no_formal_ai
+    ensure_no_formal_ai(user)
     if request.session.get("user_session_version") != user.session_version:
         raise PermissionDenied("Sessão revogada.")
     if user_requires_mfa(user) and not (
@@ -244,6 +246,8 @@ def call_tool(request, body):
         or not user_has_permission(actor, TOOLS[tool])
     ):
         raise PermissionDenied("Autorização humana revogada.")
+    from core.services.ai_policy import ensure_no_formal_ai
+    ensure_no_formal_ai(actor)
     if user_requires_mfa(actor) and not (
         actor.mfa_enabled and delegation["mfa"] is True
     ):

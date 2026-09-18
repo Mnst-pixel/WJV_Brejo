@@ -44,7 +44,7 @@ def represent(obj):
         "updated_at": obj.updated_at,
     }
     fields = {
-        StudyProgress: ("target_kind", "target_id", "percent", "position", "version"),
+        StudyProgress: ("target_kind", "target_id", "percent", "position", "version", "content_version_id"),
         StudyMark: (
             "target_kind",
             "target_id",

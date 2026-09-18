@@ -1,9 +1,11 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("database_roles", Path(__file__).resolve().parents[1] / "database-roles.py")
 db = importlib.util.module_from_spec(SPEC)
@@ -60,6 +62,10 @@ class DatabaseRolesTests(unittest.TestCase):
         self.assertIn("REVOKE ALL ON TABLES FROM PUBLIC,kairos_runtime,kairos_worker", sql)
         self.assertIn("REVOKE INSERT,UPDATE,DELETE ON public.django_migrations FROM kairos_runtime", sql)
         self.assertIn("REVOKE UPDATE,DELETE ON public.core_auditlog FROM kairos_runtime", sql)
+        self.assertIn("REVOKE UPDATE,DELETE ON public.core_alternative FROM kairos_runtime", sql)
+        self.assertIn("REVOKE UPDATE,DELETE ON public.core_questionmetadata FROM kairos_runtime", sql)
+        for table in ("rubric", "rubriccriterion", "rubriccriteriondetails", "secondphasecasemetadata", "discursivequestion", "writtencheckpoint", "writtencorrection", "writtencorrectionitem", "writtencorrectionreview"):
+            self.assertIn(f"REVOKE UPDATE,DELETE ON public.core_{table} FROM kairos_runtime", sql)
 
     def test_changed_plan_refused_without_any_command(self):
         def fail(*args, **kwargs):
@@ -80,7 +86,7 @@ class DatabaseRolesTests(unittest.TestCase):
         calls = []
         def runner(command, **kwargs):
             calls.append((command, kwargs))
-            if command[:3] == ["docker", "container", "inspect"]:
+            if "inspect" in command:
                 return SimpleNamespace(returncode=0, stdout=json.dumps({"com.docker.compose.project": "kairos", "com.docker.compose.service": "postgres"}))
             return SimpleNamespace(returncode=1, stdout="", stderr="secret SQL text " + values()["KAIROS_RUNTIME_DB_PASSWORD"])
         with self.assertRaises(db.ProvisionError) as caught:
@@ -90,7 +96,19 @@ class DatabaseRolesTests(unittest.TestCase):
             for _, key, _ in db.ROLES.values():
                 self.assertNotIn(values()[key], " ".join(command))
         self.assertIn("ALTER ROLE", calls[1][1]["input"])
-        self.assertEqual(calls[1][0][:4], ["docker", "exec", "-i", "kairos-postgres-1"])
+        self.assertEqual(calls[1][0][:6], ["/usr/bin/docker", "--host", "unix:///var/run/docker.sock", "exec", "-i", "kairos-postgres-1"])
+
+    def test_inherited_remote_context_and_credentials_never_reach_docker(self):
+        calls = []
+        def runner(command, **kwargs):
+            calls.append((command, kwargs))
+            return SimpleNamespace(returncode=0, stdout=json.dumps({"com.docker.compose.project": "kairos", "com.docker.compose.service": "postgres"}))
+        with patch.dict(os.environ, {"DOCKER_HOST": "tcp://untrusted.invalid:2375", "DOCKER_CONTEXT": "foreign", "DOCKER_CONFIG": "/foreign", "AWS_SECRET_ACCESS_KEY": "synthetic-canary"}):
+            db.apply(values(), db.plan(values())["plan_sha256"], runner)
+        self.assertEqual(len(calls), 2)
+        for command, kwargs in calls:
+            self.assertEqual(command[:3], ["/usr/bin/docker", "--host", "unix:///var/run/docker.sock"])
+            self.assertEqual(kwargs["env"], {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
 
     def test_success_reports_only_plan_metadata(self):
         def runner(command, **kwargs):

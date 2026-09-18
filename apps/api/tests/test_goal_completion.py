@@ -13,12 +13,12 @@ def test_goal_completion_follows_progress_and_reopens(student, client_for):
     created = client.post("/api/goals/", {"title": "Concluir revisão", "progress": 0}, format="json")
     assert created.status_code == 201 and created.data["completed_at"] is None
     url = f"/api/goals/{created.data['id']}/"
-    completed = client.patch(url, {"progress": 100}, format="json")
+    completed = client.patch(url, {"progress": 100, "expected_version": 1}, format="json")
     assert completed.status_code == 200 and completed.data["completed_at"]
     timestamp = completed.data["completed_at"]
-    replay = client.patch(url, {"progress": 100, "title": "Revisão concluída"}, format="json")
+    replay = client.patch(url, {"progress": 100, "title": "Revisão concluída", "expected_version": 2}, format="json")
     assert replay.data["completed_at"] == timestamp
-    reopened = client.patch(url, {"progress": 40}, format="json")
+    reopened = client.patch(url, {"progress": 40, "expected_version": 3}, format="json")
     assert reopened.status_code == 200 and reopened.data["completed_at"] is None
     assert client.patch(url, {"completed_at": timezone.now().isoformat()}, format="json").status_code == 400
 
@@ -33,7 +33,7 @@ def test_stale_goal_metadata_edit_preserves_newer_completion(student):
     stale = Goal.objects.create(owner=student, title="Meta")
     completed_at = timezone.now()
     Goal.objects.filter(pk=stale.pk).update(progress=100, completed_at=completed_at)
-    serializer = GoalSerializer(stale, data={"title": "Título atualizado"}, partial=True, context={"request": SimpleNamespace(user=student)})
+    serializer = GoalSerializer(stale, data={"title": "Título atualizado", "expected_version": 1}, partial=True, context={"request": SimpleNamespace(user=student)})
     assert serializer.is_valid(), serializer.errors
     result = serializer.save()
     assert result.progress == 100 and result.completed_at == completed_at

@@ -1,0 +1,4 @@
+{% extends 'editorial/base.html' %}{% block content %}
+<section class="panel"><h2>{{ batch.item_count }} itens para {{ batch.subject.name }}</h2><p>O acervo antigo entrará como legado não verificado, sem publicação. A referência e o texto originais serão preservados. Duplicados serão ignorados.</p><form method="post">{% csrf_token %}<button type="submit">Importar para revisão humana</button></form></section>
+{% for item in page %}<article class="panel"><h2>{{ item.title }}</h2><p>Legado não verificado</p></article>{% endfor %}{% include 'editorial/pagination.html' %}
+{% endblock %}

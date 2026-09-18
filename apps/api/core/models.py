@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 from pgvector.django import VectorField
 
 
@@ -37,6 +38,11 @@ class User(AbstractUser):
     session_version = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
+        constraints = [models.UniqueConstraint(Lower("email"), condition=~Q(email=""), name="user_email_unique_ci")]
 
     def __str__(self):
         return self.display_name or self.username
@@ -479,6 +485,7 @@ class Simulation(TimeStampedModel):
     mode = models.CharField(max_length=20, choices=Mode.choices)
     title = models.CharField(max_length=255)
     question_ids = models.JSONField(default=list)
+    selection_config = models.JSONField(default=dict, blank=True)
     duration_minutes = models.PositiveSmallIntegerField(default=300)
 
     class Meta:
@@ -522,6 +529,8 @@ class Attempt(TimeStampedModel):
 
 
 class AttemptAnswer(TimeStampedModel):
+    is_correct = models.BooleanField(null=True, blank=True, editable=False)
+    marked_for_review = models.BooleanField(default=False)
     attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.PROTECT, related_name="attempt_answers")
     selected_alternative = models.ForeignKey(Alternative, on_delete=models.PROTECT, null=True, blank=True)
@@ -530,6 +539,7 @@ class AttemptAnswer(TimeStampedModel):
     answered_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        indexes = [models.Index(fields=["question", "is_correct"], name="question_answer_accuracy")]
         constraints = [models.UniqueConstraint(fields=["attempt", "question"], name="unique_attempt_question"), models.CheckConstraint(condition=Q(answer_version__gte=1), name="attempt_answer_version_positive")]
 
 
@@ -570,14 +580,38 @@ class OwnedModel(TimeStampedModel):
 
 
 class Goal(OwnedModel):
+    class Metric(models.TextChoices):
+        MANUAL = "manual", "Conclusão manual"
+        QUESTIONS = "questions", "Questões respondidas"
+        MINUTES = "study_minutes", "Minutos de estudo registrados"
+        SIMULATIONS = "simulations", "Simulados concluídos"
+        REVIEWS = "flashcard_reviews", "Revisões de flashcards"
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     target_date = models.DateField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     progress = models.PositiveSmallIntegerField(default=0)
+    metric = models.CharField(max_length=24, choices=Metric.choices, default=Metric.MANUAL)
+    target_value = models.PositiveIntegerField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT, null=True, blank=True)
+    priority = models.PositiveSmallIntegerField(default=2)
+    version = models.PositiveIntegerField(default=1)
+    creation_key = models.UUIDField(null=True, blank=True, editable=False)
+    creation_payload_hash = models.CharField(max_length=64, blank=True, editable=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        constraints = [models.CheckConstraint(condition=Q(progress__lte=100), name="goal_progress_lte_100")]
+        constraints = [
+            models.CheckConstraint(condition=Q(progress__lte=100), name="goal_progress_lte_100"),
+            models.CheckConstraint(condition=Q(metric__in=["manual", "questions", "study_minutes", "simulations", "flashcard_reviews"]), name="goal_valid_metric"),
+            models.CheckConstraint(condition=Q(metric="manual") | (Q(target_value__isnull=False, target_value__gte=1, target_value__lte=100000, start_date__isnull=False, target_date__isnull=False, progress=0, completed_at__isnull=True) & Q(target_date__gte=models.F("start_date"))), name="goal_quantitative_shape"),
+            models.CheckConstraint(condition=Q(subject__isnull=True) | Q(metric="questions"), name="goal_subject_questions_only"),
+            models.CheckConstraint(condition=Q(priority__gte=1, priority__lte=3), name="goal_priority_range"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="goal_positive_version"),
+            models.UniqueConstraint(fields=["owner", "creation_key"], condition=Q(creation_key__isnull=False), name="goal_owner_creation_key"),
+        ]
 
 
 class StudyNote(OwnedModel):
@@ -586,6 +620,15 @@ class StudyNote(OwnedModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
     version = models.PositiveIntegerField(default=1)
+    content_version = models.ForeignKey(ContentVersion, on_delete=models.PROTECT, null=True, blank=True, related_name="personal_notes")
+    creation_key = models.UUIDField(null=True, blank=True, editable=False)
+    creation_payload_hash = models.CharField(max_length=64, blank=True, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "creation_key"], condition=Q(creation_key__isnull=False), name="note_owner_creation_key"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="note_positive_version"),
+        ]
 
 
 class Flashcard(OwnedModel):
@@ -594,6 +637,18 @@ class Flashcard(OwnedModel):
     front = models.TextField()
     back = models.TextField()
     source_reference = models.TextField(blank=True)
+    version = models.PositiveIntegerField(default=1)
+    creation_key = models.UUIDField(null=True, blank=True, editable=False)
+    creation_payload_hash = models.CharField(max_length=64, blank=True, editable=False)
+    next_review_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "creation_key"], condition=Q(creation_key__isnull=False), name="card_owner_creation_key"),
+            models.CheckConstraint(condition=Q(version__gte=1), name="card_positive_version"),
+        ]
+        indexes = [models.Index(fields=["owner", "archived_at", "next_review_at"], name="card_owner_review_due")]
 
 
 class FlashcardReview(UUIDModel):
@@ -602,9 +657,16 @@ class FlashcardReview(UUIDModel):
     rating = models.PositiveSmallIntegerField()
     reviewed_at = models.DateTimeField(auto_now_add=True)
     next_review_at = models.DateTimeField()
+    idempotency_key = models.UUIDField(null=True, blank=True, editable=False)
+    card_version = models.PositiveIntegerField(default=1)
+    snapshot = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        constraints = [models.CheckConstraint(condition=Q(rating__gte=1) & Q(rating__lte=5), name="flashcard_rating_range")]
+        constraints = [
+            models.CheckConstraint(condition=Q(rating__gte=1) & Q(rating__lte=5), name="flashcard_rating_range"),
+            models.CheckConstraint(condition=Q(card_version__gte=1), name="review_positive_card_version"),
+            models.UniqueConstraint(fields=["owner", "idempotency_key"], condition=Q(idempotency_key__isnull=False), name="card_review_owner_key"),
+        ]
 
 
 class Bookmark(OwnedModel):
@@ -841,3 +903,9 @@ class CoverageRecord(TimeStampedModel):
 from .upload_models import Enrollment, Plan, UploadPolicy  # noqa: E402,F401
 from .study_models import BrowserImportReceipt, StudyActivity, StudyMark, StudyPanelState, StudyProgress  # noqa: E402,F401
 from .content_models import ContentWorkflow, LegacyContentImport, LegacyContentItem  # noqa: E402,F401
+from .question_models import QuestionMetadata, QuestionWorkflow  # noqa: E402,F401
+from .second_phase_models import (  # noqa: E402,F401
+    SecondPhaseArea, SecondPhaseCaseMetadata, DiscursiveQuestion, RubricCriterionDetails,
+    SecondPhaseWorkflow, WrittenSubmission, WrittenResponse, WrittenCheckpoint,
+    WrittenCorrection, WrittenCorrectionItem, WrittenCorrectionReview,
+)

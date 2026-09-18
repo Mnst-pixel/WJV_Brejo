@@ -1,0 +1,5 @@
+{% extends 'editorial/base.html' %}{% block content %}
+<div class="actions">{% if can_create %}<a class="button" href="{% url 'editorial:content-create' %}">Criar conteúdo</a>{% endif %}</div>
+<form method="get" class="panel filters">{% include 'editorial/fields.html' %}<button type="submit">Filtrar</button></form>
+<div class="entries">{% for content in page %}<article class="panel"><span class="badge">{{ content.get_status_display }}</span><h2><a href="{% url 'editorial:content' content.pk %}">{{ content.current_version.title|default:'Conteúdo sem versão' }}</a></h2><p>{{ content.subject.name }}</p><a class="text-link" href="{% url 'editorial:content' content.pk %}">Ver versões e decisões</a></article>{% empty %}<p class="panel">Nenhum conteúdo encontrado. Ajuste os filtros ou crie um rascunho.</p>{% endfor %}</div>{% include 'editorial/pagination.html' %}
+{% endblock %}

@@ -101,6 +101,18 @@ def test_delegated_search_is_owned_and_audited(student, other_student, client_fo
     assert TOKEN not in str(list(AuditLog.objects.values("metadata")))
 
 
+def test_formal_blocks_new_and_previously_minted_delegation(student, client_for):
+    from tests.test_attempts import formal_attempt
+    from core.services.attempts import submit_attempt
+    client = client_for(student)
+    delegation = mint(client).data["delegation"]
+    attempt, _, _ = formal_attempt.__wrapped__(student)
+    assert mint(client).status_code == 403
+    assert call(delegation).status_code == 403
+    submit_attempt(attempt_id=attempt.pk, owner=student)
+    assert call(delegation).status_code == 200
+
+
 def test_corpus_tool_returns_published_only(student, client_for):
     published = make_version(state=SourceDocumentVersion.PipelineState.PUBLISHED)
     draft = make_version(state=SourceDocumentVersion.PipelineState.HUMAN_REVIEW)

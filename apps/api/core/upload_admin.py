@@ -3,12 +3,11 @@
 from django import forms
 from django.conf import settings
 from django.contrib import admin
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import transaction
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.shortcuts import redirect
 
-from .admin import PolicyAdmin, locked_admin_principals
-from .audit import record_audit
-from .models import Permission
+from .admin import PolicyAdmin
 from .permissions import request_has_permission
 from .upload_models import Enrollment, Plan, UploadPolicy
 
@@ -70,131 +69,40 @@ class UploadPolicyForm(LimitForm):
 
 
 class UploadSettingsAdmin(PolicyAdmin):
+    """Old bookmarks reach the canonical workspace; old POST bodies never mutate."""
+
     def allows(self, request, action):
-        return request_has_permission(
-            request, "settings.read" if action == "read" else "settings.manage"
-        )
+        return action == "read" and request_has_permission(request, "settings.read")
 
     def save_model(self, request, obj, form, change):
-        with transaction.atomic():
-            locked_admin_principals(request)
-            # Low-volume configuration writes share a stable seeded mutex. It
-            # also covers missing singleton rows and concurrent plan-code edits.
-            Permission.objects.select_for_update().get(codename="settings.manage")
-            allowed = (
-                self.has_change_permission(request, obj)
-                if change
-                else self.has_add_permission(request)
-            )
-            if not allowed:
-                raise PermissionDenied
-            current = (
-                self.model.objects.select_for_update().get(pk=obj.pk) if change else obj
-            )
-            mapping = {
-                "max_upload_mib": "max_upload_bytes",
-                "storage_quota_mib": form.quota_field,
-            }
-            allowed_fields = (
-                {"code", "name", "active"} if isinstance(obj, Plan) else {"enabled"}
-            )
-            changed = set()
-            for name in form.changed_data:
-                destination = mapping.get(name, name)
-                if name in mapping or name in allowed_fields:
-                    setattr(current, destination, getattr(obj, destination))
-                    changed.add(destination)
-            try:
-                if current.max_upload_bytes > settings.KAIROS_MAX_UPLOAD_BYTES:
-                    raise ValidationError("unsafe upload maximum")
-                current.full_clean()
-            except ValidationError:
-                raise PermissionDenied(
-                    "Os limites mudaram ou são incompatíveis; recarregue o formulário."
-                ) from None
-            if change:
-                if changed:
-                    current.save(update_fields=[*changed, "updated_at"])
-                obj.refresh_from_db()
-            else:
-                current.save(force_insert=True)
-            record_audit(
-                "admin.upload_settings.changed",
-                actor=request.user,
-                request=request,
-                target=current,
-                metadata={"fields": sorted(changed)},
-            )
+        raise PermissionDenied("Use o painel de assinaturas para registrar uma decisão atualizada.")
+
+    def _authorize_redirect(self, request):
+        if request.method != "GET" or not self.allows(request, "read"):
+            raise PermissionDenied("Use o painel de assinaturas com um papel autorizado.")
+
+    def changelist_view(self, request, extra_context=None):
+        self._authorize_redirect(request)
+        return redirect("editorial:subscriptions")
+
+    def add_view(self, request, form_url="", extra_context=None):
+        self._authorize_redirect(request)
+        if not request_has_permission(request, "settings.manage"):
+            return redirect("editorial:subscriptions")
+        return redirect({Plan: "editorial:plan-create", UploadPolicy: "editorial:upload-policy", Enrollment: "editorial:accounts"}[self.model])
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        self._authorize_redirect(request)
+        if not request_has_permission(request, "settings.manage"):
+            return redirect("editorial:subscriptions")
+        obj = self.get_object(request, object_id)
+        if obj is None:
+            raise Http404("Registro indisponível.")
+        if self.model is Plan:
+            return redirect("editorial:plan-edit", plan_id=obj.pk)
+        if self.model is Enrollment:
+            return redirect("editorial:enrollment", user_id=obj.owner_id)
+        return redirect("editorial:upload-policy")
 
 
-@admin.register(Plan)
-class PlanAdmin(UploadSettingsAdmin):
-    form = PlanForm
-    list_display = ("name", "active")
-    search_fields = ("name", "code")
-    fields = ("code", "name", "active", "max_upload_mib", "storage_quota_mib")
-
-
-@admin.register(UploadPolicy)
-class UploadPolicyAdmin(UploadSettingsAdmin):
-    form = UploadPolicyForm
-    fields = ("enabled", "max_upload_mib", "storage_quota_mib")
-
-    def has_add_permission(self, request):
-        return super().has_add_permission(request) and not UploadPolicy.objects.exists()
-
-
-@admin.register(Enrollment)
-class EnrollmentAdmin(UploadSettingsAdmin):
-    fields = ("owner", "plan", "status", "valid_from", "valid_to")
-    list_display = ("owner", "plan", "status", "valid_to")
-    list_filter = ("status", "plan")
-    search_fields = ("owner__username", "owner__display_name")
-
-    def get_readonly_fields(self, request, obj=None):
-        return ("owner",) if obj else ()
-
-    def save_model(self, request, obj, form, change):
-        with transaction.atomic():
-            locked_admin_principals(request, obj.owner_id)
-            if not self.allows(request, "edit"):
-                raise PermissionDenied
-            if change:
-                current = Enrollment.objects.select_for_update().get(pk=obj.pk)
-                if obj.owner_id != current.owner_id:
-                    raise PermissionDenied("A titularidade da matrícula é permanente.")
-                fields = set(form.changed_data) & {
-                    "plan",
-                    "status",
-                    "valid_from",
-                    "valid_to",
-                }
-                for name in fields:
-                    setattr(current, name, getattr(obj, name))
-                try:
-                    current.full_clean()
-                except ValidationError:
-                    raise PermissionDenied(
-                        "Matrícula alterada durante a edição; recarregue o formulário."
-                    ) from None
-                current.save(update_fields=[*fields, "updated_at"])
-                obj.refresh_from_db()
-            else:
-                if Enrollment.objects.filter(owner_id=obj.owner_id).exists():
-                    raise PermissionDenied(
-                        "Esta pessoa já possui matrícula; edite a existente."
-                    )
-                try:
-                    obj.full_clean()
-                except ValidationError:
-                    raise PermissionDenied(
-                        "Matrícula inválida; recarregue o formulário."
-                    ) from None
-                obj.save()
-            record_audit(
-                "admin.enrollment.changed",
-                actor=request.user,
-                request=request,
-                target=obj,
-                metadata={"fields": sorted(form.changed_data)},
-            )
+admin.site.register((Plan, UploadPolicy, Enrollment), UploadSettingsAdmin)

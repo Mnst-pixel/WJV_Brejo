@@ -1,0 +1,6 @@
+{% extends 'editorial/base.html' %}{% block content %}
+{% if not target %}<p>A nova conta recebe papel de aluno. A pessoa define a própria senha por e-mail; nenhuma senha existente é exibida.</p>{% if not smtp_configured %}<p class="notice">O serviço de e-mail está pendente de configuração. Você pode preparar o cadastro, mas o envio das instruções ainda não está disponível.</p>{% endif %}{% endif %}
+{% if replacing_superuser %}<p class="notice">Esta conta possui acesso de superadministrador. Ao salvar, apenas os papéis selecionados serão mantidos.</p>{% endif %}
+<form method="post" class="panel form">{% csrf_token %}{% include 'editorial/fields.html' %}<button type="submit">{{ submit_label }}</button></form>
+{% if target %}<a class="text-link" href="{% url 'editorial:account' target.pk %}">Voltar ao cadastro</a>{% else %}<a class="text-link" href="{% url 'editorial:accounts' %}">Voltar aos usuários</a>{% endif %}
+{% endblock %}

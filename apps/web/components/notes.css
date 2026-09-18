@@ -1,0 +1,15 @@
+.library-navigation { margin-bottom: 24px; flex-wrap: wrap; }
+.reading-actions.library-navigation button { color: var(--parchment-deep); border-color: var(--bronze); justify-content: center; }
+.reading-actions.library-navigation button[aria-current="page"] { background: var(--parchment-deep); color: var(--ink); opacity: 1; }
+.notes-layout { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(0, 2fr); gap: 24px; }
+.notes-layout > * { min-width: 0; }
+.notes-layout .stack-form { margin-block: 20px; }
+.notes-layout input, .notes-layout textarea, .notes-layout select { width: 100%; min-width: 0; box-sizing: border-box; }
+.notes-layout textarea { resize: vertical; min-height: 290px; line-height: 1.8; }
+.notes-layout h3, .notes-layout p, .notes-layout button { overflow-wrap: anywhere; }
+.notes-layout .open-row { grid-template-columns: minmax(0, 1fr); padding-block: 18px; }
+.notes-layout .button-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.notes-layout .button-row > * { flex: 1 1 180px; }
+.note-conflict { margin-block: 20px; padding: 18px; border: 1px solid var(--parchment-deep); border-radius: 8px; }
+.note-conflict pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow-y: auto; font-family: inherit; line-height: 1.8; }
+@media (max-width: 850px) { .notes-layout { grid-template-columns: minmax(0, 1fr); } }

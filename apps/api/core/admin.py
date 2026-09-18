@@ -161,8 +161,23 @@ for model in (models.Role, models.Permission, models.UserRole, models.AuditLog,
               models.Agent, models.IngestionRun, models.CorpusUpdate):
     admin.site.register(model, ReadOnlyPolicyAdmin)
 
-for model in (models.Subject, models.Topic, models.Content, models.SourceRegistry, models.AssetRegistry,
-              models.Exam, models.ExamPhase, models.Question, models.PracticalCase,
+class TopicAdmin(PolicyAdmin):
+    """Use the locked editorial command to create hierarchy; established links stay fixed."""
+    readonly_fields = ("subject", "parent", "slug")
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+
+admin.site.register(models.Topic, TopicAdmin)
+admin.site.register(models.Question, ReadOnlyPolicyAdmin)
+admin.site.register(models.PracticalCase, ReadOnlyPolicyAdmin)
+
+for model in (models.Subject, models.Content, models.SourceRegistry, models.AssetRegistry,
+              models.Exam, models.ExamPhase,
               models.SourceDocument, models.CoverageRecord):
     admin.site.register(model, PolicyAdmin)
 

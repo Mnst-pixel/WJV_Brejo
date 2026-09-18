@@ -90,3 +90,6 @@ Antes de declarar rotina operacional: executar a suíte sem skips em Linux, revi
 ## Correções decorrentes da revisão B
 
 A revisão independente encontrou dois problemas: configuração aceitava caminhos absolutos fora do namespace e o deploy histórico utilizava lock diferente. Ambos foram corrigidos. Testes cobrem recusa antes de mutação, resolução de symlinks para fora do projeto, caminho compartilhado e disputa real entre backup/deploy em Linux. Revisão A deve ser repetida e revisão B final confirmada antes da operação. SigV4 PUT e HEAD também foram comparados independentemente com botocore usando endpoint com porta não padrão, sem contato externo: assinaturas coincidiram.
+# Ensaio combinado de migrations e grants
+
+O procedimento opt-in, suas guardas e evidências estão em [P1-SCOPED-RESTORE.md](P1-SCOPED-RESTORE.md). O restore simples continua disponível sem ativar a opção. Nenhum dos dois ensaios modifica papéis ou dados produtivos.

@@ -134,16 +134,26 @@ def test_malformed_autosave_is_validation_error(student, approved_simulation, an
         autosave_attempt(attempt_id=attempt.pk, owner=student, expected_version=version, answers=answers, elapsed_seconds=elapsed)
 
 
-def test_elapsed_is_monotonic_and_formal_deadline_is_server_side(student, approved_simulation):
+def test_formal_elapsed_and_deadline_are_server_side(student, approved_simulation):
     simulation, question, correct, *_ = approved_simulation
+    attempt = create_attempt(simulation=simulation, owner=student)
+    save(attempt, student, question, correct)
+    saved = save(attempt, student, question, correct, version=2, elapsed=10)
+    assert saved.elapsed_seconds < 10
+    Attempt.objects.filter(pk=attempt.pk).update(started_at=timezone.now() - timedelta(days=1))
+    with pytest.raises(Conflict):
+        save(attempt, student, question, correct, version=3, elapsed=20)
+    assert submit_attempt(attempt_id=attempt.pk, owner=student).status == "submitted"
+
+
+def test_training_elapsed_cannot_regress(student, approved_simulation):
+    simulation, question, correct, *_ = approved_simulation
+    simulation.mode = "training"
+    simulation.save(update_fields=["mode"])
     attempt = create_attempt(simulation=simulation, owner=student)
     save(attempt, student, question, correct)
     with pytest.raises(ValidationError):
         save(attempt, student, question, correct, version=2, elapsed=10)
-    Attempt.objects.filter(pk=attempt.pk).update(started_at=timezone.now() - timedelta(days=1))
-    with pytest.raises(Conflict):
-        save(attempt, student, question, correct, version=2, elapsed=20)
-    assert submit_attempt(attempt_id=attempt.pk, owner=student).status == "submitted"
 
 
 def test_other_owner_cannot_operate_attempt(student, other_student, approved_simulation):
@@ -257,6 +267,7 @@ def test_future_annulment_does_not_change_current_attempt(student, approved_simu
     attempt = create_attempt(simulation=simulation, owner=student)
     assert attempt.frozen_definition["questions"][0]["annulled"] is False
     Annulment.objects.filter(pk=annulment.pk).update(effective_at=timezone.now() - timedelta(seconds=1))
+    submit_attempt(attempt_id=attempt.pk, owner=student)
     successor = create_attempt(simulation=simulation, owner=student)
     assert successor.frozen_definition["questions"][0]["annulled"] is True
     attempt.refresh_from_db()

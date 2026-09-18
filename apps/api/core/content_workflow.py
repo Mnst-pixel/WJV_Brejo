@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError as DocumentValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
@@ -16,6 +17,7 @@ from core.audit import record_audit
 from core.content_models import ContentWorkflow, LegacyContentImport, LegacyContentItem
 from core.models import Content, ContentSource, ContentVersion, PublicationApproval, ReviewTask, Subject, User
 from core.permissions import is_service_account, request_has_permission, user_has_permission
+from core.rich_text import document_text, normalize_document
 
 DATASETS = {"questions": "questions.json", "oab": "oab-data.json"}
 MAX_DATASET_BYTES = 2 * 1024 * 1024
@@ -40,7 +42,7 @@ def fingerprint(value):
 
 
 def version_fingerprint(version):
-    return fingerprint({key: getattr(version, key) for key in ("title", "body", "structured_data", "original_text", "source_url", "source_hash", "legal_status", "valid_from", "valid_to", "reference_date", "published_at")})
+    return fingerprint({key: getattr(version, key) for key in ("id", "content_id", "version_number", "title", "body", "structured_data", "original_text", "source_url", "source_hash", "legal_status", "valid_from", "valid_to", "reference_date", "published_at", "retrieved_at", "created_at", "approved_by_id", "approval_date", "changes_summary", "current_legal_situation", "exam_date_situation", "supersedes_id")})
 
 
 def _source_url(value):
@@ -57,9 +59,24 @@ def _mirror_pending(content, version, state):
         content.save(update_fields=["status", "current_version", "updated_at"])
 
 
+def rich_values(body, data):
+    if not isinstance(data, dict) or "rich_text" not in data:
+        return body, data
+    try:
+        document = normalize_document(data["rich_text"])
+    except DocumentValidationError:
+        raise ValidationError("A estrutura visual é inválida. Crie uma revisão válida antes de continuar.") from None
+    plain = body.replace("\r\n", "\n").replace("\r", "\n").strip()
+    if document_text(document) != plain:
+        raise ValidationError("Texto e formatação divergem. Crie uma revisão válida antes de continuar.")
+    return plain, {**data, "rich_text": document}
+
+
 @transaction.atomic
 def create_revision(*, actor, content_id, values, request=None):
     authorize(actor, "content.edit", request)
+    values = dict(values)
+    values["body"], values["structured_data"] = rich_values(values["body"], values.get("structured_data", {}))
     content = get_object_or_404(Content.objects.select_for_update(), pk=content_id)
     previous = content.current_version
     number = (content.versions.aggregate(maximum=Max("version_number"))["maximum"] or 0) + 1
@@ -81,8 +98,12 @@ def transition_content(*, actor, version_id, state, justification, legal_status=
         raise ValidationError("A transição exige justificativa de 8 a 2000 caracteres.")
     base = get_object_or_404(ContentVersion, pk=version_id)
     content = Content.objects.select_for_update().get(pk=base.content_id)
-    workflow = get_object_or_404(ContentWorkflow.objects.select_for_update().select_related("version"), version=base)
+    workflow = get_object_or_404(ContentWorkflow.objects.select_for_update(of=("self",)).select_related("version"), version=base)
     version = workflow.version
+    if state in {"approved", "published"}:
+        body, data = rich_values(version.body, version.structured_data)
+        if body != version.body or data != version.structured_data:
+            raise ValidationError("A formatação exige uma nova revisão; a versão anterior será preservada.")
     expected = {"draft": "review", "review": "approved", "approved": "published", "published": "archived"}.get(workflow.state)
     if state != expected:
         raise ValidationError("Transição fora do workflow permitido.")
